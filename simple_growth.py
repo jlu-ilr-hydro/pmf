@@ -24,17 +24,36 @@ class Plant:
     shootpercent=0.7,leaf_appearance=1,rootpercent=0.3,root_elongation=0.5,tb=5.,growth_factor=0.05,maxdrymass=1000 
      
     """
-    def __init__(self,Soil,Atmosphere,shootpercent=0.7,leaf_appearance=1,rootpercent=0.3,root_elongation=0.5,tb=5.,growth_factor=0.05,maxdrymass=1000):
+    def __init__(self,Soil,Atmosphere,shootpercent=0.7,leaf_appearance=1,rootpercent=0.3,root_elongation=0.5,tb=5.,growth_factor=0.05,W_max=1000):
         self.shoot=Shoot(shootpercent,leaf_appearance,self)
         self.root=Root(rootpercent,root_elongation,self)
         self.growingseason=Growingseason(self)
         self.soil=Soil
         self.atmosphere=Atmosphere
         self.tb=tb
-        self.maxdrymass=maxdrymass
+        self.W_max=W_max
         self.growth_factor=growth_factor
-    def grow(self):
-        pass
+        self.gdd=0
+        self.stage=''
+        self.W_tot=1
+        self.values=[]
+    def grow(self,step,act_time):
+        gdd_rate=self.growingseason.thermaltime(self.atmosphere.get_tmin(act_time), self.atmosphere.get_tmax(act_time), self.tb)
+        self.gdd+=gdd_rate
+        self.stage=self.growingseason.getstage(self.gdd)
+        W_pot=self.assimilate(self.W_tot,self.W_max,self.growth_factor)
+        water_demand=self.perspire(self.atmosphere.get_etp(act_time))
+        nutrient_demand=self.nutrientdemand(W_pot, 0.05)
+        water_content=10
+        water_uptake=self.wateruptake(water_demand, water_content)
+        nutrient_conc=0.5
+        nutrient_content=water_content*nutrient_conc
+        nutrient_uptake=self.nutrientuptake(nutrient_demand, water_uptake, nutrient_conc, nutrient_content)
+        stress_factor=self.stress(water_uptake, water_demand, nutrient_uptake, nutrient_demand)
+        W_act=W_pot-W_pot*stress_factor
+        R=self.respire(self.W_tot, W_act, 0.05, 0.5)
+        self.W_tot+=W_act
+        self.values=[W_pot,W_act,self.W_tot,gdd_rate,water_demand,nutrient_demand,water_uptake,nutrient_uptake,stress_factor,R]
     def assimilate(self,W_total,K,r):
         """
         The process of assimilation is simulated by a logistic growth function as follows:
@@ -46,7 +65,7 @@ class Plant:
         limited by a capacity limit (K)[g].
         """
         return r*W_total*(1.0-W_total/K)
-    def respire(self,W_total,W_actual,a,b):
+    def respire(self,W_tot,W_act,a,b):
         """
         Respiration is computed from the actual growth rate (growth respiration) and
         the total dry mass (maintenance respiration) with two constants a and b with the
@@ -58,12 +77,12 @@ class Plant:
         R is respiration [g CO2], Wtotal [g] the total drymatter at timestep and Wactual 
         the actual growthrate.
         """
-        return a*W_actual+b*W_total
+        return a*W_act+b*W_tot
     def perspire(self,transpiration_rate):
         """ Transpiration is not calculated by the model for itself.
         """
         return transpiration_rate
-    def nutrientdemand(self,W_actual,nutrient_fraction):
+    def nutrientdemand(self,W_pot,nutrient_fraction):
         """
         Nutrient demand (only Nitrogen) is calculated from dry mass with a nutrientfraction.
         This factor is the fractional nitrogen content of the dry mass.
@@ -73,7 +92,7 @@ class Plant:
         where Nutrientfraction [g N * W-1] is the nitrogen content of the drymass
         and Nutrientdemand [g] is the nutrient demand in this time step.
         """
-        return nutrient_fraction*W_actual
+        return nutrient_fraction*W_pot
     def harvest(self,drymass,harvest_index):
         """
         Harvest returns the Yield as product from Wtotal and a harvest_index
@@ -144,12 +163,12 @@ class Growingseason:
             return 0
         else:
             return ((tmax+tmin)/2.0-tb)
-    def getstage(self,tt):
+    def getstage(self,gdd):
         """
         Returns the actual stage depending on the actual amounbt of GDD.
         """
         for stage in self.stage:
-            if tt <= stage.tt:
+            if gdd <= stage.gdd:
                 return stage.name
                 break        
 
@@ -157,9 +176,9 @@ class Stage:
     """
     The stage class definese deveopment stages with name and accumulated GDDs.
     """
-    def __init__(self,name,tt):
+    def __init__(self,name,gdd):
         self.name=name
-        self.tt=tt
+        self.gdd=gdd
          
 class Root:
     def __init__(self,rootpercent,root_elongation,Plant):

@@ -6,22 +6,9 @@ from pylab import *
 ########################################################################################################
 #### Soil and atmosphere interface
 soil=Soil()
-#s.addhorizon(lowerlimit, bulkdensity, wetness, nutrient)
-soil.addhorizon(30, 1, 1., 0.5)
-soil.addhorizon(40, 0.3, 1., 0.5)
-soil.addhorizon(120, 0.5, 1.,0)
-soil.addhorizon(200, 0.6, 1., 0)
-tmin=arange(364.)
-tmax=arange(364.)
-etp=arange(364.)
-tmin[0:364]=10.
-tmin[60:300]=0.
-tmax[0:364]=10.
-tmax[60:300]=25.
-etp[0:364]=10.
-etp[60:300]=10.
+soil.default_values()
 atmosphere=Atmosphere()
-atmosphere.set_values(etp,tmin,tmax)
+atmosphere.default_values()
 ########################################################################################################
 ########################################################################################################
 #### Plant implementation
@@ -78,12 +65,13 @@ for doy in time:
     thermaltime=p.growingseason.thermaltime(p.atmosphere.get_tmin(doy),p.atmosphere.get_tmax(doy),p.tb)
     total_thermaltime+=thermaltime
     stage=p.growingseason.getstage(total_thermaltime)
-    potential_growthrate=p.assimilate(total_drymass, p.maxdrymass, p.growth_factor)
+    potential_growthrate=p.assimilate(total_drymass, p.W_max, p.growth_factor)
     water_demand=p.perspire(p.atmosphere.get_etp(doy))
     nutrient_demand=p.nutrientdemand(potential_growthrate, 0.01)
     wetness=[]
     nutrients=[]
     profile=arange(1,total_depth,1)#vorrausgesetzt, wetness gibt die feucht pro cm an
+    
     for depth in profile:
         wetness.append(p.soil.get_wetness(depth))
         nutrients.append(p.soil.get_nutrients(depth))
@@ -93,25 +81,26 @@ for doy in time:
     n=array(nutrients)
     nutrient_content=sum(w*n)
     nutrient_conc=sum(n)/n.size
+    
     nutrient_uptake=p.nutrientuptake(nutrient_demand, water_uptake, nutrient_conc, nutrient_content)
     stress_factor=p.stress(water_uptake, water_demand, nutrient_uptake, nutrient_demand)
     actual_growthrate=potential_growthrate-potential_growthrate*stress_factor
-    total_drymass+=actual_growthrate
-    respirationrate=p.respire(total_drymass,actual_growthrate, 0.05, 0.5)
-    total_respiration+=respirationrate
-    root_growthrate=p.root.partitioninggrowth(actual_growthrate,p.root.rootpercent)
-    root_total_drymass+=root_growthrate
-    root_respirationrate=p.root.respire(root_total_drymass,root_growthrate, 0.05, 0.5)
-    root_total_respiration+=root_respirationrate
-    rootingrate=p.root.elongation(soil.get_bulkdensity(total_depth),p.root.elongation_factor)
-    total_depth+=rootingrate
-    shoot_growthrate=p.shoot.partitioninggrowth(actual_growthrate,p.shoot.shootpercent)
-    shoot_total_drymass+=shoot_growthrate
-    shoot_respirationrate=p.shoot.respire(shoot_total_drymass,shoot_growthrate, 0.05, 0.5)
-    shoot_total_respiration+=shoot_respirationrate
-    leafrate=p.shoot.leaf.grow(p.shoot.leaf.appearance_rate)
-    total_leafs+=leafrate
     
+    respirationrate=p.respire(total_drymass,actual_growthrate, 0.05, 0.5)
+    #total_respiration+=respirationrate
+    #root_growthrate=p.root.partitioninggrowth(actual_growthrate,p.root.rootpercent)
+    #root_total_drymass+=root_growthrate
+    #root_respirationrate=p.root.respire(root_total_drymass,root_growthrate, 0.05, 0.5)
+    #root_total_respiration+=root_respirationrate
+    #rootingrate=p.root.elongation(soil.get_bulkdensity(total_depth),p.root.elongation_factor)
+    #total_depth+=rootingrate
+    #shoot_growthrate=p.shoot.partitioninggrowth(actual_growthrate,p.shoot.shootpercent)
+    #shoot_total_drymass+=shoot_growthrate
+    #shoot_respirationrate=p.shoot.respire(shoot_total_drymass,shoot_growthrate, 0.05, 0.5)
+    #shoot_total_respiration+=shoot_respirationrate
+    #leafrate=p.shoot.leaf.grow(p.shoot.leaf.appearance_rate)
+    #total_leafs+=leafrate
+    total_drymass+=actual_growthrate
     ########################################################################################################
     ########################################################################################################
     #### Plotting  

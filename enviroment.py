@@ -1,3 +1,5 @@
+from datetime import *
+from pylab import *
 class Horizon:
     def __init__(self, lowerlimit,bulkdensity,wetness,nutrients):
         self.lowerlimit=lowerlimit
@@ -38,19 +40,44 @@ class Soil:
         for horizon in self.horizon:
             if horizon.upperlimit <= depth and horizon.lowerlimit >= depth:
                 return horizon.bulkdensity
-
+    def default_values(self):
+        self.addhorizon(30, 1, 1., 0.5)
+        self.addhorizon(40, 0.3, 1., 0.5)
+        self.addhorizon(120, 0.5, 1.,0)
+        self.addhorizon(200, 0.6, 1., 0)    
+        
 class Atmosphere:
     def __init__(self):
+        self.time=[]
         self.etp=[]
-        self.tmin=[]
         self.tmax=[]
-    def get_etp(self,time):
-        return self.etp[time]
-    def get_tmin(self,time):
-        return self.tmin[time]
-    def get_tmax(self,time):
-        return self.tmax[time]
-    def set_values(self,etp,tmin,tmax):
+        self.tmin=[]
+    def get_tmin(self,act_time):
+        for i in range(len(self.tmin)):
+            if act_time == self.time[i]:
+                return self.tmin[i]
+                break
+    def get_tmax(self,act_time):
+        for i in range(len(self.tmin)):
+            if act_time == self.time[i]:
+                return self.tmax[i]
+                break
+    def get_etp(self,act_time):
+        for i in range(len(self.tmin)):
+            if act_time == self.time[i]:
+                return self.etp[i]
+                break
+    def default_values(self):
+        time=[]
+        for i in range(365):
+            time.append(datetime(2009,1,1)+timedelta(i))
+        etp=arange(364.)
+        tmax=arange(364.)
+        tmin=arange(364.)
+        etp[0:364]=10.
+        tmin[0:364]=5.
+        tmax[0:364]=30.
+        self.time=time
         self.etp=etp
         self.tmin=tmin
         self.tmax=tmax
