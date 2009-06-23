@@ -14,7 +14,7 @@ class Simulation:
         self.results=[[],[],[],[],[],[],[],[],[],[]]
     def run(self):
         while self.act_time<self.end:
-            self.plant.grow(self.step,self.act_time)
+            self.plant.grow(self.step.days,self.act_time)
             self.result(self.plant.values)
             self.act_time+=self.step
             
@@ -39,6 +39,3 @@ plant=Plant(soil,atmosphere)
 sim=Simulation(plant)
 sim.run()
 sim.graph()
-  
-
-
