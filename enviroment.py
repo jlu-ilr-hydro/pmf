@@ -29,22 +29,31 @@ class Soil:
                 horizon.length = horizon.lowerlimit - self.horizon[self.horizon.index(horizon)-1].lowerlimit
                 horizon.upperlimit = horizon.lowerlimit-horizon.length
     def get_wetness(self,depth):
-        for horizon in self.horizon:
-            if horizon.upperlimit <= depth and horizon.lowerlimit >= depth:
-                return horizon.wetness
+        if depth==0:
+            return 0
+        else:
+            for horizon in self.horizon:
+                if horizon.upperlimit <= depth and horizon.lowerlimit >= depth:
+                    return horizon.wetness
     def get_nutrients(self,depth):
-        for horizon in self.horizon:
-            if horizon.upperlimit <= depth and horizon.lowerlimit >= depth:
-                return horizon.nutrients
+        if depth==0:
+            return 0
+        else:
+            for horizon in self.horizon:
+                if horizon.upperlimit <= depth and horizon.lowerlimit >= depth:
+                    return horizon.nutrients
     def get_bulkdensity(self,depth):
-        for horizon in self.horizon:
-            if horizon.upperlimit <= depth and horizon.lowerlimit >= depth:
-                return horizon.bulkdensity
-    def default_values(self):
-        self.addhorizon(30, 1, 1., 0.5)
-        self.addhorizon(40, 0.3, 1., 0.5)
-        self.addhorizon(120, 0.5, 1.,0)
-        self.addhorizon(200, 0.6, 1., 0)    
+        if depth==0:
+            return 1
+        else:
+            for horizon in self.horizon:
+                if horizon.upperlimit <= depth and horizon.lowerlimit >= depth:
+                    return horizon.bulkdensity
+    def default_values(self): #lowerlimit, bulkdensity,wetness,nutrients
+        self.addhorizon(30, 1, 1, 10)
+        self.addhorizon(40, 1, 10, 10)
+        self.addhorizon(120, 1, 5,10)
+        self.addhorizon(200, 1, 8, 10)    
         
 class Atmosphere:
     def __init__(self):

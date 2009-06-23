@@ -37,6 +37,7 @@ class Plant:
         self.stage=''
         self.W_tot=1
         self.values=[]
+        self.rooting_depth=0
     def grow(self,step,act_time):
         gdd_rate=self.growingseason.thermaltime(self.atmosphere.get_tmin(act_time), self.atmosphere.get_tmax(act_time), self.tb)
         self.gdd+=gdd_rate
@@ -44,15 +45,34 @@ class Plant:
         W_pot=self.assimilate(self.W_tot,self.W_max,self.growth_factor)
         water_demand=self.perspire(self.atmosphere.get_etp(act_time))
         nutrient_demand=self.nutrientdemand(W_pot, 0.05)
-        water_content=10
+        rooting_rate=self.root.elongation(self.soil.get_bulkdensity(self.rooting_depth),0.5)
+        self.rooting_depth=rooting_rate*step + self.rooting_depth
+        
+        
+        depth_step=10
+        depth_profile=arange(0,self.rooting_depth,depth_step)
+        
+        wetness=[]
+        nutrients=[]
+        for depth in depth_profile:
+            wetness.append(self.soil.get_wetness(depth))
+            nutrients.append(self.soil.get_nutrients(depth))
+        w=array(wetness)
+        water_content=sum(w*10)
+        water_content_act_depth=self.soil.get_wetness(self.rooting_depth)*(self.rooting_depth-depth_profile[-1])
+        water_content_act_depth=0
+        water_content+=water_content_act_depth
         water_uptake=self.wateruptake(water_demand, water_content)
-        nutrient_conc=0.5
-        nutrient_content=water_content*nutrient_conc
+        n_conc=array(nutrients)
+        n_content=n_conc*w*10
+        nutrient_content_act_depth=self.soil.get_nutrients(self.rooting_depth)*water_content_act_depth
+        nutrient_content=n_content+nutrient_content_act_depth
+        
         nutrient_uptake=self.nutrientuptake(nutrient_demand, water_uptake, nutrient_conc, nutrient_content)
         stress_factor=self.stress(water_uptake, water_demand, nutrient_uptake, nutrient_demand)
         W_act=W_pot-W_pot*stress_factor
         R=self.respire(self.W_tot, W_act, 0.05, 0.5)
-        self.W_tot+=W_act
+        self.W_tot=self.W_tot+step*W_act
         self.values=[W_pot,W_act,self.W_tot,gdd_rate,water_demand,nutrient_demand,water_uptake,nutrient_uptake,stress_factor,R]
     def assimilate(self,W_total,K,r):
         """
@@ -193,7 +213,7 @@ class Root:
         """
         return Wactual*rootpercent
     def elongation(self,bulkdensity,rooting_rate):
-        return rooting_rate*bulkdensity
+        return bulkdensity*rooting_rate
     def respire(self,W_total,W_actual,a,b):
         """
         Respiration is computed from the actual growth rate (growth respiration) and
