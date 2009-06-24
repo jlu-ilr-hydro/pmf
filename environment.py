@@ -1,5 +1,6 @@
 from datetime import *
 from pylab import *
+
 class Horizon:
     def __init__(self, lowerlimit,bulkdensity,wetness,nutrients):
         self.lowerlimit=lowerlimit
@@ -8,7 +9,7 @@ class Horizon:
         self.nutrients=nutrients
         self.length=0.
         self.upperlimit=0.
-            
+
 class Soil:
     def __init__(self):
         self.horizon=[]
@@ -17,7 +18,7 @@ class Soil:
     def __iter__(self):
         for h in self.horizon:
             yield h
-    def addhorizon(self, lowerlimit, bulkdensity,wetness,nutrients):
+    def add_horizon(self, lowerlimit, bulkdensity,wetness,nutrients):
         self.horizon.append(Horizon(lowerlimit,bulkdensity,wetness,nutrients))
         self.calc_values()
     def calc_values(self):
@@ -49,11 +50,7 @@ class Soil:
             for horizon in self.horizon:
                 if horizon.upperlimit <= depth and horizon.lowerlimit >= depth:
                     return horizon.bulkdensity
-    def default_values(self): #lowerlimit, bulkdensity,wetness,nutrients
-        self.addhorizon(30, 1, 1, 10)
-        self.addhorizon(40, 1, 10, 10)
-        self.addhorizon(120, 1, 5,10)
-        self.addhorizon(200, 1, 8, 10)    
+ 
         
 class Atmosphere:
     def __init__(self):
@@ -85,9 +82,9 @@ class Atmosphere:
         tmin=arange(364.)
         etp[0:364]=10.
         tmin[0:364]=5.
-        tmax[0:364]=30.
+        tmax[0:364]=20.
         self.time=time
         self.etp=etp
         self.tmin=tmin
         self.tmax=tmax
-        
+
