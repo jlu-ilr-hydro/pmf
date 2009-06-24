@@ -24,7 +24,7 @@ class Plant:
     shootpercent=0.7,leaf_appearance=1,rootpercent=0.3,root_elongation=0.5,tb=5.,growth_factor=0.05,maxdrymass=1000 
      
     """
-    def __init__(self,Soil,Atmosphere,shootpercent=0.7,leaf_appearance=1,rootpercent=0.3,root_elongation=0.5,tb=5.,growth_factor=0.05,W_max=1000):
+    def __init__(self,Soil,Atmosphere,shootpercent=0.7,leaf_appearance=1,rootpercent=0.3,root_elongation=0.5,tb=0.,growth_factor=0.05,W_max=1000):
         self.shoot=Shoot(shootpercent,leaf_appearance,self)
         self.root=Root(rootpercent,root_elongation,self)
         self.growingseason=Growingseason(self)
@@ -34,7 +34,6 @@ class Plant:
         self.W_max=W_max
         self.growth_factor=growth_factor
         self.gdd=0
-        self.stage=''
         self.W_tot=1
         self.values=[]
         self.rooting_depth=0
@@ -257,19 +256,3 @@ class Leaf:
         self.shoot=Shoot
     def grow(self,appearance_rate):
         return appearance_rate
-
-class Soil:
-    def get_wetness(self,depth):
-        pass
-    def get_nutrients(self,depth):
-        pass
-    def get_bulkdensity(self,depth):
-        pass
-
-class Atmosphere:
-    def get_etp(self,time): 
-        pass
-    def get_tmax(self,time):
-        pass
-    def get_tmin(self,time):
-        pass  
