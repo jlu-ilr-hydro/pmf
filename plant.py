@@ -1,32 +1,13 @@
 from pylab import *
 
 class Plant:
-    """
-    The plant class must be implemented wit ha soil and a atmosphere interface:
-    class Soil:
-    def get_wetness(self,depth):
-        pass
-    def get_nutrients(self,depth):
-        pass
-    def get_bulkdensity(self,depth):
-        pass
-
-    class Atmosphere:
-    def get_etp(self,time): 
-        pass
-    def get_tmax(self,time):
-        pass
-    def get_tmin(self,time):
-        pass 
-    
+    """    
     Default values:
-    
-    shootpercent=0.7,leaf_appearance=1,rootpercent=0.3,root_elongation=0.5,tb=5.,growth_factor=0.05,maxdrymass=1000 
-     
+    shootpercent=0.7,leaf_appearance=1,rootpercent=0.3,tb=5.,growth_factor=0.05,maxdrymass=1000 
     """
-    def __init__(self,Soil,Atmosphere,shootpercent=0.7,leaf_appearance=1,rootpercent=0.3,root_elongation=0.5,tb=0.,growth_factor=0.05,W_max=1000):
+    def __init__(self,Soil,Atmosphere,shootpercent=0.7,leaf_appearance=1,rootpercent=0.3,tb=0.,growth_factor=0.05,W_max=1000):
         self.shoot=Shoot(shootpercent,leaf_appearance,self)
-        self.root=Root(rootpercent,root_elongation,self)
+        self.root=Root(rootpercent,self)
         self.growingseason=Growingseason(self)
         self.soil=Soil
         self.atmosphere=Atmosphere
@@ -35,45 +16,7 @@ class Plant:
         self.growth_factor=growth_factor
         self.gdd=0
         self.W_tot=1
-        self.values=[]
-        self.rooting_depth=0
-    def grow(self,step,act_time):
-        gdd_rate=self.growingseason.thermaltime(self.atmosphere.get_tmin(act_time), self.atmosphere.get_tmax(act_time), self.tb)
-        self.gdd+=gdd_rate
-        self.stage=self.growingseason.getstage(self.gdd)
-        W_pot=self.assimilate(self.W_tot,self.W_max,self.growth_factor)
-        water_demand=self.perspire(self.atmosphere.get_etp(act_time))
-        nutrient_demand=self.nutrientdemand(W_pot, 0.05)
-        rooting_rate=self.root.elongation(self.soil.get_bulkdensity(self.rooting_depth),0.5)
-        self.rooting_depth=rooting_rate*step + self.rooting_depth
-        
-        
-        depth_step=10
-        depth_profile=arange(0,self.rooting_depth,depth_step)
-        
-        wetness=[]
-        nutrients=[]
-        for depth in depth_profile:
-            wetness.append(self.soil.get_wetness(depth))
-            nutrients.append(self.soil.get_nutrients(depth))
-        w=array(wetness)
-        water_content=sum(w*10)
-        water_content_act_depth=self.soil.get_wetness(self.rooting_depth)*(self.rooting_depth-depth_profile[-1])
-        water_content_act_depth=0
-        water_content+=water_content_act_depth
-        water_uptake=self.wateruptake(water_demand, water_content)
-        n_conc=array(nutrients)
-        n_content=n_conc*w*10
-        nutrient_content_act_depth=self.soil.get_nutrients(self.rooting_depth)*water_content_act_depth
-        nutrient_content=n_content+nutrient_content_act_depth
-        
-        nutrient_uptake=self.nutrientuptake(nutrient_demand, water_uptake, nutrient_conc, nutrient_content)
-        stress_factor=self.stress(water_uptake, water_demand, nutrient_uptake, nutrient_demand)
-        W_act=W_pot-W_pot*stress_factor
-        R=self.respire(self.W_tot, W_act, 0.05, 0.5)
-        self.W_tot=self.W_tot+step*W_act
-        self.values=[W_pot,W_act,self.W_tot,gdd_rate,water_demand,nutrient_demand,water_uptake,nutrient_uptake,stress_factor,R]
-    def assimilate(self,W_total,K,r):
+    def assimilate(self,W_tot,K,r):
         """
         The process of assimilation is simulated by a logistic growth function as follows:
         
@@ -83,7 +26,7 @@ class Plant:
         coefficiant(r)[-]and the whole drymass (W)[g]. The amount of whole drymass is 
         limited by a capacity limit (K)[g].
         """
-        return r*W_total*(1.0-W_total/K)
+        return r*W_tot*(1.0-W_tot/K)
     def respire(self,W_tot,W_act,a,b):
         """
         Respiration is computed from the actual growth rate (growth respiration) and
@@ -93,7 +36,7 @@ class Plant:
         Repiration: R = a(dW/dt)+bW,
         
         where a [g CO2 (kg drymass)-1] and b a [g CO2 (kg drymass)-1] are constants,
-        R is respiration [g CO2], Wtotal [g] the total drymatter at timestep and Wactual 
+        R is respiration [g CO2], Wtotaranspiration_ratel [g] the total drymatter at timestep and Wactual 
         the actual growthrate.
         """
         return a*W_act+b*W_tot
@@ -121,7 +64,7 @@ class Plant:
         with Yield [g] and Wtotal [g] and a harvest_index [-]
         """
         return drymass*harvest_index
-    def stress(self,water_uptake,water_demand,nutrient_uptake,nutrient_demand):
+    def stress_response(self,water_uptake,water_demand,nutrient_uptake,nutrient_demand):
         """
         Less nutrient or water uptake can limit potential growth, but only the most limiting factor reduces the growth.
         
@@ -130,17 +73,7 @@ class Plant:
         where stress response [-] is a dimensionless coefficient between zero (no stress) and one (fully stressed). 
         """
         
-        return 1-min(water_uptake/water_demand,nutrient_uptake/nutrient_demand)
-    def wateruptake(self,water_demand,water_content):
-        """
-        The remaining wateruptake is computed from the following equation from every soil horizon limited by the rootingdepth:
-        
-        Wateruptake = min(water_demand,water_content),
-        
-        where Wateruptake [mm] is the uptake for a time step from a specific depth, Waterdemand [mm]
-        is equal to potential transpiration and Watercontent[mm] is the water content of the soil.
-        """
-        return min(water_demand,water_content)                         
+        return 1-min(water_uptake/water_demand,nutrient_uptake/nutrient_demand)                        
     def nutrientuptake(self,nutrient_demand,water_uptake,nutrient_conc,nutrient_content):
         """
         Total nutrient uptake depends on active and passive uptake. Passive uptake is proportitional to wateruptake.
@@ -200,17 +133,18 @@ class Stage:
         self.gdd=gdd
          
 class Root:
-    def __init__(self,rootpercent,root_elongation,Plant):
-        self.elongation_factor=root_elongation
+    def __init__(self,rootpercent,Plant):
         self.rootpercent=rootpercent
+        self.W_tot=0
+        self.depth=0
         self.plant=Plant
     def grow(self,drymass):
         pass
-    def partitioninggrowth(self,Wactual,rootpercent):
+    def partitioning(self,W_act,rootpercent):
         """
         The root drymass is calculated as fraction from the Wactual.
         """
-        return Wactual*rootpercent
+        return W_act*rootpercent
     def elongation(self,bulkdensity,rooting_rate):
         return bulkdensity*rooting_rate
     def respire(self,W_total,W_actual,a,b):
@@ -226,16 +160,35 @@ class Root:
         the actual growthrate.
         """
         return a*W_actual+b*W_total
+    def sink_therm_alpha(h):#calculates sink therm alpha depending on h=soil water pressure head(cm)
+        return 1 # later fuzzy set
+    def wateruptake_homogeneous(self,T_p,Z_r):
+        """
+        T_P=potential transpiration (cm*d^-1), Z_r=root-zone depth (cm)
+        """
+        return T_p/Z_r 
+    def wateruptake_heterogeneous(self,T_p,Z_r,z):
+        """
+        T_P=potential transpiration (cm*d^-1), Z_r=root-zone depth (cm), z=depth (cm)
+        """
+        return 2*T_p/Z_r*(1-z/Z_r)
+    def wateruptake_nonhomogeneous(self,T_p,L_r,l_r,z):
+        """
+        T_P=potential transpiration (cm*d^-1), L_r=root mass or the root length density(cm cm-3),z=depth(cm)
+        """
+        return l_r/L_r*T_p
+
 class Shoot:
     def __init__(self,shootpercent,leaf_appearance,Plant):
         self.shootpercent=shootpercent
         self.plant=Plant
+        self.W_tot=0
         self.leaf=Leaf(leaf_appearance,self)
     def grow(self,drymass):
         pass
-    def partitioninggrowth(self,drymass,shootpercent):
+    def partitioning(self,W_act,shootpercent):
         """Shoot dry mass [g] is proportional to the plant dry mass"""
-        return shootpercent*drymass
+        return W_act*shootpercent
     def respire(self,W_total,W_actual,a,b):
         """
         Respiration is computed from the actual growth rate (growth respiration) and
