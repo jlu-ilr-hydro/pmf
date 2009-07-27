@@ -2,7 +2,7 @@ from pylab import *
 from Fuzzy import *
 class Root():
     def __init__(self):
-        self.depth=0.
+        pass
     def nutrient_passive(self,water_uptake,nutrient_c,c_max=10.): #c_max: maximal allowed nutrient concentration, if zero, passive uptake is neglegated
         nutrient_passive=water_uptake*min(nutrient_c,c_max)
         return nutrient_passive
@@ -32,7 +32,26 @@ class Root():
         return W_plant*Root_percent*stress_modifier
     def rootibility(self,mechanical_impedance,water_stress,oxygen_deficiency):
         return min(mechanical_impedance,water_stress,oxygen_deficiency)
+
     
+    
+
+r=Root()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+''' 
 root=Root()
 root.depth=56.
 T_p=10.
@@ -63,4 +82,4 @@ print pas
 print act
 print tot
 
-
+'''

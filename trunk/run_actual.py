@@ -23,7 +23,7 @@ plant.growingseason.__setitem__(4,'Anthesis',901)
 plant.growingseason.__setitem__(5,'Seed fill',1174)
 plant.growingseason.__setitem__(6,'Dough stage',1556)
 plant.growingseason.__setitem__(7,'Maturity complete',1665)
-
+[[160,208,421,659,901,1174,1556,1665],['Emergence','Leaf development','Tillering','Stem elongation','Anthesis','Seed fill','Dough stage','Maturity complete']]
 sim=Simulation(sowing=datetime(2009,3,1))#start=datetime(2009,1,1),end=datetime(2009,12,31),step=timedelta(1)
 GDD=[] # List for results
 W_tot=[] # List for results
