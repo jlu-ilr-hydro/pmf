@@ -1,3 +1,4 @@
+from pylab import *
 class Plant:
     """
     Description:
@@ -12,7 +13,8 @@ class Plant:
         self.stage=Stage()
         self.root=Root()
         self.shoot=Shoot()
-    def __call__(self,time_act,time_step,W_max,growth_factor,root_verticalgrowth,root_percent,shoot_percent,tbase,development,soil,atmosphere):
+        self.water=[]
+    def __call__(self,time_act,time_step,W_max,growth_factor,root_verticalgrowth,root_percent,shoot_percent,tbase,development,soil,atmosphere,critical_pressurehead):
         """
         Description:
     
@@ -20,11 +22,21 @@ class Plant:
         
         Returns:
         """
-        
-        self.stage(time_step,atmosphere.get_tmin(time_act),atmosphere.get_tmax(time_act),tbase,development)   #time_step,tmax,tmin,tbase,development 
-        if self.stage.total_thermaltime>=development[0][0] and self.stage.total_thermaltime<=development[0][-1]: 
+        self.stage(time_step,atmosphere.get_tmin(time_act),atmosphere.get_tmax(time_act),tbase,development)#calculates total_thermaltime and stage 
+        if self.stage.total_thermaltime>=development[0][0] and self.stage.total_thermaltime<=development[0][-1]:#restrict growth due to the development 
+            T_p=self.perspire(atmosphere.get_etp(time_act))                
+            Z_r=self.root.depth
+            S_p=self.homogeneous_root(T_p, Z_r)
+            water_daily=[];step=1.
+            for depth in arange(0.,Z_r,step):
+                h=soil.get_pressurehead(depth)
+                alpha=self.sink_therm(h, critical_pressurehead)
+                if depth+step<=Z_r:S_h=S_p*alpha*step
+                else: S_h=(Z_r-depth)*alpha*S_p
+                water_daily.append(S_h)
+            self.water.append(water_daily)
             Wp_potential=self.assimilate(self.Wp_total, W_max, growth_factor)
-            Wp_actual=Wp_potential*1.
+            Wp_actual=Wp_potential*1.#self.stress_response(T_p, S_h)
             self.R=self.respire(0.5,Wp_actual,0.5,self.Wp_total)
             self.root(time_step,root_verticalgrowth,Wp_actual,root_percent,soil.get_bulkdensity(self.root.depth))
             self.shoot(time_step,Wp_actual,shoot_percent)
@@ -55,6 +67,48 @@ class Plant:
         Returns: Respiration
         """
         return a*Wp_actual+b*Wp_total
+    def perspire(self,T_p):
+        """
+        Description: 
+        
+        Parameter: time_step
+        
+        Returns:
+        """
+        return T_p
+    def homogeneous_root(self,T_p,Z_r):#T_P=potential transpiration (cm*d^-1), Z_r=root-zone depth (cm)
+        """
+        Description: 
+        
+        Parameter: time_step
+        
+        Returns:
+        """
+        return T_p/Z_r
+    def sink_therm(self,h_soil,h_plant): # h_soil = pressure head in soil compartment (cm), list with critical pressureheads for the plant
+        """
+        Description: 
+        
+        Parameter: time_step
+        
+        Returns:
+        """
+        try:
+            if h_soil<h_plant[0] or h_soil>h_plant[-1]: return 0
+            if h_soil>=h_plant[1] and h_soil<=h_plant[2]: return 1
+            elif h_soil<h_plant[1]: return (h_soil-h_plant[0])/(h_plant[1]-h_plant[0])
+            else: return (h_plant[-1]-h_soil)/(h_plant[-1]-h_plant[-2])
+        except ValueError, err:
+            print err 
+    def stress_response(self,T_p,S_h):
+        """
+        Description: 
+        
+        Parameter: time_step
+        
+        Returns:
+        """
+        return min(T_p/S_h,1.)
 
 class Root:
     """

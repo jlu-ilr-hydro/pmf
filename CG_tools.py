@@ -20,5 +20,6 @@ class Simulation:
         for result in self.results:
             fig.add_subplot(len(self.results),rows,self.results.index(result)+1)
             plot(result)
+            xlim(0,365)
         show()
         

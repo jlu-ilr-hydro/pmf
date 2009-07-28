@@ -51,8 +51,14 @@ class Soil:
             for horizon in self.horizon:
                 if horizon.upper_limit <= depth and horizon.lower_limit >= depth:
                     return horizon.bulkdensity
- 
-        
+    def get_pressurehead(self,depth):
+        if depth==0:
+            return 1
+        else:
+            for horizon in self.horizon:
+                if horizon.upper_limit <= depth and horizon.lower_limit >= depth:
+                    return horizon.pressure_head
+                 
 class Atmosphere:
     def __init__(self):
         self.time=[]
@@ -81,7 +87,7 @@ class Atmosphere:
         etp=arange(364.)
         tmax=arange(364.)
         tmin=arange(364.)
-        etp[0:364]=444.
+        etp[0:364]=100.
         tmin[0:364]=5.
         tmax[0:364]=20.
         self.time=time
