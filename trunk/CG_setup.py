@@ -32,8 +32,10 @@ def run(time_act,time_period,time_step,sowing_date):
         sim.result(Plant_drymass, plant.Wp_total)
         sim.result(Plant_thermaltime,plant.stage.total_thermaltime)
         time_act+=time_step
+run(datetime(2009,1,1),timedelta(365),timedelta(1.),datetime(2009,1,1))
 
-run(datetime(2009,1,1),timedelta(365),timedelta(1),datetime(2009,1,1))
+for days in plant.uptake.s_h:
+    print plant.uptake.s_h.index(days),'S_h,P_a,A_a,R_a: ',sum(days),sum(plant.uptake.p_a[plant.uptake.s_h.index(days)]),sum(plant.uptake.a_a[plant.uptake.s_h.index(days)])
 
 
 

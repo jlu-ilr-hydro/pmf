@@ -2,20 +2,10 @@ from pylab import *
 from Fuzzy import *
 from CG_environment import *
 from datetime import *
+
 class Root():
     def __init__(self):
         pass
-    def nutrient_passive(self,water_uptake,nutrient_c,c_max=10.): #c_max: maximal allowed nutrient concentration, if zero, passive uptake is neglegated
-        nutrient_passive=water_uptake*min(nutrient_c,c_max)
-        return nutrient_passive
-    def nutrient_active(self,nutrient_demand,nutrient_passive,nutrient_c,K_m,c_min=0.):#c_min: min concentration in solution for active uptake
-        nutrient_active_potential=max(nutrient_demand-nutrient_passive,0)
-        michaelis_menten=(nutrient_c-c_min)/(K_m+nutrient_c-c_min)
-        nutrient_active_actual=nutrient_active_potential*michaelis_menten
-        return nutrient_active_actual
-    def nutrient_total(self,nutrient_passive,nutrient_active):
-        nutrient_total=nutrient_passive+nutrient_active
-        return nutrient_total
     def homogeneous_root(self,T_p,Z_r):#T_P=potential transpiration (cm*d^-1), Z_r=root-zone depth (cm)
         return T_p/Z_r
     def sink_therm(self,h_soil,h_plant): # h_soil = pressure head in soil compartment (cm), list with critical pressureheads for the plant
@@ -39,37 +29,49 @@ class Root():
 r=Root()
 soil=Soil()
 for depth in arange(10.,210.,10.): # 200cm deep soil with 10cm horizons
-    soil.add_horizon(depth,1,1,1,400.) # lowerlimit,bulkdensity,wetness,nutrients,pressurehead
+    soil.add_horizon(depth,1,1,0.5,400.) # lowerlimit,bulkdensity,wetness,nutrients,pressurehead
+
 for horizon in soil:
     if horizon.lower_limit>=45:horizon.pressure_head=400.
 
 critical_pressurehead=[0.,1.,500.,16000.]
-Z_r=85.
+Z_r=55.
 T_p=100.
 nutrient_period=[]
 water_period=[]
 step=10.
-nutrient_demand=20.
+R_p=100
 
 time_act=datetime(2009,1,1);time_step=timedelta(1);time_period=timedelta(1);run_end=time_act+time_period
 while time_act<run_end:
-    water_daily=[]
+    s_h_daily=[]
     nutrient_daily=[]
+    p_a_daily=[]
     S_p=r.homogeneous_root(T_p,Z_r)
-    for depth in arange(1.,Z_r+1.,step):
-        h=soil.get_pressurehead(depth)
+    for depth in arange(0.,Z_r,step):
+        h=soil.get_pressurehead(depth+step)
         alpha=r.sink_therm(h,critical_pressurehead)
-        if depth+step<=Z_r:S_h=S_p*alpha*step
-        else: S_h=(Z_r-depth)*alpha*S_p
-        water_daily.append(S_h);
-        
-        nutrient_passive=r.nutrient_passive(S_h,soil.get_nutrients(depth))
-        nutrient_active=r.nutrient_active(nutrient_demand,nutrient_passive,soil.get_nutrients(depth),1.)
-        nutrient_total=r.nutrient_total(nutrient_passive,nutrient_active)
-        print nutrient_passive,nutrient_active,nutrient_total
-        nutrient_daily.append(nutrient_total)
-    nutrient_period.append(nutrient_daily)
-    water_period.append(water_daily)
+        if depth+step<=Z_r:s_h=S_p*alpha*step
+        else: s_h=alpha*S_p*(Z_r-depth)
+        s_h_daily.append(s_h);
+        p_a=s_h*min(soil.get_nutrients(depth+step),100)
+        p_a_daily.append(p_a)
+        print '1Depth wetness,NO3_conc,s_h,p_a:',depth,soil.get_wetness(depth+step),soil.get_nutrients(depth+step),s_h,p_a
+    print '2Daily s_h,p_a:',sum(s_h_daily),sum(p_a_daily)
+    P_a=sum(p_a_daily)
+    A_p=max(R_p-P_a,0)
+    a_p=A_p/Z_r
+    print '2Daily P_a,A_p,a_p:',P_a,A_p,a_p
+    K_m=0.;c_min=0.
+    a_a_daily=[]
+    for depth in arange(0.,Z_r,step): 
+        if depth+step<=Z_r:a_a=a_p*(soil.get_nutrients(depth+step)-c_min)/(K_m+soil.get_nutrients(depth+step)-c_min)*step
+        else:a_a=a_p*(soil.get_nutrients(depth+step)-c_min)/(K_m+soil.get_nutrients(depth+step)-c_min)*(Z_r-depth)
+        a_a_daily.append(a_a)
+        print '3depth,Mechaelis_Menten,a_p,a_a:',depth,(soil.get_nutrients(depth+step)-c_min)/(K_m+soil.get_nutrients(depth+step)-c_min),a_p,a_a
+    A_a=sum(a_a_daily)
+    R_a=P_a+A_a
+    print '4A_a,P_a,R_a:',A_a,P_a,R_a
     time_act+=time_step
-    
 
+    

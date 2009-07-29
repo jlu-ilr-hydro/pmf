@@ -17,7 +17,6 @@ class Plant:
         
         Returns:
         """
-   
         W_potential=self.assimilate(self.W_total, W_max, growth_factor)
         W_actual=W_potential*1.
         self.R=self.respire(1,W_actual,1,self.W_total)
