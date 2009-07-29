@@ -31,29 +31,29 @@ class Soil:
                 horizon.depth = horizon.lower_limit - self.horizon[self.horizon.index(horizon)-1].lower_limit
                 horizon.upper_limit = horizon.lower_limit-horizon.depth
     def get_wetness(self,depth):
-        if depth==0:
-            return 0
+        if depth==0.:
+            return 0.
         else:
             for horizon in self.horizon:
                 if horizon.upper_limit <= depth and horizon.lower_limit >= depth:
                     return horizon.wetness
     def get_nutrients(self,depth):
-        if depth==0:
-            return 0
+        if depth==0.:
+            return 0.
         else:
             for horizon in self.horizon:
                 if horizon.upper_limit <= depth and horizon.lower_limit >= depth:
                     return horizon.nutrients
     def get_bulkdensity(self,depth):
-        if depth==0:
-            return 1
+        if depth==0.:
+            return 0.
         else:
             for horizon in self.horizon:
                 if horizon.upper_limit <= depth and horizon.lower_limit >= depth:
                     return horizon.bulkdensity
     def get_pressurehead(self,depth):
-        if depth==0:
-            return 1
+        if depth==0.:
+            return 0.
         else:
             for horizon in self.horizon:
                 if horizon.upper_limit <= depth and horizon.lower_limit >= depth:
