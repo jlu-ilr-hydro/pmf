@@ -87,7 +87,7 @@ class Atmosphere:
         etp=arange(364.)
         tmax=arange(364.)
         tmin=arange(364.)
-        etp[0:364]=100.
+        etp[0:364]=10.
         tmin[0:364]=5.
         tmax[0:364]=20.
         self.time=time

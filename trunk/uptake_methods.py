@@ -105,4 +105,4 @@ uptake=Uptake()
 for days in range(5):
     uptake(55.,100.,100.,[0.,1.,500.,16000.],10.,soil)
 for days in uptake.s_h:
-    print 'S_h,P_a,A_a,R_a: ',sum(days),sum(uptake.p_a[uptake.s_h.index(days)]),sum(uptake.a_a[uptake.s_h.index(days)])
+    print 'S_h,P_a,A_a: ',sum(days),sum(uptake.p_a[uptake.s_h.index(days)]),sum(uptake.a_a[uptake.s_h.index(days)])

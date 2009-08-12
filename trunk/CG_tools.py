@@ -22,4 +22,4 @@ class Simulation:
             plot(result)
             xlim(0,365)
         show()
-        
+   
