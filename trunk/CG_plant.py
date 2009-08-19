@@ -17,18 +17,24 @@ class Plant:
     Grow call several methods from plant and the growth functions from root
     and shoot. At the end of every time step Wttot and Rtot are updated.    
     """
-    def __init__(self):
+    def __init__(self,soil,atmosphere,tbase,Wmax,growth):
         self.Wtot=1.
         self.Rtot=0.
-        self.soil_profile=[]
+        self.thermaltime=0.
         self.stage=Stage(self)
         self.root=Root(self)
         self.shoot=Shoot(self)
-    def grow(self,time_act,time_step,W_max,growth_factor,root_growth,root_percent,shoot_percent,tbase,development,soil,atmosphere,h_plant,plant_N):
+        self.phenological_event=Phenological_event(self)
+        self.soil=soil
+        self.atmosphere=atmosphere
+        self.tbase=tbase
+        self.Wmax=Wmax
+        self.growth=growth
+    def __call__(self,time_act,time_step,root_growth,ratio,h_plant,plant_N,lai_conversion,rootability_thresholds):
         """
         call signature:
         
-            grow(time_act,time_step,W_max,growth_factor,root_growth,root_percent,
+            __call__(time_act,time_step,W_max,growth_factor,root_growth,root_percent,
                  shoot_percent,tbase,development,soil,atmosphere,h_plant,plant_N)   
         
         The method calls the functions develop() from the stage class and hte grow()
@@ -50,15 +56,32 @@ class Plant:
         coefficiants for the phenological depending decline of the biomass nitrogen
         content, e.g. [100,0.43,1000,0.16].
         """
-        self.stage.develop(time_step,atmosphere.get_tmin(time_act),atmosphere.get_tmax(time_act),tbase,development)
-        if self.stage.thermal_time>=development[0][0] and self.stage.thermal_time<=development[0][-1]:#restrict growth due to the development 
-            Wpot=self.assimilate(self.Wtot, W_max, growth_factor)
-            self.uptake(self.root.depth,atmosphere.get_etp(time_act),self.nitrogen_demand(Wpot, self.nitrogen_content(plant_N, self.stage.thermal_time)),h_plant,10.,soil)
+        self.thermaltime+=self.develop(self.atmosphere.get_tmin(time_act), self.atmosphere.get_tmax(time_act), self.tbase)
+        if self.thermaltime>=self.stage[0].gdd and self.thermaltime<=self.stage[-1].gdd: 
+            Wpot=self.assimilate(self.Wtot, self.Wmax, self.growth)
+            self.uptake(self.root.depth,self.atmosphere.get_etp(time_act),self.nitrogen_demand(Wpot, self.nitrogen_content(plant_N, self.thermaltime)),h_plant,10.,self.soil)
             Wact=Wpot-Wpot*0.
-            self.Rtot=self.respire(0.5,Wact,0.5,self.Wtot)
-            self.root.grow(time_step,root_growth,Wact,root_percent,soil.get_bulkdensity(self.root.depth))
-            self.shoot.grow(time_step, Wact, shoot_percent)
+            self.Rtot=self.respire(0.5,Wact,0.5,self.Wtot)               
+            self.root(time_step,root_growth,Wact,self.phenological_event[0](self.thermaltime),self.soil.get_bulkdensity(self.root.depth),self.soil.get_pressurehead(self.root.depth),rootability_thresholds)
+            self.shoot(time_step,self.thermaltime, Wact, self.phenological_event[1](self.thermaltime),lai_conversion)
             self.Wtot=self.Wtot+Wact*time_step
+    def develop(self,tmin,tmax,tbase):
+        """
+        call signature:
+        
+            thermaltime(tmin,tmax,tbase)
+        
+        Compute thermaltime and is called in the stage.development() method. 
+        
+        The parameter tmin, tmax, tbase and tmin are float-values. Tmin and tmax must
+        be get from the atmosphere interface. Tbase is a crop specific paramter and
+        set by plant.
+            
+        """
+        if tmax < tbase or tmin < tbase:
+            return 0
+        else:
+            return ((tmax+tmin)/2.0-tbase)
     def assimilate(self,Wtot,Wmax,growth_factor):
         """
         call signature:
@@ -73,7 +96,7 @@ class Plant:
         crop specific parameters.        
         """
         return growth_factor*Wtot*(1.0-Wtot/Wmax)
-    def respire(self,a,Wact,b,Wtot):
+    def respire(self,resp_growth,Wact,resp_maintenance,Wtot):
         """
         call signature:
             
@@ -81,12 +104,12 @@ class Plant:
         
         respire() calcultes growth and maintenance respiration.
         
-        Wact,a,b and Wtot are float values. Wtot is given by
+        Wact,resp_growth,resp_maintenance and Wtot are float values. Wtot is given by
         the plant class object variable Wtot, Wact is the additional
         biomass from plant in every timestep. a and b are adjustment 
         parameter.
         """
-        return a*Wact+b*Wtot
+        return resp_growth*Wact+resp_maintenance*Wtot
     def perspire(self,T_p):
         """
         call signature:
@@ -114,12 +137,12 @@ class Plant:
         
         plant_N is a list with four values with crop coefficiants 
         for the phenological depending decline of the biomass nitrogen
-        content, e.g. [100,0.43,1000,0.16]. 
+        content, e.g. [[160.,0.43],[1174.,0.16]]. 
         """
         if thermal_time<=plant_N[0][0]: return plant_N[0][1]
         elif thermal_time>=plant_N[1][0]: return plant_N[1][1]
         else: return plant_N[0][1]+(plant_N[1][1]-plant_N[0][1])/(plant_N[1][0]-plant_N[0][0])*(thermal_time-plant_N[0][0])
-    def nitrogen_demand(self,Wp_potential,N_content):
+    def nitrogen_demand(self,Wpot,N_content):
         """
         call signature:
         
@@ -236,23 +259,58 @@ class Plant:
         adjustment coefficiant, defined from the user.
         """
         return s_p*min(c_nutrient,c_max)
-    def michaelis_menten(self,nutrient_c,K_m,c_min):
+    def michaelis_menten(self,c_nutrient,K_m,c_min):
         """
         call signature:
         
-            michaelis_menten(nutrient_c,K_m,c_min)
+            michaelis_menten(c_nutrient,K_m,c_min)
         
         Calculates the uptake kinetics with the michaelis menton function for
         active nutrient uptake. It returns the relationship bewteen 
         ion influx (uptake per unit root and unit time) and its concetration 
-        at the root surface (nurient_c).
+        at the root surface (c_nutrient).
     
-        nutrient_c = soillayer nutrient concentration ,K_m = Mechaelis-Menten constant,
+        c_nutrient = soillayer nutrient concentration ,K_m = Mechaelis-Menten constant,
         and c_min = minimum concetration at which no net influx occurs are float
         values. nutrient_c is given from the soil interface, K_m and c_min are
         crop specific coefficiants.
         """
-        return (nutrient_c-c_min)/(K_m+nutrient_c-c_min)
+        return (c_nutrient-c_min)/(K_m+c_nutrient-c_min)
+    def vernalisation(self,tmean,plant_vern):
+        """call signature:
+        
+            vernalisation(self,tmean,plant_vernalisation)
+        
+        Calculates the relative vernalisation based on mean
+        temperature and crop specific parameters.
+    
+        
+        Tmean (float) is the mean temperature in time step.
+        plant_vernalisation is a list with the vernalisation threesholds,
+        e.g. [-1.,3.,20.]
+        """
+        if tmean<plant_vern[0] or tmean>plant_vern[2]: return 0.
+        elif tmean>=plant_vern[0] and tmean<=plant_vern[1]: return 1.0
+        else: return (plant_vern[-1]-tmean)/(plant_vern[-1]-plant_vern[-2])    
+    def photoperiod(self,daylength,plant_photoperiod,plant_type):
+        """call signature:
+        
+            photoperiod(daylength,plant_photoperiod,plant_type)
+        
+        Calculates the plant response to daylength.
+        
+        Daylenth must be tanken from the environment interface.
+        plant_photoperiod is alist with critical values and plant_type
+        is a string ('longday' or 'shortday').     
+        """  
+        if plant_type=='longday':
+            if daylength<=plant_photoperiod[0] or daylength>=plant_photoperiod[-1]: return 0.
+            elif daylength>plant_photoperiod[1] and daylength<plant_photoperiod[2]: return 1.0
+            else: return (plant_photoperiod[1]-daylength)/(plant_photoperiod[1]-plant_photoperiod[0])
+        else:
+            if daylength<=plant_photoperiod[0] or daylength>=plant_photoperiod[-1]: return 0.
+            elif daylength>plant_photoperiod[0] and daylength<plant_photoperiod[1]: return 1.0
+            else: return (plant_photoperiod[-1]-daylength)/(plant_photoperiod[-1]-plant_photoperiod[-2])
  
 class Root:
     """
@@ -275,25 +333,25 @@ class Root:
         self.plant=plant
         self.depth=0.
         self.Wtot=0.
-    def grow(self,time_step,root_growth,Wact,root_percent,BD_rootingdepth):
+    def __call__(self,time_step,root_growth,Wact,root_percent,bulkdensity,h,rootability_thresholds):
         """
         call signature:
         
-            grow(time_step,root_growth,Wact,root_percent,BD_rootingdepth)
+            __call__(time_step,root_growth,Wact,root_percent,bulkdensity,h,rootability_thresholds)
             
-        The method calls the functions vertical_growth(), physical_constraints(),
+        The method calls the functions elongation(), physical_constraints(),
         root_paritioning() and calculate the object variables depth and Wtot. 
         
-        Root_growth,Wact,root_percent and BD_rootingdept are float-values.        
+        Root_growth,Wact,root_percent, bulkdensity and h are float-values.        
         The parameter time_step  set the duration of the growth process.
         """
-        self.depth=self.depth+self.vertical_growth(self.physical_constraints(BD_rootingdepth), root_growth)*time_step
+        self.depth=self.depth+self.elongation(self.physical_constraints(bulkdensity,h,rootability_thresholds),root_growth)*time_step
         self.Wtot=self.Wtot+self.root_partitioning(root_percent, Wact)*time_step
-    def vertical_growth(self,physical_constraints,root_growth):
+    def elongation(self,physical_constraints,root_growth):
         """
         call signature:
             
-            vertical_growth(physical_constraints,root_growth)
+            elongation(physical_constraints,root_growth)
         
         The method calculates vertical growth.
         
@@ -302,23 +360,27 @@ class Root:
         Root growth is a crop specific parameter.            
         """
         return root_growth-physical_constraints*root_growth
-    def physical_constraints(self,BD_rootingdepth,water_stress=0.,oxygen_deficiency=0.):
+    def physical_constraints(self,bulkdensity,h,rootability_thresholds):
         """
         call signature: 
         
-            physical_constraints(BD_rootingdepth,water_stress,oxygen_deficiency)
+            physical_constraints(bulkdensity,h,rootability_thresholds)
             
         Physical_constraints() calculates the soil resistance against root
         penetration and returns the most restricting parameter.
         
-        BD_rootingdepth,water_stress and oxygen_deficiency are float values.
-        BD_rootingdepth must be get from the soil interface. Water_stress and
-        oxygen_deficiency are zero by default.
+        Bulkdensity and h (pressurehead) must be tanken form the soil interface.
+        rootability_thresholds is a list with six values, e.g.
+        [meachanical_impendance threshold, physical_contrain through physical_constraint, 
+        water_stress threshold, physical_contrain through water stress,
+        oxygen_deficiency threshold, physical_contrain through oxygen_deficiency]
         """
-        if BD_rootingdepth > 1.5: mechanical_impendance=0.5
+        if bulkdensity>=rootability_thresholds[0]: mechanical_impendance=rootability_thresholds[1]
         else: mechanical_impendance=0.
-        water_stress=water_stress
-        oxygen_deficiency=oxygen_deficiency
+        if h>=rootability_thresholds[2]:water_stress=rootability_thresholds[3]
+        else: water_stress=0.
+        if h<=rootability_thresholds[4]:oxygen_deficiency=rootability_thresholds[5]
+        else: oxygen_deficiency=0.
         return max(mechanical_impendance,water_stress,oxygen_deficiency)
     def root_partitioning(self,Wact,root_percent):
         """
@@ -331,7 +393,7 @@ class Root:
         The parameter Wact is actual growthrate from the plant class and
         root_percent a crop specific coefficiant. Both are double values.        
         """
-        return root_percent*plant_growthrate
+        return root_percent*Wact
     
 class Shoot:
     """
@@ -347,7 +409,7 @@ class Shoot:
     To start the growth process for a given timstep shoot must be 
     called with the grow() method, which is done by the plant class:
     
-        grow(time_step,Wact,shoot_percent)
+         __call__(time_step,Wact,shoot_percent)
         
     The method calls the function shoot_partitioning() and update
     the object variable Wtot.
@@ -355,10 +417,10 @@ class Shoot:
     def __init__(self,plant):
         self.plant=plant
         self.Wtot=0.
-        self.leaf=Leaf(shoot)
-        self.stem=Stem(shoot)
-        self.storage_organs=Storage_Organs(shoot)
-    def grow(self,time_step,Wact,shoot_percent):
+        self.leaf=Leaf(self)
+        self.stem=Stem(self)
+        self.storage_organs=Storage_Organs(self)
+    def __call__(self,time_step,thermaltime,Wact,shoot_percent,lai_conversion):
         """
         call signature:
         
@@ -371,20 +433,24 @@ class Shoot:
         shoot_percent a crop specific coefficiant. Both are double values.        
         The parameter time_step set the duration of the growth process.
         """
-        self.Wtot=self.Wtot+self.shoot_partitioning(shoot_percent, Wact)*time_step
-    def shoot_partitioning(self,shoot_percent,Wact):
+        Wact_shoot=self.shoot_partitioning(shoot_percent, Wact)
+        self.Wtot=self.Wtot+Wact_shoot*time_step
+        self.leaf(time_step,self.plant.phenological_event[2](thermaltime),Wact_shoot,lai_conversion)
+        self.stem(time_step,self.plant.phenological_event[3](thermaltime),Wact_shoot)
+        self.storage_organs(time_step,self.plant.phenological_event[4](thermaltime),Wact_shoot)
+    def shoot_partitioning(self,shoot_fraction,Wact):
         """
         call signature:
         
-            grow(Wact,shoot_percent)
+            shoot_partitioning(self,shoot_fraction,Wact):
             
-        Let the shoot object grow.
+        Allocates biomass to shoot biomass.
         
         The parameter Wact is actual growthrate from the plant class and
-        shoot_percent a crop specific coefficiant. Both are double values.        
+        shoot_fraction a crop specific coefficiant. Both are double values.        
         """
-        return shoot_percent*Wact
-
+        return shoot_fraction*Wact
+    
 class Stem:
     """
     call signature:
@@ -397,25 +463,38 @@ class Stem:
     To start the growth process for a given timstep Stem must be 
     called with the grow() method, which is done by the shoot class:
     
-        grow(time_step)
+        grow(time_step,stem_ratio,Wact_shoot)
         
-    The method calculates the Storage_Organs class variable Wtot.
+    The method calculates the stem class variable Wtot.
     """
     def __init__(self,shoot):
         self.shoot=shoot
         self.Wtot=0.
-    def grow(self):
+    def  __call__(self,time_step,stem_fraction,Wact_shoot):
         """
         call signature:
         
-            grow(time_step)
+             __call__(time_step,stem_fraction,Wact_shoot)
             
         Let the stem object grow. For that, Wtot is updated
         in every step.
         
-        The parameter time_step set the duration of the growth process.
+        The parameter time_step set the duration of the growth process.stem_fraction
+        the fraction from shoot, which is allocated to stem
         """
-        pass
+        self.Wtot=self.Wtot+self.stem_partitioning(stem_fraction, Wact_shoot)*time_step
+    def stem_partitioning(self,stem_ratio,Wact_shoot):
+        """
+        call signature:
+        
+            stem_partitioning(self,stem_fraction,Wact):
+            
+        Allocates biomass to stem biomass.
+        
+        The parameter Wact is actual growthrate from the shoot class and
+        stem_fraction a crop specific coefficiant. Both are double values.        
+        """
+        return stem_ratio*Wact_shoot
     
 class Storage_Organs:
     """
@@ -430,25 +509,38 @@ class Storage_Organs:
     To start the growth process for a given timstep Storage_Organs must 
     be called with the growt() method, which is done by the shoot class:
     
-        grow(time_step)
+         __call__(time_step,storage_organs_ratio,Wact_shoot)
         
     The method calculates the Storage_Organs class variable Wtot.
     """
     def __init__(self,shoot):
         self.shoot=shoot
         self.Wtot=0.
-    def grow(self):
+    def  __call__(self,time_step,storage_organs_fraction,Wact_shoot):
         """
         call signature:
         
-            grow(time_step)
+            grow(time_step,storage_organs_fraction,Wact_shoot)
             
         Let the storage_organs object grow. For that, Wtot is updated
-        in every step.
+        in every step. storage_organs_fraction is the part from shoot biomass,
+        which is allocated to storage_organs.
         
         The parameter time_step set the duration of the growth process.
         """
-        pass
+        self.Wtot=self.Wtot+self.storage_organs_partitioning(storage_organs_fraction,Wact_shoot)*time_step
+    def storage_organs_partitioning(self,storage_organs_fraction,Wact_shoot):
+        """
+        call signature:
+        
+            storage_organs_partitioning(self,storage_organs_ratio,Wact_shoot):
+            
+        Allocates biomass to storage_organs biomass.
+        
+        The parameter Wact is actual growthrate from the plant class and
+        storage_organs_fraction a crop specific coefficiant. Both are double values.        
+        """
+        return storage_organs_fraction*Wact_shoot
     
 class Leaf:
     """
@@ -462,102 +554,107 @@ class Leaf:
     To start the growth process for a given timstep leaf must be 
     called with the grow() method, which is done by the shoot class:
     
-        grow(time_step)
+         __call__(time_step)
         
     The method calculates the two leaf class variables leafarea and 
     Wtot.
     """
     def __init__(self,shoot):
         self.shoot=shoot
-        self.tot=0.
-        self.leafarea=0.
-    def grow(self,time_step):
+        self.Wtot=0.
+        self.lai=0.
+    def  __call__(self,time_step,leaf_fraction,Wact_shoot,lai_conversion):
         """
         call signature:
         
-            grow(time_step)
+            grow(time_step,leaf_fraction,Wact_shoot)
             
         Let the leaf object grow. For that, two object variables are updated
         in every step: Wtot and leafarea. 
         
         The parameter time_step set the duration of the growth process.
         """
-        pass
-    
-    
-class Stage:
-    """
-    call signature:
+        self.Wtot=self.Wtot+self.leaf_partitioning(leaf_fraction, Wact_shoot)*time_step
+        self.lai=self.lai_convesrsion(self.Wtot, lai_conversion)
+    def leaf_partitioning(self,leaf_fraction,Wact_shoot):
+        """
+        call signature:
         
-        Stage(plant,thermaltime=0.,stage=0)
+            leaf_partitioning(self,leaf_fraction,Wact_shoot):
+            
+        Allocates biomass to leaf biomass.
         
-    Create stage class instance. Stage is part from the plant class and is 
-    created automatically whenever implementing plant. The optional keyword 
-    arguments set object variables thermal_time and stage.
-    
-    To start the development process for a given timestep stage must be called 
-    with the develop() method, whoch is done by the plant class:
-    
-        develop(time_step,tmin,tmax,tbase,development)
+        The parameter Wact is actual growthrate from the plant class and
+        leaf_fraction a crop specific coefficiant. Both are double values.        
+        """
+        return leaf_fraction*Wact_shoot
+    def lai_convesrsion(self,Wtot,lai_conversion):
+        """
+        call signature:
         
-    The method calculates the both stage object variables thermal_time and
-    stage.
-    """
-     
-    def __init__(self,plant,thermaltime=0.,stage=0):
+            leaf_area(Wtot,lai_conversion):
+            
+        Calcualtes leaf area from the leaf weight.
+        
+        Wtot from leaf class and lai_conversion as crop specific paramater. Both float values.       
+        """
+        return Wtot*lai_conversion
+    
+class Stage():
+    def __init__(self,plant,gdd=0.,name=""):
         self.plant=plant
-        self.thermal_time=thermaltime
-        self.stage=stage
-    def develop(self,time_step,tmin,tmax,tbase,development):
-        """
-        call signature:
-        
-            develop(time_step,tmin,tmax,tbase,development)
-        
-        Compute and set the object variables thermal_time and stage for a given timestep.
-        For that the class methods thermaltime() and get_stage() are used.
-        
-        Tmin, tmax, tbase and tmin are float-values to compute thermaltime. Development
-        must be a two dimensional list with first accumulated thermaltime values (float)
-        and second the names (string) of the development stage, 
-        e.g.: [[100,200,300],['Emergence','Anthesis','Maturity']]. The parameter time_step 
-        set the duration of the growth process.
-        """
-        self.thermal_time=self.thermal_time+self.thermaltime(tmin, tmax, tbase)*time_step
-        self.stage=self.get_stage(self.thermal_time,development)
-    def thermaltime(self,tmin,tmax,tbase):
-        """
-        call signature:
-        
-            thermaltime(tmin,tmax,tbase)
-        
-        Compute thermaltime and is called in the stage.development() method. 
-        
-        The parameter tmin, tmax, tbase and tmin are float-values. Tmin and tmax must
-        be get from the atmosphere interface. Tbase is a crop specific paramter and
-        set by plant.
-            
-        """
-        if tmax < tbase or tmin < tbase:
-            return 0
+        self.gdd=gdd
+        self.name=name
+        self.stages=[]
+    def __setitem__(self,gdd=0.,name=""):
+        self.stages.append(Stage(self.plant,gdd,name))
+    def __getitem__(self,index):
+        return self.stages[index]
+    def __iter__(self):
+        for stage in self.stages:
+            yield stage
+    def __call__(self,thermaltime):
+        if thermaltime>self.stages[-1].gdd: return self.stages[-1].name
         else:
-            return ((tmax+tmin)/2.0-tbase)
-    def get_stage(self,thermaltime,development):
-        """
-        call signature:
-        
-            get_stage(thermaltime,development)
-            
-        Compute development stage and is called in the stage.development() method. 
-        
-        
-        The parameter thermaltime must be a float-value.Development must be a two dimensional 
-        list with first accumulated thermaltime values (float) and second the names (string) 
-        of the development stage, e.g.: [[100,200,300],['Emergence','Anthesis','Maturity']]
-        """
-        for stage in development[0]:
-            if thermaltime<=stage:
-                return development[1][development[0].index(stage)]
-                break
+            for stage in self.stages:
+                if thermaltime<=stage.gdd:
+                    return stage.name
+                    break
+
+class Phenological_event():
+    """call siganture:
     
+        Phenological_event(plant,time=0.,value=0.)
+        
+    Phenological_event must be called with plant instance as first arguement.
+    The class is iterable.
+    
+    time and value are default and set with the __setitem__().  
+    """
+    def __init__(self,plant,time=0.,value=0.):
+        self.time=time
+        self.value=value
+        self.events=[]
+        self.plant=plant
+    def __setitem__(self,time=0.,value=0.):
+        self.events.append(Phenological_event(self.plant,time,value))
+    def __getitem__(self,index):
+        return self.events[index]
+    def __iter__(self):
+        for event in self.events:
+            yield event
+    def __call__(self,thermaltime):
+        """call signature:
+        
+            __call__(thermaltime)
+            
+        Returns the event, whoch is related to the given
+        thermaltime.
+        """
+        if thermaltime>self.events[-1].time: return self.events[-1].value
+        else:
+            for event in self.events:
+                if thermaltime<=event.time:
+                    return event.value
+                    break
 

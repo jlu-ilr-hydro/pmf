@@ -76,22 +76,25 @@ class Atmosphere:
                 return self.tmax[i]
                 break
     def get_etp(self,act_time):
-        for i in range(len(self.tmin)):
-            if act_time == self.time[i]:
-                return self.etp[i]
+        for i in self.time:
+            if act_time == i:
+                #print act_time,self.etp[self.time.index(i)]
+                return self.etp[self.time.index(i)]
                 break
     def default_values(self):
         time=[]
-        for i in range(365):
+        for i in range(1000):
             time.append(datetime(2009,1,1)+timedelta(i))
-        etp=arange(364.)
-        tmax=arange(364.)
+        etp=arange(1000.)
+        tmax=arange(1000.)
         tmin=arange(364.)
-        etp[0:364]=10.
-        tmin[0:364]=5.
-        tmax[0:364]=20.
+        etp[0:1000]=10.
+        tmin[0:1000]=5.
+        tmax[0:1000]=20.
         self.time=time
         self.etp=etp
         self.tmin=tmin
         self.tmax=tmax
+        
 
+    
