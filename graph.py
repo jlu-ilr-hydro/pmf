@@ -20,7 +20,6 @@ ion()
 hold(False)
 fig=figure()
 
-
 for i in range(300):
     Wtot=Wtot+grow(Wtot)
     drymass[i]+=Wtot
@@ -31,5 +30,3 @@ for i in range(300):
     fig.add_subplot(212)
     plot(development)
     sleep(0.)
-    
-

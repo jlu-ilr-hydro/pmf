@@ -1,25 +1,33 @@
 from datetime import *
 from pylab import *
 
-class Simulation:
-    def __init__(self,sowing=datetime(2009,1,1),start=datetime(2009,1,1),end=datetime(2009,12,31),time_step=timedelta(1)):
-        self.start=start
-        self.end=end
-        self.time_step=time_step
-        self.time_act=self.start
-        self.sowing=sowing
-        self.results=[]         
-    def result(self,name,value):
-        try:
-            self.results[self.results.index(name)].append(value)
-        except ValueError:
-            self.results.append(name)
-            self.results[self.results.index(name)].append(value)
-    def graph(self,rows):
+class Graph():
+    def __init__(self,name='',values=[],xlabel='',ylabel=''):
+        self.graphs=[]
+        self.values=values
+        self.name=name
+        self.xlabel=xlabel
+        self.ylabel=ylabel
+    def __setitem__(self,name,values,xlabel,ylabel):
+        self.graphs.append(Graph(name,values,xlabel,ylabel))
+    def __getitem__(self,index):
+        return self.graphs[index]
+    def __iter__(self):
+        for graph in self.graphs:
+            yield graph
+    def __call__(self,name,values,xlabel,ylabel):
+        self.__setitem__(name,values,xlabel,ylabel)
+    def plot(self):
         fig=figure()
-        for result in self.results:
-            fig.add_subplot(len(self.results),rows,self.results.index(result)+1)
-            plot(result)
+        for graph in self.graphs:
+            fig.add_subplot(len(self.graphs),1,self.graphs.index(graph)+1)
+            plot(graph.values,label=graph.name)
+            legend(loc=0)
             xlim(0,365)
+            xlabel(graph.xlabel)
+            ylabel(graph.ylabel)
         show()
+
+
+    
    
