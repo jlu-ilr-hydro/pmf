@@ -17,20 +17,27 @@ class Plant:
     Grow call several methods from plant and the growth functions from root
     and shoot. At the end of every time step Wttot and Rtot are updated.    
     """
-    def __init__(self,soil,atmosphere,tbase,Wmax,growth):
+    def __init__(self,tbase=0.,Wmax=1000.,growth=0.05,rootability_thresholds=[1.5,0.5,16000,0.9,0.0,0.0],h_plant=[0.,1.,500.,16000.],plant_N=[[160.,0.43],[1174.,0.16]],lai_conversion=1.,root_growth=0.5):
         self.Wtot=1.
         self.Rtot=0.
         self.thermaltime=0.
+        self.rootability_thresholds=rootability_thresholds
+        self.h_plant=h_plant
+        self.plant_N=plant_N
+        self.lai_conversion=lai_conversion
+        self.root_growth=root_growth
+        self.tbase=tbase
+        self.Wmax=Wmax
+        self.growth=growth
+        self.s_h=[]
+        self.s_p=[]
+        self.a_a=[]
+        self.p_a=[]
         self.stage=Stage(self)
         self.root=Root(self)
         self.shoot=Shoot(self)
         self.phenological_event=Phenological_event(self)
-        self.soil=soil
-        self.atmosphere=atmosphere
-        self.tbase=tbase
-        self.Wmax=Wmax
-        self.growth=growth
-    def __call__(self,time_act,time_step,root_growth,ratio,h_plant,plant_N,lai_conversion,rootability_thresholds):
+    def __call__(self,time_act,time_step,soil,atmosphere):
         """
         call signature:
         
@@ -56,14 +63,16 @@ class Plant:
         coefficiants for the phenological depending decline of the biomass nitrogen
         content, e.g. [100,0.43,1000,0.16].
         """
-        self.thermaltime+=self.develop(self.atmosphere.get_tmin(time_act), self.atmosphere.get_tmax(time_act), self.tbase)
+        time_step=time_step.days
+        self.thermaltime+=self.develop(atmosphere.get_tmin(time_act), atmosphere.get_tmax(time_act), self.tbase)
         if self.thermaltime>=self.stage[0].gdd and self.thermaltime<=self.stage[-1].gdd: 
             Wpot=self.assimilate(self.Wtot, self.Wmax, self.growth)
-            self.uptake(self.root.depth,self.atmosphere.get_etp(time_act),self.nitrogen_demand(Wpot, self.nitrogen_content(plant_N, self.thermaltime)),h_plant,10.,self.soil)
+            uptake=(self.uptake(self.root.depth,atmosphere.get_etp(time_act),self.nitrogen_demand(Wpot, self.nitrogen_content(self.plant_N, self.thermaltime)),self.h_plant,10.,soil))
+            self.s_h=uptake[0];self.p_a=uptake[1];self.a_a=uptake[2]
             Wact=Wpot-Wpot*0.
             self.Rtot=self.respire(0.5,Wact,0.5,self.Wtot)               
-            self.root(time_step,root_growth,Wact,self.phenological_event[0](self.thermaltime),self.soil.get_bulkdensity(self.root.depth),self.soil.get_pressurehead(self.root.depth),rootability_thresholds)
-            self.shoot(time_step,self.thermaltime, Wact, self.phenological_event[1](self.thermaltime),lai_conversion)
+            self.root(time_step,self.root_growth,Wact,self.phenological_event[0](self.thermaltime),soil.get_bulkdensity(self.root.depth),soil.get_pressurehead(self.root.depth),self.rootability_thresholds)
+            self.shoot(time_step,self.thermaltime, Wact, self.phenological_event[1](self.thermaltime),self.lai_conversion)
             self.Wtot=self.Wtot+Wact*time_step
     def develop(self,tmin,tmax,tbase):
         """
@@ -202,6 +211,8 @@ class Plant:
             else: a_a=a_p*self.michaelis_menten(nutrient_c, K_m, c_min)*(Z_r-depth)
             a_a_list.append(a_a)
         A_a=sum(a_a_list)#A_a = Actual acitve nutrient uptake
+        R_a=A_a+P_a
+        return [s_h_list,p_a_list,a_a_list]
     def water_extractionrate(self,T_p,Z_r): 
         """
         call siganture:
@@ -214,7 +225,7 @@ class Plant:
         Z_r = Total rootingdepth and T_p = Potential transpiration
         are float values. Z_r equals the obkect variable
         plant.root.depth and T_p can be achieved with perspire().         
-        """
+        """     
         return T_p/Z_r
     def sink_therm(self,h_soil,h_plant): 
         """
@@ -331,7 +342,7 @@ class Root:
     """
     def __init__(self,plant):
         self.plant=plant
-        self.depth=0.
+        self.depth=1.
         self.Wtot=0.
     def __call__(self,time_step,root_growth,Wact,root_percent,bulkdensity,h,rootability_thresholds):
         """
