@@ -76,25 +76,16 @@ class Water_extraction():
             Returns a list with fluxes for each root penetrated layer
             in mm/day.
         """
-        return [water_uptake[rooted_layer.index(l)] for l in rooted_layer]
+        try:
+            return [water_uptake[rooted_layer.index(l)] for l in rooted_layer]
+        except IndexError:
+            return []
     def rooted_layer(self,rooting_depth,depth_step=10.):
-        """ Depth_step in cm, must be equal to plant.uptake deptp_step
+        """ Depth_step in cm, must be equal to plant.uptake depth_step
             Returns a list with the penetrated root zone from cmf1d in
             therms of cmf1d layer concept.        
         """
-        return [self.cmf1d.layer(depth) for depth in arange(0.,rooting_depth/100.,depth_step/100.)]
-                
-""" example:
-while time_act<time_end:
-   
-   cg.grow(...,soil,atmosphere)
-   
-    #Water flux from soil layer from plant root in mm/d
-    example.c.flux=water.waterloss_flux(water.rooted_layer(cg.plant.root.depth),cg.plant.s_h)
-
-    time_act+=time_step
-"""
-                
+        return [self.cmf1d.layer(depth) for depth in arange(0.,rooting_depth/100.,depth_step/100.)]                
                 
 """ call
 #import cmf
@@ -118,7 +109,7 @@ time_step=timedelta(1)
 soil=interface.Soil(example.c)
 atmosphere=interface.Atmosphere(example.c)
 water=interface.Water_extraction(example.c)
-
+res=[]
 while time_act<time_end:
     #Plant growth
     cg.grow(time_act,timedelta(1),soil,atmosphere)
@@ -126,9 +117,10 @@ while time_act<time_end:
     
     #Water flux from soil layer from plant root in mm/d
     example.c.flux=water.waterloss_flux(water.rooted_layer(cg.plant.root.depth),cg.plant.s_h)
-    
+    res.append(example.cmf.flux)
     #time
     time_act+=time_step
+    time_act
     
     
 cg.graph([['thermaltime',thermaltime],['biomass',biomass]])
