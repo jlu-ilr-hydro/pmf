@@ -17,7 +17,7 @@ class Plant:
     Grow call several methods from plant and the growth functions from root
     and shoot. At the end of every time step Wttot and Rtot are updated.    
     """
-    def __init__(self,tbase=0.,Wmax=1000.,growth=0.05,rootability_thresholds=[1.5,0.5,16000,0.9,0.0,0.0],h_plant=[0.,1.,500.,16000.],plant_N=[[160.,0.43],[1174.,0.16]],lai_conversion=1.,root_growth=0.5):
+    def __init__(self,tbase=0.,Wmax=1000.,growth=0.08,rootability_thresholds=[1.5,0.5,16000,0.9,0.0,0.0],h_plant=[0.,1.,500.,16000.],plant_N=[[160.,0.43],[1174.,0.16]],lai_conversion=1.,root_growth=0.9):
         self.Wtot=1.
         self.Rtot=0.
         self.thermaltime=0.
@@ -30,7 +30,6 @@ class Plant:
         self.Wmax=Wmax
         self.growth=growth
         self.s_h=[]
-        self.s_p=[]
         self.a_a=[]
         self.p_a=[]
         self.stage=Stage(self)
@@ -67,12 +66,12 @@ class Plant:
         self.thermaltime+=self.develop(atmosphere.get_tmin(time_act), atmosphere.get_tmax(time_act), self.tbase)
         if self.thermaltime>=self.stage[0].gdd and self.thermaltime<=self.stage[-1].gdd: 
             Wpot=self.assimilate(self.Wtot, self.Wmax, self.growth)
-            uptake=(self.uptake(self.root.depth,atmosphere.get_etp(time_act),self.nitrogen_demand(Wpot, self.nitrogen_content(self.plant_N, self.thermaltime)),self.h_plant,10.,soil))
-            self.s_h=uptake[0];self.p_a=uptake[1];self.a_a=uptake[2]
-            Wact=Wpot-Wpot*0.
+            uptake=self.uptake(self.root.depth,atmosphere.get_etp(time_act),self.nitrogen_demand(Wpot, self.nitrogen_content(self.plant_N, self.thermaltime)),self.h_plant,10.,soil)
+            self.s_h=uptake[0]
+            Wact=Wpot-Wpot*self.stress_response(atmosphere.get_etp(time_act), sum(uptake[0]), 1, 1)
             self.Rtot=self.respire(0.5,Wact,0.5,self.Wtot)               
-            self.root(time_step,self.root_growth,Wact,self.phenological_event[0](self.thermaltime),soil.get_bulkdensity(self.root.depth),soil.get_pressurehead(self.root.depth),self.rootability_thresholds)
-            self.shoot(time_step,self.thermaltime, Wact, self.phenological_event[1](self.thermaltime),self.lai_conversion)
+            self.root(time_step,self.root_growth,Wact,self.phenological_event(self.thermaltime,'root'),soil.get_bulkdensity(self.root.depth),soil.get_pressurehead(self.root.depth),self.rootability_thresholds)
+            self.shoot(time_step,self.thermaltime, Wact, self.phenological_event(self.thermaltime,'shoot'),self.lai_conversion)
             self.Wtot=self.Wtot+Wact*time_step
     def develop(self,tmin,tmax,tbase):
         """
@@ -176,7 +175,7 @@ class Plant:
         T_p,S_h,R_p and R_a are float values. T_p is given by
         perspire(). S_h,R_p and R_a is given by uptake().
         """
-        return max((1-S_h/S_p),(1-R_a/R_p),0.)
+        return max((1-S_h/T_p),(1-R_a/R_p),0.)
     def uptake(self,Z_r,T_p,R_p,h_plant,depth_step,soil,K_m=0.,c_max=0.01,c_min=0.):
         """
         call siganture:
@@ -194,14 +193,18 @@ class Plant:
         at which no net influx occurs (all float values).
         """
         s_h_list=[];p_a_list=[];a_a_list=[]
-        s_p=self.water_extractionrate(T_p, Z_r)#s_p = root water extraction rate
+        #root water extraction rate
+        s_p=self.water_extractionrate(T_p, Z_r)
         for depth in arange(0.,Z_r,depth_step):
             alpha=self.sink_therm(soil.get_pressurehead(depth+depth_step), h_plant)#sink_therm alpha
-            if depth+depth_step<=Z_r:s_h=s_p*alpha*depth_step#uptake from each layer, which are completely penetrated
-            else: s_h=alpha*s_p*(Z_r-depth)##uptake from layer which are partly penetrated
+            if depth+depth_step<=Z_r:
+                s_h=s_p*alpha*depth_step#uptake from each layer, which are completely penetrated
+            else: 
+                s_h=alpha*s_p*(Z_r-depth)##uptake from layer which are partly penetrated
             s_h_list.append(s_h)
             p_a=self.passive_nutrientuptake(s_h, soil.get_nutrients(depth+depth_step),c_max)
             p_a_list.append(p_a)
+        
         P_a=sum(p_a_list)
         A_p=max(R_p-P_a,0)#A_p = Potential acitve nutrient uptake
         a_p=A_p/Z_r#a_p = Potential acitve nutrient uptake from soil layer
@@ -315,9 +318,12 @@ class Plant:
         is a string ('longday' or 'shortday').     
         """  
         if plant_type=='longday':
-            if daylength<=plant_photoperiod[0] or daylength>=plant_photoperiod[-1]: return 0.
-            elif daylength>plant_photoperiod[1] and daylength<plant_photoperiod[2]: return 1.0
-            else: return (plant_photoperiod[1]-daylength)/(plant_photoperiod[1]-plant_photoperiod[0])
+            if daylength<=plant_photoperiod[0] or daylength>=plant_photoperiod[-1]: 
+                return 0.
+            elif daylength>plant_photoperiod[1] and daylength<plant_photoperiod[2]: 
+                return 1.0
+            else: 
+                return (plant_photoperiod[1]-daylength)/(plant_photoperiod[1]-plant_photoperiod[0])
         else:
             if daylength<=plant_photoperiod[0] or daylength>=plant_photoperiod[-1]: return 0.
             elif daylength>plant_photoperiod[0] and daylength<plant_photoperiod[1]: return 1.0
@@ -446,9 +452,9 @@ class Shoot:
         """
         Wact_shoot=self.shoot_partitioning(shoot_percent, Wact)
         self.Wtot=self.Wtot+Wact_shoot*time_step
-        self.leaf(time_step,self.plant.phenological_event[2](thermaltime),Wact_shoot,lai_conversion)
-        self.stem(time_step,self.plant.phenological_event[3](thermaltime),Wact_shoot)
-        self.storage_organs(time_step,self.plant.phenological_event[4](thermaltime),Wact_shoot)
+        self.leaf(time_step,self.plant.phenological_event(self.plant.thermaltime,'leaf'),Wact_shoot,lai_conversion)
+        self.stem(time_step,self.plant.phenological_event(self.plant.thermaltime,'stem'),Wact_shoot)
+        self.storage_organs(time_step,self.plant.phenological_event(self.plant.thermaltime,'storage'),Wact_shoot)
     def shoot_partitioning(self,shoot_fraction,Wact):
         """
         call signature:
@@ -633,6 +639,7 @@ class Stage():
                     break
 
 class Phenological_event():
+    Count = 0
     """call siganture:
     
         Phenological_event(plant,time=0.,value=0.)
@@ -642,19 +649,23 @@ class Phenological_event():
     
     time and value are default and set with the __setitem__().  
     """
-    def __init__(self,plant,time=0.,value=0.):
-        self.time=time
+    def __init__(self,plant,name="",thermaltime=0.,value=0.):
+        self.name=name
+        self.thermaltime=thermaltime
         self.value=value
         self.events=[]
         self.plant=plant
-    def __setitem__(self,time=0.,value=0.):
-        self.events.append(Phenological_event(self.plant,time,value))
+        Phenological_event.Count+=1
+    def __setitem__(self,name="",thermaltime=0.,value=0.):
+        self.events.append(Phenological_event(self.plant,name,thermaltime,value))
     def __getitem__(self,index):
         return self.events[index]
     def __iter__(self):
         for event in self.events:
             yield event
-    def __call__(self,thermaltime):
+    def __del__(self):
+        Phenological_event.Count-=1
+    def __call__(self,thermaltime,name):
         """call signature:
         
             __call__(thermaltime)
@@ -662,10 +673,13 @@ class Phenological_event():
         Returns the event, whoch is related to the given
         thermaltime.
         """
-        if thermaltime>self.events[-1].time: return self.events[-1].value
-        else:
-            for event in self.events:
-                if thermaltime<=event.time:
-                    return event.value
-                    break
+        for item in self.events:
+            if name==item.name:
+                if thermaltime>=item[-1].thermaltime: return item[-1].value        
+                else:
+                    for event in item:
+                        if thermaltime<=event.thermaltime:
+                            return event.value
+                            break 
+
 
