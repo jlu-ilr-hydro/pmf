@@ -1,4 +1,4 @@
-import cg_setup as cg
+import CG_setup as cg
 from datetime import *
 import env
 from pylab import *
@@ -96,11 +96,12 @@ from datetime import *
 
 #import cg_plant and cg_interface
 cd d:\pyxy\src
-import cg_setup as cg #import flowerpower
-import cg_interface as interface #import atmosphere interface flowerpower_cmf_weather
+import CG_setup as cg #import flowerpower
+import CG_interface as interface #import atmosphere interface flowerpower_cmf_weather
 
 #Model time amd lsit for results
-thermaltime=[];biomass=[]
+thermaltime=[];biomass=[];stress=[]
+wetness=[];matrix_potential=[];flux=[]
 time_act=datetime(2000,1,1)
 time_end=datetime(2000,12,31)
 time_step=timedelta(1)
@@ -109,20 +110,52 @@ time_step=timedelta(1)
 soil=interface.Soil(example.c)
 atmosphere=interface.Atmosphere(example.c)
 water=interface.Water_extraction(example.c)
-res=[]
+
 while time_act<time_end:
-    #Plant growth
+    #PLANT
     cg.grow(time_act,timedelta(1),soil,atmosphere)
     thermaltime.append(cg.plant.thermaltime);biomass.append(cg.plant.Wtot)
+    stress.append(cg.plant.stress)
     
-    #Water flux from soil layer from plant root in mm/d
+    #CMF
     example.c.flux=water.waterloss_flux(water.rooted_layer(cg.plant.root.depth),cg.plant.s_h)
-    res.append(example.cmf.flux)
-    #time
+    example.c.run(cmf.day)
+    wetness.append(example.c.wetness);matrix_potential.append(example.c.matrix_potential);flux.append(example.c.flux)
+    
+    #TIME
     time_act+=time_step
-    time_act
-    
-    
-cg.graph([['thermaltime',thermaltime],['biomass',biomass]])
 
+hold=0
+fig=figure()
+fig.add_subplot(621)
+plot(thermaltime,label='thermaltime')
+legend(loc=0)
+xlabel('Time in days')
+ylabel('GDD in C')
+fig.add_subplot(622)
+plot(biomass,label='biomass')
+legend(loc=0)
+xlabel('Time in days')
+ylabel('biomass in g')
+fig.add_subplot(623)
+plot(stress,label='stress')
+ylim(0,1)
+legend(loc=0)
+xlabel('Time in days')
+ylabel('fraction')
+fig.add_subplot(624)
+imshow(transpose(wetness),cmap=cm.RdYlBu)
+xlabel('Time in days')
+ylabel('Depth in m')
+fig.add_subplot(625)
+imshow(transpose(matrix_potential),cmap=cm.RdYlBu)
+xlabel('Time in days')
+ylabel('Depth in m')
+fig.add_subplot(626)
+imshow(transpose(flux),cmap=cm.RdYlBu)
+xlabel('Time in days')
+ylabel('Depth in m')
+
+    
+    
 """

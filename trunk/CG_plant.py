@@ -17,10 +17,13 @@ class Plant:
     Grow call several methods from plant and the growth functions from root
     and shoot. At the end of every time step Wttot and Rtot are updated.    
     """
-    def __init__(self,tbase=0.,Wmax=1000.,growth=0.08,rootability_thresholds=[1.5,0.5,16000,0.9,0.0,0.0],h_plant=[0.,1.,500.,16000.],plant_N=[[160.,0.43],[1174.,0.16]],lai_conversion=1.,root_growth=0.9):
+    def __init__(self,stage,root_fraction,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction,tbase=0.,Wmax=1000.,growth=0.08,rootability_thresholds=[1.5,0.5,16000,0.9,0.0,0.0],h_plant=[0.,1.,500.,16000.],plant_N=[[160.,0.43],[1174.,0.16]],lai_conversion=1.,root_growth=0.9):
+        #
         self.Wtot=1.
         self.Rtot=0.
         self.thermaltime=0.
+        self.stress=0.
+        self.act_stage=""
         self.rootability_thresholds=rootability_thresholds
         self.h_plant=h_plant
         self.plant_N=plant_N
@@ -32,10 +35,9 @@ class Plant:
         self.s_h=[]
         self.a_a=[]
         self.p_a=[]
-        self.stage=Stage(self)
-        self.root=Root(self)
-        self.shoot=Shoot(self)
-        self.phenological_event=Phenological_event(self)
+        self.stage=Stage(self,stage)
+        self.root=Root(self,root_fraction)
+        self.shoot=Shoot(self,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction)
     def __call__(self,time_act,time_step,soil,atmosphere):
         """
         call signature:
@@ -61,17 +63,45 @@ class Plant:
         uptake, e.g. [0.,100.,500.,16000.](float-values). plant_N is a list with four values with crop
         coefficiants for the phenological depending decline of the biomass nitrogen
         content, e.g. [100,0.43,1000,0.16].
-        """
+        """ 
+        #convert timedelta to int       
         time_step=time_step.days
+        
+        #Calculate actual devcelopment stage and thermaltime
         self.thermaltime+=self.develop(atmosphere.get_tmin(time_act), atmosphere.get_tmax(time_act), self.tbase)
-        if self.thermaltime>=self.stage[0].gdd and self.thermaltime<=self.stage[-1].gdd: 
+        self.act_stage=self.stage(self.thermaltime)
+
+        #Condition to start palnt growth
+        self.s_h=[]
+        if self.stage.is_growingseason(self.thermaltime)==True:
+            
+            #Change partitioning coefficiants with changes in development stage
+            root_fraction=self.root.fraction(self.thermaltime)
+            shoot_fraction=self.shoot.fraction(self.thermaltime)
+            leaf_fraction=self.shoot.leaf.fraction(self.thermaltime)
+            stem_fraction=self.shoot.stem.fraction(self.thermaltime)
+            storage_fraction=self.shoot.storage_organs.fraction(self.thermaltime)
+
+            #let grow
             Wpot=self.assimilate(self.Wtot, self.Wmax, self.growth)
+            
+            #Water uptake; active and passive nutrient uptake
             uptake=self.uptake(self.root.depth,atmosphere.get_etp(time_act),self.nitrogen_demand(Wpot, self.nitrogen_content(self.plant_N, self.thermaltime)),self.h_plant,10.,soil)
             self.s_h=uptake[0]
+            
+            #Limiting potential Growth througt water and nutrient stress
+            
+            self.stress=self.stress_response(atmosphere.get_etp(time_act), sum(uptake[0]), 1, 1)
+            
             Wact=Wpot-Wpot*self.stress_response(atmosphere.get_etp(time_act), sum(uptake[0]), 1, 1)
+            
+            #Empirical plant respiration
             self.Rtot=self.respire(0.5,Wact,0.5,self.Wtot)               
-            self.root(time_step,self.root_growth,Wact,self.phenological_event(self.thermaltime,'root'),soil.get_bulkdensity(self.root.depth),soil.get_pressurehead(self.root.depth),self.rootability_thresholds)
-            self.shoot(time_step,self.thermaltime, Wact, self.phenological_event(self.thermaltime,'shoot'),self.lai_conversion)
+            
+            #Initialize root and shoot growth
+            self.root(time_step,self.root_growth,Wact,root_fraction,soil.get_bulkdensity(self.root.depth),soil.get_pressurehead(self.root.depth),self.rootability_thresholds)
+            self.shoot(time_step,self.thermaltime, Wact,self.lai_conversion,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction)
+            
             self.Wtot=self.Wtot+Wact*time_step
     def develop(self,tmin,tmax,tbase):
         """
@@ -297,7 +327,6 @@ class Plant:
         
         Calculates the relative vernalisation based on mean
         temperature and crop specific parameters.
-    
         
         Tmean (float) is the mean temperature in time step.
         plant_vernalisation is a list with the vernalisation threesholds,
@@ -346,8 +375,9 @@ class Root:
     The method calls the functions vertical_growth(), physical_constraints(),
     root_paritioning() and calculate the object variables depth and Wtot. 
     """
-    def __init__(self,plant):
+    def __init__(self,plant,root_fraction):
         self.plant=plant
+        self.fraction=Fraction(root_fraction)
         self.depth=1.
         self.Wtot=0.
     def __call__(self,time_step,root_growth,Wact,root_percent,bulkdensity,h,rootability_thresholds):
@@ -431,13 +461,14 @@ class Shoot:
     The method calls the function shoot_partitioning() and update
     the object variable Wtot.
     """
-    def __init__(self,plant):
+    def __init__(self,plant,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction):
         self.plant=plant
+        self.fraction=Fraction(shoot_fraction)
         self.Wtot=0.
-        self.leaf=Leaf(self)
-        self.stem=Stem(self)
-        self.storage_organs=Storage_Organs(self)
-    def __call__(self,time_step,thermaltime,Wact,shoot_percent,lai_conversion):
+        self.leaf=Leaf(self,leaf_fraction)
+        self.stem=Stem(self,stem_fraction)
+        self.storage_organs=Storage_Organs(self,storage_fraction)
+    def __call__(self,time_step,thermaltime,Wact,lai_conversion,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction):
         """
         call signature:
         
@@ -450,11 +481,11 @@ class Shoot:
         shoot_percent a crop specific coefficiant. Both are double values.        
         The parameter time_step set the duration of the growth process.
         """
-        Wact_shoot=self.shoot_partitioning(shoot_percent, Wact)
+        Wact_shoot=self.shoot_partitioning(shoot_fraction, Wact)
         self.Wtot=self.Wtot+Wact_shoot*time_step
-        self.leaf(time_step,self.plant.phenological_event(self.plant.thermaltime,'leaf'),Wact_shoot,lai_conversion)
-        self.stem(time_step,self.plant.phenological_event(self.plant.thermaltime,'stem'),Wact_shoot)
-        self.storage_organs(time_step,self.plant.phenological_event(self.plant.thermaltime,'storage'),Wact_shoot)
+        self.leaf(time_step,leaf_fraction,Wact_shoot,lai_conversion)
+        self.stem(time_step,stem_fraction,Wact_shoot)
+        self.storage_organs(time_step,storage_fraction,Wact_shoot)
     def shoot_partitioning(self,shoot_fraction,Wact):
         """
         call signature:
@@ -484,8 +515,9 @@ class Stem:
         
     The method calculates the stem class variable Wtot.
     """
-    def __init__(self,shoot):
+    def __init__(self,shoot,stem_fraction):
         self.shoot=shoot
+        self.fraction=Fraction(stem_fraction)
         self.Wtot=0.
     def  __call__(self,time_step,stem_fraction,Wact_shoot):
         """
@@ -530,8 +562,9 @@ class Storage_Organs:
         
     The method calculates the Storage_Organs class variable Wtot.
     """
-    def __init__(self,shoot):
+    def __init__(self,shoot,storage_fraction):
         self.shoot=shoot
+        self.fraction=Fraction(storage_fraction)
         self.Wtot=0.
     def  __call__(self,time_step,storage_organs_fraction,Wact_shoot):
         """
@@ -576,8 +609,9 @@ class Leaf:
     The method calculates the two leaf class variables leafarea and 
     Wtot.
     """
-    def __init__(self,shoot):
+    def __init__(self,shoot,leaf_fraction):
         self.shoot=shoot
+        self.fraction=Fraction(leaf_fraction)
         self.Wtot=0.
         self.lai=0.
     def  __call__(self,time_step,leaf_fraction,Wact_shoot,lai_conversion):
@@ -618,54 +652,60 @@ class Leaf:
         return Wtot*lai_conversion
     
 class Stage():
-    def __init__(self,plant,gdd=0.,name=""):
+    Count = 0
+    def __init__(self,plant,stage):
         self.plant=plant
-        self.gdd=gdd
-        self.name=name
         self.stages=[]
-    def __setitem__(self,gdd=0.,name=""):
-        self.stages.append(Stage(self.plant,gdd,name))
+        Stage.Count+=1
+        for s in stage:
+            self.__setitem__(s)
+    def __setitem__(self,stage):
+        self.stages.append(stage)
     def __getitem__(self,index):
         return self.stages[index]
     def __iter__(self):
-        for stage in self.stages:
-            yield stage
+        for s in self.stages:
+            yield s
     def __call__(self,thermaltime):
-        if thermaltime>self.stages[-1].gdd: return self.stages[-1].name
+        if thermaltime>self.stages[-1][1]: return self.stages[-1][0]
         else:
             for stage in self.stages:
-                if thermaltime<=stage.gdd:
-                    return stage.name
+                if thermaltime<=stage[1]:
+                    return stage[0]
                     break
-
-class Phenological_event():
+    def __del__(self):
+        Stage.Count-=1
+    def is_growingseason(self,thermaltime):
+        if thermaltime>=self.stages[0][1] and thermaltime< self.stages[-1][1]:
+            return True
+        else:
+            return False
+     
+class Fraction:
     Count = 0
-    """call siganture:
+    """ call siganture:
     
-        Phenological_event(plant,time=0.,value=0.)
+        Fraction(events)
         
-    Phenological_event must be called with plant instance as first arguement.
-    The class is iterable.
-    
-    time and value are default and set with the __setitem__().  
+    Fraction is a lists with events for partitioning. Each event
+    must be definded with a thermaltime threshold as first
+    arguement and a fractioning valu as second arguement.
     """
-    def __init__(self,plant,name="",thermaltime=0.,value=0.):
-        self.name=name
-        self.thermaltime=thermaltime
-        self.value=value
+    def __init__(self,events):
         self.events=[]
-        self.plant=plant
-        Phenological_event.Count+=1
-    def __setitem__(self,name="",thermaltime=0.,value=0.):
-        self.events.append(Phenological_event(self.plant,name,thermaltime,value))
+        for e in events:
+            self.__setitem__(e[0],e[1])
+        Fraction.Count+=1
+    def __setitem__(self,time,value):
+        self.events.append(Event(time,value))
     def __getitem__(self,index):
         return self.events[index]
     def __iter__(self):
         for event in self.events:
             yield event
     def __del__(self):
-        Phenological_event.Count-=1
-    def __call__(self,thermaltime,name):
+        Fraction.Count-=1
+    def __call__(self,thermaltime):
         """call signature:
         
             __call__(thermaltime)
@@ -673,13 +713,18 @@ class Phenological_event():
         Returns the event, whoch is related to the given
         thermaltime.
         """
-        for item in self.events:
-            if name==item.name:
-                if thermaltime>=item[-1].thermaltime: return item[-1].value        
-                else:
-                    for event in item:
-                        if thermaltime<=event.thermaltime:
-                            return event.value
-                            break 
+        if thermaltime>=self.events[-1].time: 
+                return self.events[-1].value
+        else:
+            for e in self.events:
+                if thermaltime<=e.time:
+                    return e.value
+                    break 
 
-
+class Event:
+    def __init__(self,time=.0,value=0.):
+        self.time=time
+        self.value=value
+    def __call__(self,time,value):
+        self.time=time
+        self.value=value
