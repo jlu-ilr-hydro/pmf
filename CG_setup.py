@@ -25,8 +25,5 @@ leaf_fraction=[[160.,0.],[901.,0.5],[1174.,0.375],[1665.,0.]]
 stem_fraction=[[160.,0.],[901.,0.5],[1174.,0.375],[1665.,0.]]
 storage_fraction=[[160.,0.],[901.,0.0],[1174.,0.25],[1665.,1.]]
 
-
-
-
 #Create plant with default values
 plant=Plant(stage,root_fraction,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction)

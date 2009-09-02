@@ -1,10 +1,47 @@
-import CG_setup as cg
 from datetime import *
-import env
 from pylab import *
+from CG_plant import *
+from cmf import *
 
 
-# Inferface from FlowerPower for soil interaction
+from cmf_setup import cmf1d
+import cmf
+# Create a soil column
+c=cmf1d(sand=60,silt=30,clay=10,c_org=2.0,layercount=50,layerthickness=0.1)
+
+#Load meteo data
+import cmf.cmfDWD as dwd
+# Load meteoroligical stations
+MeteoStations=dwd.GetMeteorology(c.project,'dwddaten/kl_bestand_abgabe440_1','dwddaten/kl_satz_abgabe440_1','dwddaten/kl_dat_abgabe440_1',cmf.Time(1,1,1980),cmf.Time(1,1,2006))
+# Load rainfall stations
+rainfall=dwd.get_rainfall('dwddaten/rr_dat_abgabe440')
+
+# Set Giessen as actual meteo station
+c.cell.meteorology=cmf.MeteoStationReference( MeteoStations['02609'],c.cell)
+# Set Giessen as rainfall station
+c.cell.rain.flux=rainfall['76148']
+
+# Set intial conditions
+c.cell.saturated_depth=2.5
+
+
+#Import flower power
+
+#Parameter for development:
+stage=[['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],
+               ['Anthesis',901.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]]
+
+#Parameter for partitioning:
+root_fraction=[[160.,1.],[901.,0.5],[1665.,0.]]
+shoot_fraction=[[160.,0.],[901.,0.5,],[1665.,1.,]]
+leaf_fraction=[[160.,0.],[901.,0.5],[1174.,0.375],[1665.,0.]]
+stem_fraction=[[160.,0.],[901.,0.5],[1174.,0.375],[1665.,0.]]
+storage_fraction=[[160.,0.],[901.,0.0],[1174.,0.25],[1665.,1.]]
+
+#Create plant with default values
+plant=Plant(stage,root_fraction,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction)
+
+# Inferface flowerpower - cmf
 class Soil:
     """call siganture:
     
@@ -33,6 +70,11 @@ class Soil:
     def get_bulkdensity(self,depth):
         """ Depth in cm; Returns 1.5"""
         return 1.5
+    def get_soilprofile(self):
+        """ Returns a list with the lower limits of the
+            layers in the soilprofile in cm.
+        """
+        return [l.boundary[1]*100 for l in self.cmf1d.cell.layers]
 
 # Inferface from FlowerPower for atmosphere interaction
 class Atmosphere:
@@ -55,107 +97,69 @@ class Atmosphere:
         return self.cmf1d.cell.get_weather(time).Tmax
     def get_etp(self,time):
         """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns 5.0 """
-        return 5.
+        return 20.
 
-#Methods for plant water extraction from soil
-
-class Water_extraction():
-    """ Water_extraction must be implemented with cmf1d instance and
-        functioning as interface for the water flux from the soil
-        into plant. 
-        
-        At first depth profile from FlowerPower must be converted into
-        cmf1d soil layer; in the second step the water flux is calclulated
-        from the root water uptake for each layer.
-    """
-    def __init__(self,cmf1d):
-        self.cmf1d=cmf1d
-    def waterloss_flux(self,rooted_layer,water_uptake):
-        """ Water_uptake must be taken from plant.s_h; rooted layer
-            must be calculated with the corresponding function.
-            Returns a list with fluxes for each root penetrated layer
-            in mm/day.
-        """
-        try:
-            return [water_uptake[rooted_layer.index(l)] for l in rooted_layer]
-        except IndexError:
-            return []
-    def rooted_layer(self,rooting_depth,depth_step=10.):
-        """ Depth_step in cm, must be equal to plant.uptake depth_step
-            Returns a list with the penetrated root zone from cmf1d in
-            therms of cmf1d layer concept.        
-        """
-        return [self.cmf1d.layer(depth) for depth in arange(0.,rooting_depth/100.,depth_step/100.)]                
                 
 """ call
-#import cmf
-cd d:\pyxy\src\env
-import cmf
-import cmf_example as example
-from datetime import *
-
-#import cg_plant and cg_interface
+#Import cmf,flowerpower,cmf1d and interface
 cd d:\pyxy\src
-import CG_setup as cg #import flowerpower
-import CG_interface as interface #import atmosphere interface flowerpower_cmf_weather
+from cg_interface import *
+from datetime import *
+from pylab import *
 
-#Model time amd lsit for results
+#Model time and list for results
 thermaltime=[];biomass=[];stress=[]
 wetness=[];matrix_potential=[];flux=[]
 time_act=datetime(2000,1,1)
 time_end=datetime(2000,12,31)
 time_step=timedelta(1)
 
-#Implement interfaces
-soil=interface.Soil(example.c)
-atmosphere=interface.Atmosphere(example.c)
-water=interface.Water_extraction(example.c)
+#Initialise interfaces
+soil=Soil(c)
+atmosphere=Atmosphere(c)
 
 while time_act<time_end:
-    #PLANT
-    cg.grow(time_act,timedelta(1),soil,atmosphere)
-    thermaltime.append(cg.plant.thermaltime);biomass.append(cg.plant.Wtot)
-    stress.append(cg.plant.stress)
-    
-    #CMF
-    example.c.flux=water.waterloss_flux(water.rooted_layer(cg.plant.root.depth),cg.plant.s_h)
-    example.c.run(cmf.day)
-    wetness.append(example.c.wetness);matrix_potential.append(example.c.matrix_potential);flux.append(example.c.flux)
-    
-    #TIME
+    #FlowerPower run
+    plant(time_act,timedelta(1),soil,atmosphere)
+    #Water flux from cmf to FlowerPower
+    #CMF run
+    c.run(cmf.day)
+    #Time step
     time_act+=time_step
-
+    #Results
+    thermaltime.append(plant.thermaltime);biomass.append(plant.Wtot);stress.append(plant.stress)
+    wetness.append(c.wetness);matrix_potential.append(c.matrix_potential);flux.append(c.flux)
+    time_act, plant.s_h
+    
 hold=0
 fig=figure()
 fig.add_subplot(621)
 plot(thermaltime,label='thermaltime')
 legend(loc=0)
-xlabel('Time in days')
-ylabel('GDD in C')
+ylabel('GDD')
+
 fig.add_subplot(622)
 plot(biomass,label='biomass')
 legend(loc=0)
-xlabel('Time in days')
 ylabel('biomass in g')
+
 fig.add_subplot(623)
 plot(stress,label='stress')
 ylim(0,1)
 legend(loc=0)
-xlabel('Time in days')
 ylabel('fraction')
+
 fig.add_subplot(624)
 imshow(transpose(wetness),cmap=cm.RdYlBu)
-xlabel('Time in days')
-ylabel('Depth in m')
+ylabel('wetness')
+
 fig.add_subplot(625)
 imshow(transpose(matrix_potential),cmap=cm.RdYlBu)
 xlabel('Time in days')
-ylabel('Depth in m')
+ylabel('matrix_potential')
+
 fig.add_subplot(626)
 imshow(transpose(flux),cmap=cm.RdYlBu)
 xlabel('Time in days')
-ylabel('Depth in m')
-
-    
-    
+ylabel('flux')   
 """
