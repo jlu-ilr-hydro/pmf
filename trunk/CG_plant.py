@@ -17,28 +17,29 @@ class Plant:
     Grow call several methods from plant and the growth functions from root
     and shoot. At the end of every time step Wttot and Rtot are updated.    
     """
-    def __init__(self,stage,root_fraction,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction,tbase=0.,Wmax=1000.,growth=0.08,rootability_thresholds=[1.5,0.5,16000,0.9,0.0,0.0],h_plant=[0.,1.,500.,16000.],plant_N=[[160.,0.43],[1174.,0.16]],lai_conversion=1.,root_growth=0.9):
-        #
+    def __init__(self,stage,root_fraction,shoot_fraction,leaf_fraction,stem_fraction,
+                 storage_fraction,tbase=0.,Wmax=1000.,growth=0.08,
+                 rootability_thresholds=[1.5,0.5,16000,0.9,0.0,0.0],pressure_threshold=[0.,1.,500.,16000.],
+                 plant_N=[[160.,0.43],[1174.,0.16]],lai_conversion=1.,root_growth=1.5,K_m=0.,c_min=0.):
         self.Wtot=1.
         self.Rtot=0.
         self.thermaltime=0.
-        self.stress=0.
         self.act_stage=""
         self.rootability_thresholds=rootability_thresholds
-        self.h_plant=h_plant
+        self.pressure_threshold=pressure_threshold
         self.plant_N=plant_N
+        self.K_m=K_m
+        self.c_min=c_min
         self.lai_conversion=lai_conversion
         self.root_growth=root_growth
         self.tbase=tbase
         self.Wmax=Wmax
         self.growth=growth
-        self.s_h=[]
-        self.a_a=[]
-        self.p_a=[]
         self.stage=Stage(self,stage)
         self.root=Root(self,root_fraction)
         self.shoot=Shoot(self,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction)
-    def __call__(self,time_act,time_step,soil,atmosphere):
+        self.uptake=[]
+    def __call__(self,time_act,step,interval,soil,atmosphere):
         """
         call signature:
         
@@ -64,45 +65,72 @@ class Plant:
         coefficiants for the phenological depending decline of the biomass nitrogen
         content, e.g. [100,0.43,1000,0.16].
         """ 
-        #convert timedelta to int       
-        time_step=time_step.days
-        
-        #Calculate actual devcelopment stage and thermaltime
-        self.thermaltime+=self.develop(atmosphere.get_tmin(time_act), atmosphere.get_tmax(time_act), self.tbase)
-        self.act_stage=self.stage(self.thermaltime)
-
-        #Condition to start palnt growth
-        self.s_h=[]
-        if self.stage.is_growingseason(self.thermaltime)==True:
+        #Compute time_step     
+        if step=='day':
+            time_step = 1.*interval
+        elif step=='hour':
+            time_step = 1./24.*interval
+        #Calculate actual development stage and thermaltime
+        self.thermaltime += self.develop(atmosphere.get_tmin(time_act), atmosphere.get_tmax(time_act), self.tbase)
+        self.act_stage = self.stage(self.thermaltime)
+        #is growingseason
+        if self.stage.is_growingseason(self.thermaltime)==True:            
             
-            #Change partitioning coefficiants with changes in development stage
-            root_fraction=self.root.fraction(self.thermaltime)
-            shoot_fraction=self.shoot.fraction(self.thermaltime)
-            leaf_fraction=self.shoot.leaf.fraction(self.thermaltime)
-            stem_fraction=self.shoot.stem.fraction(self.thermaltime)
-            storage_fraction=self.shoot.storage_organs.fraction(self.thermaltime)
-
-            #let grow
-            Wpot=self.assimilate(self.Wtot, self.Wmax, self.growth)
+            ''' Compute soil proberties '''
+            #Get soil proberities
+            pressure_head = [soil.get_pressurehead(s) for s in soil.get_profile()]
+            nutrient_conc = [soil.get_nutrients(s) for s in soil.get_profile()]
+            #Compute root penetrated soil layer from soilprofile
+            penetrated_layer = self.penetrated_soillayer(soil.get_profile(), self.root.depth)
             
-            #Water uptake; active and passive nutrient uptake
-            uptake=self.uptake(self.root.depth,atmosphere.get_etp(time_act),self.nitrogen_demand(Wpot, self.nitrogen_content(self.plant_N, self.thermaltime)),self.h_plant,10.,soil)
-            self.s_h=uptake[0]
+            ''' Water uptake from soil '''
+            #potential soil water extraction per cm
+            s_p = self.water_extractionrate(atmosphere.get_etp(time_act), self.root.depth)
+            #Soil resistance against plant water uptake 
+            alpha = [self.sink_therm(p,self.pressure_threshold) for p in pressure_head]
+            #Actual soil water extraction
+            S_h = [p*s_p*alpha[penetrated_layer.index(p)] for p in penetrated_layer]
             
+            ''' Potential growth and potential nutrient demand '''
+            #Potential biomass accumulation
+            Wpot = self.assimilate(self.Wtot, self.Wmax, self.growth)
+            #Nutrient demand
+            R_p = self.nitrogen_demand(Wpot, self.nitrogen_content(self.plant_N, self.thermaltime))
+            
+            ''' Active and passive nutrient uptake '''
+            #actual passive nutrient uptake
+            P_a = [w*nutrient_conc[S_h.index(w)] for w in S_h]
+            #Total potential active nutrient uptake
+            A_p = max(R_p-sum(P_a),0.)
+            #Potential active nutrient uptake per layer in cm
+            a_p = A_p/self.root.depth
+            #Compute Michaelis-mentent constant or each soil layer
+            michaelis_menten = [self.michaelis_menten(n,self.K_m,self.c_min) for n in nutrient_conc]
+            #actual active nutrient uptake
+            A_a = [a_p*michaelis_menten[penetrated_layer.index(p)]*p for p in penetrated_layer]
+            
+            self.uptake.append([soil.get_profile(),pressure_head,nutrient_conc,penetrated_layer,
+                                alpha,S_h,P_a,michaelis_menten,A_a])
+            
+            
+            ''' Compute actual biomass accumulation and respiration '''
             #Limiting potential Growth througt water and nutrient stress
+            Wact = Wpot-Wpot*self.stress_response(atmosphere.get_etp(time_act), 5., 1, 1)
+            #Total biomass 
+            self.Wtot = self.Wtot+Wact*time_step
+            #Total respiration
+            self.Rtot = self.respire(0.5,Wact,0.5,self.Wtot)               
             
-            self.stress=self.stress_response(atmosphere.get_etp(time_act), sum(uptake[0]), 1, 1)
-            
-            Wact=Wpot-Wpot*self.stress_response(atmosphere.get_etp(time_act), sum(uptake[0]), 1, 1)
-            
-            #Empirical plant respiration
-            self.Rtot=self.respire(0.5,Wact,0.5,self.Wtot)               
-            
-            #Initialize root and shoot growth
+            ''' root and shoot growth '''
+            #Copmpute plant organ partitioning fractions depneding on dvelopment
+            root_fraction = self.root.fraction(self.thermaltime)
+            shoot_fraction = self.shoot.fraction(self.thermaltime)
+            leaf_fraction = self.shoot.leaf.fraction(self.thermaltime)
+            stem_fraction = self.shoot.stem.fraction(self.thermaltime)
+            storage_fraction = self.shoot.storage_organs.fraction(self.thermaltime)
+            # call root and shoot
             self.root(time_step,self.root_growth,Wact,root_fraction,soil.get_bulkdensity(self.root.depth),soil.get_pressurehead(self.root.depth),self.rootability_thresholds)
             self.shoot(time_step,self.thermaltime, Wact,self.lai_conversion,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction)
-            
-            self.Wtot=self.Wtot+Wact*time_step
     def develop(self,tmin,tmax,tbase):
         """
         call signature:
@@ -205,47 +233,23 @@ class Plant:
         T_p,S_h,R_p and R_a are float values. T_p is given by
         perspire(). S_h,R_p and R_a is given by uptake().
         """
-        return max((1-S_h/T_p),(1-R_a/R_p),0.)
-    def uptake(self,Z_r,T_p,R_p,h_plant,depth_step,soil,K_m=0.,c_max=0.01,c_min=0.):
-        """
-        call siganture:
-        
-            uptake(self,Z_r,T_p,R_p,h_plant,depth_step,soil,K_m=0.,c_max=0.01,c_min=0.)
-            
-        uptake() calculates the water and nutrient uptake for defined
-        depth steps from the soil interface.
+        return 1-(min(S_h/T_p,R_a/R_p,1.))
     
-        Z_r = Total rootingdepth, T_p = Potential transpiration,
-        R_p = Potential root nutrient uptake, h_plant = critical pressurehead of
-        plant for soil water extraction, depth_step = layer thickness for pressure-
-        head and nutrient_c request, soil = Soil-Instance, c_max = maximal allowed 
-        nutrient concentration,Mechaelis-Menten constant, c_min = minimum concetration 
-        at which no net influx occurs (all float values).
-        """
-        s_h_list=[];p_a_list=[];a_a_list=[]
-        #root water extraction rate
-        s_p=self.water_extractionrate(T_p, Z_r)
-        for depth in arange(0.,Z_r,depth_step):
-            alpha=self.sink_therm(soil.get_pressurehead(depth+depth_step), h_plant)#sink_therm alpha
-            if depth+depth_step<=Z_r:
-                s_h=s_p*alpha*depth_step#uptake from each layer, which are completely penetrated
-            else: 
-                s_h=alpha*s_p*(Z_r-depth)##uptake from layer which are partly penetrated
-            s_h_list.append(s_h)
-            p_a=self.passive_nutrientuptake(s_h, soil.get_nutrients(depth+depth_step),c_max)
-            p_a_list.append(p_a)
-        
-        P_a=sum(p_a_list)
-        A_p=max(R_p-P_a,0)#A_p = Potential acitve nutrient uptake
-        a_p=A_p/Z_r#a_p = Potential acitve nutrient uptake from soil layer
-        for depth in arange(0.,Z_r,depth_step):
-            nutrient_c=soil.get_nutrients(depth+depth_step)
-            if depth+depth_step<=Z_r:a_a=a_p*self.michaelis_menten(nutrient_c, K_m, c_min)*depth_step
-            else: a_a=a_p*self.michaelis_menten(nutrient_c, K_m, c_min)*(Z_r-depth)
-            a_a_list.append(a_a)
-        A_a=sum(a_a_list)#A_a = Actual acitve nutrient uptake
-        R_a=A_a+P_a
-        return [s_h_list,p_a_list,a_a_list]
+    def penetrated_soillayer(self,soilprofile,Z_r):
+        #compute upper layer limit
+        upperlimit=[]
+        for s in soilprofile:
+            if soilprofile.index(s)==0: upperlimit.append(0.)
+            else: upperlimit.append(soilprofile[soilprofile.index(s)-1])
+        #compute penetreted depth of each layer
+        penetrated_layer=[]
+        for s in soilprofile:
+            if s<=Z_r: penetrated_layer.append(s-upperlimit[soilprofile.index(s)])
+            elif Z_r>=upperlimit[soilprofile.index(s)] and Z_r<=s: penetrated_layer.append(Z_r-upperlimit[soilprofile.index(s)])
+            else: penetrated_layer.append(0.)
+        return penetrated_layer  
+      
+    
     def water_extractionrate(self,T_p,Z_r): 
         """
         call siganture:
@@ -357,7 +361,7 @@ class Plant:
             if daylength<=plant_photoperiod[0] or daylength>=plant_photoperiod[-1]: return 0.
             elif daylength>plant_photoperiod[0] and daylength<plant_photoperiod[1]: return 1.0
             else: return (plant_photoperiod[-1]-daylength)/(plant_photoperiod[-1]-plant_photoperiod[-2])
- 
+
 class Root:
     """
     call signature:
