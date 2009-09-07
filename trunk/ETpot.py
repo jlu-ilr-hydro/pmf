@@ -40,7 +40,19 @@ def Radiation(daily=1,DOY=1,lat=50.6,lon=8.1,timezone=1,height=155,Tmax=25.,Tmin
 #    plot(array([R_n,R_ns,R_nl,R_s,R_so,R_a]).transpose(),hold=0)
 #    legend(['R_n','R_ns','R_nl','R_s','R_so','R_a'])
     return R_n,R_ns,R_nl,R_s,R_so,R_a
-def ETpot(daily,Rn,T,e_s,e_a,windspeed=2.,alt=0,vegH=0.12,LAI=24*0.12,printSteps=0):
+def ETpot(daily,Rn,T,e_s,e_a,windspeed=2.,alt=0,vegH=0.12,LAI=24*0.12,stomatal_resistance=100,printSteps=0):
+    """Calculates the potential ET using the famous Penmonteith (FAO 1994) eq.
+    daily = if True, the daily average will be calculated, else the hourly
+    Rn = Net radiation in MJ/m2
+    T = Avg. Temp. for the timespan
+    e_s,e_a Sat. vap. press, act. vap. press, Pa
+    windspeed = in m/s
+    alt = Altitude in m o.s.l.
+    vegH = Height of the vegetation in m
+    LAI = Leaf area index (both sides) in m2/m2
+    stomatal_resistance = Resistance of open stomata against transpiration s/m
+    print_steps = if true, some debiug info 
+    """
     delta=4098*(0.6108*exp(17.27*T/(T+237.3)))/(T+237.3)**2
     if daily:   G=0
     else : G=(0.5-greater(Rn,0)*0.4)*Rn
@@ -82,7 +94,7 @@ def vapor_pressure(rHmean,Tmin,Tmax,T=None):
         e_s=vp_sat(T)
     e_a=rHmean/100.*e_s
     return e_s,e_a
-    
+
 def interpolateMonthlyData(doy,monthlyarray):
     m=(doy+15)*12./365.
     try:
