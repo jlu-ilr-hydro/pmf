@@ -19,11 +19,11 @@ stage=[['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem el
                ['Anthesis',901.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]]
 
 #Parameter partitioning:
-root_fraction=[[160.,1.],[901.,0.5],[1665.,0.]]
+penetrated_layer=[[160.,1.],[901.,0.5],[1665.,0.]]
 shoot_fraction=[[160.,0.],[901.,0.5,],[1665.,1.,]]
 leaf_fraction=[[160.,0.],[901.,0.5],[1174.,0.375],[1665.,0.]]
 stem_fraction=[[160.,0.],[901.,0.5],[1174.,0.375],[1665.,0.]]
 storage_fraction=[[160.,0.],[901.,0.0],[1174.,0.25],[1665.,1.]]
 
 #Create plant with default values
-plant=Plant(stage,root_fraction,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction)
+plant=Plant(stage,penetrated_layer,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction)
