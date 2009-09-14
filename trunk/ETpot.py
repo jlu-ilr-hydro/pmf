@@ -83,7 +83,7 @@ def ETpot(daily,Rn,T,e_s,e_a,windspeed=2.,alt=0,vegH=0.12,LAI=24*0.12,stomatal_r
        print "r_a=%0.2f,r_s=%0.2f,gamma=%0.2f" % (r_a,r_s,gamma)
        print "rho_a=%0.2f,c_p=%0.2f" % (rho_a,c_p)
        print "P=  %0.2f,e_a=%0.2f,e_s=  %0.2f" % (P,e_a,e_s)
-    return AeroTerm+RadTerm,RadTerm,AeroTerm
+    return AeroTerm+RadTerm
 def vp_sat(T):
     return 0.6108*exp(17.27*T/(T+237.3))
 def vapor_pressure(rHmean,Tmin,Tmax,T=None):
@@ -106,4 +106,3 @@ def interpolateMonthlyData(doy,monthlyarray):
     v_last=monthlyarray[m_last % 12]
     v_next=monthlyarray[m_next % 12]
     return v_next*m_part+v_last*(1-m_part)
-

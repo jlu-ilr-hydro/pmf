@@ -26,19 +26,23 @@ class Atmosphere:
     def get_etp(self,time):
         return 5.
 
+#Interfaces
+soil=Soil()
+atmosphere=Atmosphere()
+
 #Parameter development:
 stage=[['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],
                ['Anthesis',901.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',2000.]]#'Maturity',1665.
 
 #Parameter partitioning:
-root_fraction=[[160.,1.],[901.,0.5],[1665.,0.]]
+penetrated_layer=[[160.,1.],[901.,0.5],[1665.,0.]]
 shoot_fraction=[[160.,0.],[901.,0.5,],[1665.,1.,]]
 leaf_fraction=[[160.,0.],[901.,0.5],[1174.,0.375],[1665.,0.]]
 stem_fraction=[[160.,0.],[901.,0.5],[1174.,0.375],[1665.,0.]]
 storage_fraction=[[160.,0.],[901.,0.0],[1174.,0.25],[1665.,1.]]
 
 #Create plant with default values
-plant=Plant(stage,root_fraction,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction)
+plant=Plant(soil,atmosphere,stage,penetrated_layer,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction)
 
 #Model time amd lsit for results
 thermaltime=[];biomass=[];shoot=[];root=[];stem=[];leaf=[];storage=[];root_depth=[];water_profile=[]
@@ -46,12 +50,10 @@ time_act=datetime(2000,1,1)
 time_end=datetime(2000,12,31)
 time_step=timedelta(1)#daily
 
-#Interfaces
-soil=Soil()
-atmosphere=Atmosphere()
+
 
 while time_act<time_end:
-    plant(time_act,'day',time_step.days,soil,atmosphere)
+    plant(time_act,'day',1.)
     thermaltime.append(plant.thermaltime);biomass.append(plant.Wtot)
     shoot.append(plant.shoot.Wtot);root.append(plant.root.Wtot)
     root_depth.append(plant.root.depth)
