@@ -199,7 +199,6 @@ class Field:
             return True
         elif self.isharvest(time_act) == True:
             return True
-
 def wheat(soil,atmosphere):
     #Parameter development:
     stage=[['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],
@@ -238,13 +237,17 @@ if __name__=='__main__':
     penetrated_layer=[];shoot_fraction=[];
     leaf_fraction=[];stem_fraction=[];
     storage_fraction =[];ETpot=[];pF=[]
-    
+
     start = time.time()
     ion()
+    root=zeros(1826)
+    alpha=zeros(1826)
     biomass = zeros(1826)
     ETp=zeros(1826)
     ETa=zeros(1826)
     x = range(1826) 
+    f=figure()
+    f.add_subplot(311)
     ETp_plot, = plot(x,ETp,color='blue',label='ETp')
     ETa_plot, = plot(x,ETa,color='green',label='ETa')
     legend(loc=0)
@@ -252,11 +255,25 @@ if __name__=='__main__':
     title('Crop: SummerWheat, Weather: Giessen, Period: 1980 - 1985 ')
     ylabel('Evapotranspiration [mm]')
     xlabel('Day of simulation period [day]')
+    grid()
+    f.add_subplot(312)
+    root_plot, = plot(x,root,color='blue',label='Rootingdepth')
+    ylim(-200,0)
+    ylabel('Depth [cm]')
+    grid()
+    xlabel('Day of simulation period [day]')
+    legend(loc=0)
+    f.add_subplot(313)
+    alpha_plot, = plot(x,alpha,color='r',label='stress index')
+    ylabel('fraction [-]')
+    legend(loc=0)
+    ylim(-0.1,1.1)
     ax2=twinx()
-    biomass_plot, = plot(x,biomass,'r',label='Biomass')
+    biomass_plot, = plot(x,biomass,'g',label='Biomass')
     ylim(0,300)
     ylabel('Biomass [g * m-1]')
     grid()
+
     
     #Simulation period
     while time_act<t.datetime(1984,12,31):
@@ -266,16 +283,18 @@ if __name__=='__main__':
             biomass[i]+=plant.Wtot
             ETp[i]+=plant.ETp
             ETa[i]+=sum(plant.s_h)
+            root[i]+=-plant.root.depth
+            alpha[i]+=plant.stress
         except NameError:
-            biomass[i]+=0.
-            ETp[i]+=0.
-            ETa[i]+=0.
+           pass
         if i%7==0:
             ETp_plot.set_ydata(ETp)
             #fill_between(x,0,ETp,facecolor='blue')
             ETa_plot.set_ydata(ETa)
             #fill_between(x,0,ETa,facecolor='green')
             biomass_plot.set_ydata(biomass)
+            root_plot.set_ydata(root)
+            alpha_plot.set_ydata(alpha)
             draw()
         
         if field.issowing(time_act) == True:
