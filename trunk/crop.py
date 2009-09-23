@@ -1,19 +1,9 @@
 from pylab import *
 from CG_plant import *
+from WaterBalance import *
 import cmf
 from cmf_setup import cmf1d
 import struct
-def load_dwd(c):
-    #Load meteo data
-    import cmf.cmfDWD as dwd
-    # Load meteoroligical stations
-    MeteoStations=dwd.GetMeteorology(c.project,'dwddaten/kl_bestand_abgabe440_1','dwddaten/kl_satz_abgabe440_1','dwddaten/kl_dat_abgabe440_1',cmf.Time(1,1,1980),cmf.Time(1,1,2006))
-    # Load rainfall stations
-    rainfall=dwd.get_rainfall('dwddaten/rr_dat_abgabe440')
-    # Set Giessen as actual meteo station
-    c.cell.meteorology=cmf.MeteoStationReference( MeteoStations['02609'],c.cell)
-    # Set Giessen as rainfall station
-    c.cell.rain.flux=rainfall['76148']
 def timeseries_from_file(f):
 
     """ Loads a timeseries saved with to_file from a file
@@ -148,7 +138,7 @@ def set_results():
         leaf_fraction.append(plant.shoot.leaf.fraction(plant.thermaltime))
         stem_fraction.append(plant.shoot.stem.fraction(plant.thermaltime))
         storage_fraction.append(plant.shoot.storage_organs.fraction(plant.thermaltime))
-        ETpot.append(plant.ETp)
+        ETpot.append(plant.ET.reference)
     except NameError:
         biomass_plant.append(0);biomass_shoot.append(0)
         biomass_root.append(0);biomass_stem.append(0)
@@ -199,7 +189,7 @@ class Field:
             return True
         elif self.isharvest(time_act) == True:
             return True
-def wheat(soil,atmosphere):
+def wheat(soil,atmosphere,WaterBalance):
     #Parameter development:
     stage=[['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],
                    ['Anthesis',901.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]]
@@ -209,7 +199,7 @@ def wheat(soil,atmosphere):
     leaf_fraction=[[160.,0.],[901.,0.5],[1174.,0.375],[1665.,0.]]
     stem_fraction=[[160.,0.],[901.,0.5],[1174.,0.375],[1665.,0.]]
     storage_fraction=[[160.,0.],[901.,0.0],[1174.,0.25],[1665.,1.]]
-    plant=Plant(soil,atmosphere,stage,root_fraction,shoot_fraction,leaf_fraction,stem_fraction,
+    plant=Plant(soil,atmosphere,WaterBalance,stage,root_fraction,shoot_fraction,leaf_fraction,stem_fraction,
                  storage_fraction)
     return plant
 if __name__=='__main__':
@@ -217,6 +207,7 @@ if __name__=='__main__':
     import time
     #Create cmf1d instance: sand=60,silt=30,clay=10,c_org=2.0,layercount=20,layerthickness=.1, saturated_depth=2.5
     c=cmf1d(sand=60,silt=30,clay=10,c_org=2.0,layercount=20,layerthickness=.1)
+    w=WaterBalance_MatrixPotential()
     load_meteo(c.project,stationname='Giessen')
     c.cell.saturated_depth=5
     #Create management with sowing and harvest dates
@@ -240,6 +231,7 @@ if __name__=='__main__':
 
     start = time.time()
     
+    """
     
     ion()
     root=zeros(1826)
@@ -275,12 +267,12 @@ if __name__=='__main__':
     ylim(0,300)
     ylabel('Biomass [g * m-1]')
     grid()
-    
+    """
     
     #Simulation period
-    while time_act<t.datetime(1985,12,31):
+    while time_act<t.datetime(1980,9,30):
         i+=1
-        
+        """
         try:
             biomass[i]+=plant.Wtot
             ETp[i]+=plant.ETp
@@ -298,32 +290,26 @@ if __name__=='__main__':
             root_plot.set_ydata(root)
             alpha_plot.set_ydata(alpha)
             draw()
-        
-        
-        
+        """
         if field.issowing(time_act) == True:
-            plant=wheat(c,c)
+            plant=wheat(c,c,w)
         if field.isharvest(time_act) == True:
             field.total_harvest.append(plant.Wtot)
-            del plant
         if Plant.Count>=1:
             plant(time_act,'day',1.)
-            c.flux=[s_h*-1. for s_h in plant.s_h]
+            c.flux=[s_h*-1. for s_h in plant.water.uptake]
         else:
             c.flux=[0]*50
         set_results()        
-        if i%14==0:
+        if i%1==0:
             if Plant.Count>=1:
-                print time_act,plant.stage(plant.thermaltime),plant.Wtot,plant.root.depth,plant.stress#,'stress',plant.stress,'water',sum(plant.s_h),'etp',plant.ETp,'depth',plant.root.depth,plant.Wtot
+                print time_act, 'ET %4.2f, sh %4.2f,comp %4.2f, sh_comp %4.2f' % (plant.ET.reference,sum(plant.water.uptake),sum(plant.water.compensation),sum(plant.water.s_h_compensated))
                 #print time_act ,'fgi',['%4.2f' %  a for a in plant.root.fgi][:10],sum(plant.root.fgi)
-                print time_act ,'distribution',['%4.2f' %  a for a in plant.root.distribution][:10],sum(plant.root.distribution),plant.root.Wtot
-                print time_act,"ET= %0.2f" % plant.ETp,"Water uptake=%4.2f" % sum(plant.s_h),'depth',plant.root.depth,'stress',plant.stress
-                #print time_act,'penetration' ,['%4.2f' % a for a in plant.penetration][:10]
                 #print time_act,'pF',['%4.2f' % a for a in c.pF][:10]
-                #print time_act,'alpha' ,['%4.2f' % a for a in plant.alpha][:10],sum(plant.alpha)
-                #print time_act,'pressure',['%4.2f' % a for a in plant.pressure_head][:10]
-                #print time_act,'matrix',['%4.2f' % -a for a in c.matrix_potential][:10]
-                #print time_act, 's_h', ['%4.2f' % s_h for s_h in plant.s_h][:10]
+                #print time_act, 's_p', ['%4.2f' % u for u in plant.s_p]
+                #print time_act, 's_h', ['%4.2f' % u for u in plant.water.uptake]
+                #print time_act, 'alpha', ['%4.2f' % u for u in plant.water.alpha]#[:10]
+                #print time_act, 's_h_comp', ['%4.2f' % u for u in plant.water.uptake_comp]#[:10]
                 #print time_act, 'flux',['%4.2f' % f for f in c.flux][:10]
             else:
                 print 'No plant'
