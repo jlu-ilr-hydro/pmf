@@ -18,7 +18,7 @@ class Plant:
     Grow call several methods from plant and the growth functions from root
     and shoot. At the end of every time step Wttot and Rtot are updated.    
     """
-    def __init__(self,soil,atmosphere,stage,root_fraction,shoot_fraction,leaf_fraction,stem_fraction,
+    def __init__(self,soil,atmosphere,WaterBalance,stage,root_fraction,shoot_fraction,leaf_fraction,stem_fraction,
                  storage_fraction,tbase=0.,Wmax=1000.,growth=0.05,
                  rootability_thresholds=[1.5,0.5,16000.,.0,0.0,0.0],pressure_threshold=[0.,1.,500.,16000.],
                  plant_N=[[160.,0.43],[1174.,0.16]],lai_conversion=1.,root_growth=1.2,K_m=0.,c_min=0.):
@@ -28,7 +28,7 @@ class Plant:
         self.thermaltime=0.
         self.soil=soil
         self.atmosphere=atmosphere
-        self.pressure_threshold=pressure_threshold
+        self.water=WaterBalance
         self.plant_N=plant_N
         self.K_m=K_m
         self.c_min=c_min
@@ -38,24 +38,19 @@ class Plant:
         self.stage=Stage(self,stage)
         self.root=Root(self,root_fraction,rootability_thresholds,root_growth,self.soil.get_profile())
         self.shoot=Shoot(self,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction,lai_conversion)
-        self.pressure_head=[]
-        self.s_h=[]
-        self.alpha=[]
+        self.pressure_threshold=pressure_threshold
         self.Wact=0.
         self.Wpot=0.
         self.stress=1.
-        self.ETp=0.
-        self.penetration=[]
+        self.ET=ET_FAO(self)
         self.R_a=0.
         self.R_p=0.
+        self.s_p=[]
     def __del__(self):
         Plant.Count-=1
     @property 
     def is_germinated(self):
-        return self.stage.is_growingseason(self.thermaltime)
-    @property 
-    def water(self):
-        return self.wateruptake(self.ETp, self.root.depth, self.alpha, [l.penetration for l in self.rootingzone])
+        return self.stage.is_growingseason(self.thermaltime) 
     def step(self,step,interval):
         if step=='day':
             return 1.*interval
@@ -87,36 +82,19 @@ class Plant:
         coefficiants for the phenological depending decline of the biomass nitrogen
         content, e.g. [100,0.43,1000,0.16].
         """ 
-        #Compute time_step     
         time_step=self.step(step,interval)
-        
         self.root.zone(self.root.depth)
-        
         self.thermaltime += self.develop(self.atmosphere.get_tmin(time_act), self.atmosphere.get_tmax(time_act), self.tbase)
-        #self.root.zone(self.root.depth)
-
-        #Compute ETp
-        ''' Transpiration '''
         if self.Wtot>=1.0:
-            ETp=self.perspire(True,self.atmosphere.get_Rn(time_act,0.12,True),self.atmosphere.get_tmean(time_act),
-                              self.atmosphere.get_es(time_act),self.atmosphere.get_ea(time_act),
-                              self.atmosphere.get_windspeed(time_act),alt=0,vegH=self.Wtot/900.+0.01,
-                              LAI=1+3*self.shoot.plant.Wtot/900.,stomatal_resistance=self.shoot.leaf.stomatal_resistance,printSteps=0)
-        self.ETp=ETp
-        ''' Water uptake '''
-        if self.stage(self.thermaltime) == self.stage[0][0]:
-            pass
-        else:
-            pressure_head = [self.soil.get_pressurehead(layer.center) for layer in self.root.zone]
-            self.pressure_head=pressure_head
-            alpha = [self.sink_term(p,self.pressure_threshold) for p in pressure_head]
-            self.alpha=alpha
-            layer_penetration=[p.penetration  for p in self.root.zone]
-            self.penetration=layer_penetration
-            
-            print ['%4.2f' % (r/sum(self.root.distribution)) for i,r in enumerate(self.root.distribution)]
-            self.s_h = self.wateruptake(self.ETp,alpha, layer_penetration,self.root.depth)
-        
+            #Compute ET
+            self.ET(self.atmosphere.get_Rn(time_act,0.12,True),self.atmosphere.get_tmean(time_act)
+                    ,self.atmosphere.get_es(time_act),self.atmosphere.get_ea(time_act)
+                    ,self.atmosphere.get_windspeed(time_act),vegH=self.Wtot/900.+0.01
+                    ,LAI=1+3*self.shoot.plant.Wtot/900.,stomatal_resistance=self.shoot.leaf.stomatal_resistance)
+            #Compute water uptake
+            self.water([self.ET.reference/self.root.depth * l.penetration for l in self.root.zone]
+                       ,[self.soil.get_pressurehead(l.center) for l in self.root.zone],self.pressure_threshold)
+        #plant growth
         if self.stage.is_growingseason(self.thermaltime):
             ''' Potential growth  '''
             Wpot = self.assimilate(self.Wtot, self.Wmax, self.growth)
@@ -125,17 +103,16 @@ class Plant:
             nitrogen=[self.soil.get_nutrients(l.center) for l in self.root.zone]
             self.R_a=self.nutrientuptake(self.root.depth, 
                                          nitrogen, 
-                                         self.s_h, self.R_p, [l.penetration for l in self.root.zone], 
+                                         self.water.uptake, self.R_p, [l.penetration for l in self.root.zone], 
                                          self.c_min, self.K_m)
-            self.stress=self.stress_response(sum(self.s_h), self.ETp, self.R_a, self.R_p)*1.
+            self.stress=self.stress_response(sum(self.water.uptake), self.ET.reference, self.R_a, self.R_p)*1.
             Wact=Wpot*self.stress
             self.Wtot = self.Wtot + Wact*time_step
             self.Rtot = self.respire(0.5,Wact,0.5,self.Wtot)               
             ''' root and shoot growth '''
-            fgi_nitrogen=[nitrogen[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]
-            fgi_alpha=[alpha[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]
-            feeling_good_index=self.get_fgi(sum(self.s_h), self.ETp, self.R_a, self.R_p, fgi_nitrogen,fgi_alpha)
-            self.root(time_step,Wact,feeling_good_index)
+            self.root(time_step,Wact,self.get_fgi(sum(self.water.uptake), self.ET.reference, self.R_a, self.R_p, 
+                                            [nitrogen[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)],
+                                            [self.water.stress[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]))
             self.shoot(time_step,Wact)
     def get_fgi(self,s_h,ETp,R_a,R_p,nitrogen_distribution,water_distribution):
         w=1-s_h/ETp
@@ -144,9 +121,6 @@ class Plant:
             return [w/sum(water_distribution) for w in water_distribution]
         else:
             return [n/sum(nitrogen_distribution) for n in nitrogen_distribution]
-    def wateruptake(self,ETp,alpha,layer_penetration,root_depth):
-        return [ETp/root_depth * alpha[i] * p for i,p in enumerate(layer_penetration)]
-       # return [ETp * root_distribution[i] * alpha[i] * p for i,p in enumerate(layer_penetration)]
     def nutrientuptake(self,rooting_depth,nutrient_conc,water_uptake,R_p,layer_penetration,c_min,K_m):
         P_a = [w*nutrient_conc[i] for i,w in enumerate(water_uptake)]
         A_p = max(R_p-sum(P_a),0.)
@@ -290,44 +264,6 @@ class Plant:
         perspire(). S_h,R_p and R_a is given by uptake().
         """
         return min(S_h/T_p,R_a/R_p,1.)
-    def water_extractionrate(self,T_p,Z_r): 
-        """
-        call siganture:
-        
-            water_extractionrate(T_p,Z_r)
-            
-        water_extraction() allocates the potential water uptake
-        over the rooting depth.
-        
-        Z_r = Total rootingdepth and T_p = Potential transpiration
-        are float values. Z_r equals the obkect variable
-        plant.root.depth and T_p can be achieved with perspire().         
-        """     
-        return T_p/Z_r
-    def sink_term(self,h_soil,h_plant): 
-        """
-        call signature:
-        
-            sink_therm(h_soil,h_plant)
-        
-        Calculates alpha(h): a dimensionless prescribed function of s
-        oil water pressure head with values between or equal zero and one.
-    
-        h_soil = pressure head in soil compartment and h_plant = list 
-        with critical pressureheads for the plant. Both variables
-        are list with the following structure:
-        h_plant is a list with four values with the criticall pressurehead for water
-        uptake, e.g. [0.,100.,500.,16000.](float-values). plant_N is a list with four 
-        values with crop coefficiants for the phenological depending decline of 
-        the biomass nitrogen content, e.g. [100,0.43,1000,0.16].
-        """
-        try:
-            if h_soil<h_plant[0] or h_soil>h_plant[-1]: return 0
-            if h_soil>=h_plant[1] and h_soil<=h_plant[2]: return 1
-            elif h_soil<h_plant[1]: return (h_soil-h_plant[0])/(h_plant[1]-h_plant[0])
-            else: return (h_plant[-1]-h_soil)/(h_plant[-1]-h_plant[-2])
-        except ValueError, err:
-            print err
     def passive_nutrientuptake(self,s_p,c_nutrient,c_max):
         """
         call signature:
@@ -672,6 +608,7 @@ class Leaf:
         self.stomatal_resistance= 100 if self.shoot.plant.is_germinated else 300
         self.Wtot=0.
         self.lai=0.
+        self.specific_weight=400.
     def  __call__(self,time_step,Wact_shoot):
         """
         call signature:
@@ -684,7 +621,7 @@ class Leaf:
         The parameter time_step set the duration of the growth process.
         """
         self.Wtot=self.Wtot+self.leaf_partitioning(self.fraction(self.shoot.plant.thermaltime), Wact_shoot)*time_step
-        self.lai+=self.lai_calc(self.Wtot, self.lai_conversion)
+        self.lai=self.convert(self.Wtot, self.specific_weight)
     def leaf_partitioning(self,leaf_fraction,Wact_shoot):
         """
         call signature:
@@ -697,18 +634,28 @@ class Leaf:
         leaf_fraction a crop specific coefficiant. Both are double values.        
         """
         return leaf_fraction*Wact_shoot
-    def lai_calc(self,Wtot,lai_conversion):
-        """
-        call signature:
+    def convert(self,biomass,specific_weight):
+        """ Calculates LAI [ha/ha]:
         
-            leaf_area(Wtot,lai_conversion):
-            
-        Calcualtes leaf area from the leaf weight.
+        The growth of leaf area is related to growth in leaf weight.
+        The specific leaf weight of new leaves change with crop age.
+        Leaf area is determined by dividing the weight of
+        live leaves by the specific leaf weight
         
-        Wtot from leaf class and lai_conversion as crop specific paramater. Both float values.       
+        biomass - biomass of the leafs[kg/ha]
+        specific_weight - dry weight of leaves (no reserves,
+        only structural dry matter) with a total one-sided 
+        leaf area of one hectare [kg/ha]
         """
-        return Wtot*lai_conversion
-    
+        return biomass/specific_weight
+    def get_specific_weight(self,thermaltime,fixed_specific_weight):
+        """
+        The specific leaf weight of new leaves is calculated by
+        multiplying the specific leaf weight constant with a factor that depends on the
+        development stage of the crop.
+        """
+        weight_factor=1.
+        return weight_factor*fixed_specific_weight
 class Stage():
     Count = 0
     def __init__(self,plant,stage):
@@ -818,7 +765,70 @@ class SoilLayer:
                 layer_penetration = 0.
             else: 
                 layer.penetration = rooting_depth - layer.upperlimit
-             
+
+class ET_FAO:
+    def __init__(self,plant):
+        self.plant=plant
+        self.ETo=0.
+        self.ETc=0.
+        self.ETc_adj=0.
+    @property
+    def reference(self):
+        return self.ETo
+    @property
+    def cropspecific(self):
+        return self.ETc
+    @property
+    def adjusted(self):
+        return self.ETc_adjusted
+    def __call__(self,Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance):
+        self.ETo = self.reference_ET(Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt=0,printSteps=0)
+    def reference_ET(self,Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt=0,printSteps=0,daily=True):
+        """Calculates the potential ET using the famous Penmonteith (FAO 1994) eq.
+        daily = if True, the daily average will be calculated, else the hourly
+        Rn = Net radiation in MJ/m2
+        T = Avg. Temp. for the timespan
+        e_s,e_a Sat. vap. press, act. vap. press, Pa
+        windspeed = in m/s
+        alt = Altitude in m o.s.l.
+        vegH = Height of the vegetation in m
+        LAI = Leaf area index (both sides) in m2/m2
+        stomatal_resistance = Resistance of open stomata against transpiration s/m
+        print_steps = if true, some debiug info 
+        """
+        delta=4098*(0.6108*exp(17.27*T/(T+237.3)))/(T+237.3)**2
+        if daily:   G=0
+        else : G=(0.5-greater(Rn,0)*0.4)*Rn
+        P=101.3*((293-0.0065*alt)/293)**5.253
+        c_p=0.001013
+        epsilon=0.622
+        lat_heat=2.45
+        gamma=c_p*P/(lat_heat*epsilon)
+        R=0.287
+        rho_a=P/(1.01*(T+273)*R)
+        d=0.6666667*vegH
+        z_om=0.123*vegH
+        z_oh=0.1*z_om
+        k=0.41
+        r_a_u= log((2-d)/z_om)*log((2-d)/z_oh)/k**2
+        r_a=r_a_u/windspeed
+        r_s=100./(0.5*LAI)
+        nominator=(delta+gamma*(1+r_s/r_a))
+        ATcoeff=epsilon*3.486*86400/r_a_u/1.01
+        #AeroTerm=(rho_a*c_p*(e_s-e_a)/r_a)/nominator
+        AeroTerm=gamma/nominator*ATcoeff/(T+273)*windspeed*(e_s-e_a)
+        RadTerm=(delta*(Rn-G))/(nominator*lat_heat)
+        if printSteps:
+           print "ET= %0.2f,AT= %0.2f,RT=   %0.2f" % (AeroTerm+RadTerm,AeroTerm,RadTerm)
+           print "Rn= %0.2f,G=  %0.2f,Dlt=  %0.2f" % (Rn,G,delta)
+           gamma_star=gamma*(1+r_s/r_a)
+           print "gamma*=%0.2f,dl/(dl+gm*)=%0.2f,gm/(dl+gm*)=%0.2f" % (gamma_star,delta/(delta+gamma_star),gamma/(delta+gamma_star))
+           print "r_a=%0.2f,r_s=%0.2f,gamma=%0.2f" % (r_a,r_s,gamma)
+           print "rho_a=%0.2f,c_p=%0.2f" % (rho_a,c_p)
+           print "P=  %0.2f,e_a=%0.2f,e_s=  %0.2f" % (P,e_a,e_s)
+        return AeroTerm+RadTerm
+
+
 ''' Plant Interfaces:
         
         Plant requires two interfaces:

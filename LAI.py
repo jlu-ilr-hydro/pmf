@@ -15,11 +15,11 @@ class Leaf():
         leaf area of one hectare [kg/ha]
         """
         return biomass/specific_weight
-    def get_specific_weight(self,thermaltime,fixed_specific_weigth):
+    def get_specific_weight(self,thermaltime,fixed_specific_weight):
         """
         The specific leaf weight of new leaves is calculated by
         multiplying the specific leaf weight constant with a factor that depends on the
         development stage of the crop.
         """
         weight_factor=1.
-        return weigt_factor*fixed_specific_weight
+        return weight_factor*fixed_specific_weight
