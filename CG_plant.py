@@ -1,5 +1,6 @@
 from pylab import *
 class Plant:
+    Count=0.
     """
     call signature:
     
@@ -21,6 +22,7 @@ class Plant:
                  storage_fraction,tbase=0.,Wmax=1000.,growth=0.05,
                  rootability_thresholds=[1.5,0.5,16000.,.0,0.0,0.0],pressure_threshold=[0.,1.,500.,16000.],
                  plant_N=[[160.,0.43],[1174.,0.16]],lai_conversion=1.,root_growth=1.2,K_m=0.,c_min=0.):
+        Plant.Count+=1
         self.Wtot=1.
         self.Rtot=0.
         self.thermaltime=0.
@@ -34,10 +36,8 @@ class Plant:
         self.Wmax=Wmax
         self.growth=growth
         self.stage=Stage(self,stage)
-        self.root=Root(self,root_fraction,rootability_thresholds,root_growth)
+        self.root=Root(self,root_fraction,rootability_thresholds,root_growth,self.soil.get_profile())
         self.shoot=Shoot(self,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction,lai_conversion)
-        self.rootingzone=RootingZone()
-        self.rootingzone.get_rootingzone(self.soil.get_profile())
         self.pressure_head=[]
         self.s_h=[]
         self.alpha=[]
@@ -49,7 +49,7 @@ class Plant:
         self.R_a=0.
         self.R_p=0.
     def __del__(self):
-        pass
+        Plant.Count-=1
     @property 
     def is_germinated(self):
         return self.stage.is_growingseason(self.thermaltime)
@@ -90,58 +90,63 @@ class Plant:
         #Compute time_step     
         time_step=self.step(step,interval)
         
-        self.thermaltime += self.develop(self.atmosphere.get_tmin(time_act), self.atmosphere.get_tmax(time_act), self.tbase)
+        self.root.zone(self.root.depth)
         
+        self.thermaltime += self.develop(self.atmosphere.get_tmin(time_act), self.atmosphere.get_tmax(time_act), self.tbase)
+        #self.root.zone(self.root.depth)
+
         #Compute ETp
         ''' Transpiration '''
-        # TODO: Value from literature
-        
-        # TODO: Change vegH and LAI calculation to something less mental
         if self.Wtot>=1.0:
             ETp=self.perspire(True,self.atmosphere.get_Rn(time_act,0.12,True),self.atmosphere.get_tmean(time_act),
                               self.atmosphere.get_es(time_act),self.atmosphere.get_ea(time_act),
                               self.atmosphere.get_windspeed(time_act),alt=0,vegH=self.Wtot/900.+0.01,
                               LAI=1+3*self.shoot.plant.Wtot/900.,stomatal_resistance=self.shoot.leaf.stomatal_resistance,printSteps=0)
         self.ETp=ETp
-                
         ''' Water uptake '''
-        self.rootingzone(self.root.depth)
-        #if self.root.depth>0.:
         if self.stage(self.thermaltime) == self.stage[0][0]:
             pass
         else:
-            pressure_head = [self.soil.get_pressurehead(layer.center) for layer in self.rootingzone]
+            pressure_head = [self.soil.get_pressurehead(layer.center) for layer in self.root.zone]
             self.pressure_head=pressure_head
             alpha = [self.sink_term(p,self.pressure_threshold) for p in pressure_head]
             self.alpha=alpha
-            layer_penetration=[p.penetration  for p in self.rootingzone]
-            self.penetration=layer_penetration        
-            self.s_h = self.wateruptake(self.ETp, self.root.depth, alpha, layer_penetration)
+            layer_penetration=[p.penetration  for p in self.root.zone]
+            self.penetration=layer_penetration
+            
+            print ['%4.2f' % (r/sum(self.root.distribution)) for i,r in enumerate(self.root.distribution)]
+            self.s_h = self.wateruptake(self.ETp,alpha, layer_penetration,self.root.depth)
+        
         if self.stage.is_growingseason(self.thermaltime):
             ''' Potential growth  '''
             Wpot = self.assimilate(self.Wtot, self.Wmax, self.growth)
-            
             ''' Nutrient uptake '''
             self.R_p=self.nitrogen_demand(Wpot, self.nitrogen_content(self.plant_N, self.thermaltime))
+            nitrogen=[self.soil.get_nutrients(l.center) for l in self.root.zone]
             self.R_a=self.nutrientuptake(self.root.depth, 
-                                         [self.soil.get_nutrients(l.center) for l in self.rootingzone], 
-                                         self.s_h, self.R_p, [l.penetration for l in self.rootingzone], 
+                                         nitrogen, 
+                                         self.s_h, self.R_p, [l.penetration for l in self.root.zone], 
                                          self.c_min, self.K_m)
             self.stress=self.stress_response(sum(self.s_h), self.ETp, self.R_a, self.R_p)*1.
             Wact=Wpot*self.stress
             self.Wtot = self.Wtot + Wact*time_step
             self.Rtot = self.respire(0.5,Wact,0.5,self.Wtot)               
             ''' root and shoot growth '''
-            self.root(time_step,Wact)
+            fgi_nitrogen=[nitrogen[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]
+            fgi_alpha=[alpha[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]
+            feeling_good_index=self.get_fgi(sum(self.s_h), self.ETp, self.R_a, self.R_p, fgi_nitrogen,fgi_alpha)
+            self.root(time_step,Wact,feeling_good_index)
             self.shoot(time_step,Wact)
-    def grow(self,Wpot,stress):
-        return Wpot * stress
-    def wateruptake(self,ETp,rooting_depth,alpha,layer_penetration):
-        try:
-            s_p = float(ETp)/float(rooting_depth)
-        except ZeroDivisionError:
-            s_p = 0.
-        return [s_p * alpha[i] * p for i,p in enumerate(layer_penetration)]
+    def get_fgi(self,s_h,ETp,R_a,R_p,nitrogen_distribution,water_distribution):
+        w=1-s_h/ETp
+        n=1-(R_a/R_p) if R_p>0. else 0.
+        if  w >= n:
+            return [w/sum(water_distribution) for w in water_distribution]
+        else:
+            return [n/sum(nitrogen_distribution) for n in nitrogen_distribution]
+    def wateruptake(self,ETp,alpha,layer_penetration,root_depth):
+        return [ETp/root_depth * alpha[i] * p for i,p in enumerate(layer_penetration)]
+       # return [ETp * root_distribution[i] * alpha[i] * p for i,p in enumerate(layer_penetration)]
     def nutrientuptake(self,rooting_depth,nutrient_conc,water_uptake,R_p,layer_penetration,c_min,K_m):
         P_a = [w*nutrient_conc[i] for i,w in enumerate(water_uptake)]
         A_p = max(R_p-sum(P_a),0.)
@@ -414,14 +419,18 @@ class Root:
     The method calls the functions vertical_growth(), physical_constraints(),
     root_paritioning() and calculate the object variables depth and Wtot. 
     """
-    def __init__(self,plant,root_fraction,rootability_thresholds,root_growth):
+    def __init__(self,plant,root_fraction,rootability_thresholds,root_growth,soil_profile):
         self.plant=plant
         self.rootability_thresholds=rootability_thresholds
         self.root_growth=root_growth
         self.fraction=Fraction(root_fraction)
         self.depth=1.
         self.Wtot=0.
-    def __call__(self,time_step,Wact):
+        self.zone=SoilLayer()
+        self.zone.get_rootingzone(soil_profile)
+        self.distribution=[0. for l in self.zone]
+        self.fgi=[]
+    def __call__(self,time_step,Wact,feeling_good_index):
         """
         call signature:
         
@@ -433,8 +442,13 @@ class Root:
         Root_growth,Wact,root_percent, bulkdensity and h are float-values.        
         The parameter time_step  set the duration of the growth process.
         """
+        self.fgi=feeling_good_index
         self.depth=self.depth+self.elongation(self.physical_constraints(self.plant.soil.get_bulkdensity(self.depth),self.plant.soil.get_pressurehead(self.depth),self.rootability_thresholds),self.root_growth)*self.plant.stress*time_step
-        self.Wtot=self.Wtot+self.root_partitioning(self.fraction(self.plant.thermaltime), Wact)*time_step
+        Wact_root=self.root_partitioning(self.fraction(self.plant.thermaltime), Wact)
+        self.Wtot=self.Wtot+Wact_root*time_step
+        self.distribution=self.allocate_biomass(self.distribution, Wact_root, feeling_good_index)
+    def allocate_biomass(self,distribution,Wact_root,feeling_good_index):
+        return [b+(Wact_root*feeling_good_index[i]) for i,b in enumerate(distribution)]
     def elongation(self,physical_constraints,root_growth):
         """
         call signature:
@@ -484,7 +498,6 @@ class Root:
         root_percent a crop specific coefficiant. Both are double values.        
         """
         return root_percent*Wact
-    
 class Shoot:
     """
     call signature:
@@ -774,7 +787,7 @@ class Event:
         self.time=time
         self.value=value
 
-class RootingZone:
+class SoilLayer:
     def __init__(self,lowerlimit=0.,upperlimit=0.,center=0.,thickness=0.,penetration=0.):
         self.lowerlimit=lowerlimit
         self.upperlimit=upperlimit
@@ -789,7 +802,7 @@ class RootingZone:
             yield horizon
     def get_rootingzone(self,soil_profile):
         for i,layer in enumerate(soil_profile):
-            self.rootingzone.append(RootingZone())
+            self.rootingzone.append(SoilLayer())
             self.rootingzone[i].lowerlimit=layer
             if i == 0: 
                 self.rootingzone[i].upperlimit = 0.
@@ -805,7 +818,7 @@ class RootingZone:
                 layer_penetration = 0.
             else: 
                 layer.penetration = rooting_depth - layer.upperlimit
-                    
+             
 ''' Plant Interfaces:
         
         Plant requires two interfaces:
