@@ -239,6 +239,8 @@ if __name__=='__main__':
     storage_fraction =[];ETpot=[];pF=[]
 
     start = time.time()
+    
+    
     ion()
     root=zeros(1826)
     alpha=zeros(1826)
@@ -273,10 +275,10 @@ if __name__=='__main__':
     ylim(0,300)
     ylabel('Biomass [g * m-1]')
     grid()
-
+    
     
     #Simulation period
-    while time_act<t.datetime(1984,12,31):
+    while time_act<t.datetime(1985,12,31):
         i+=1
         
         try:
@@ -284,7 +286,7 @@ if __name__=='__main__':
             ETp[i]+=plant.ETp
             ETa[i]+=sum(plant.s_h)
             root[i]+=-plant.root.depth
-            alpha[i]+=plant.stress
+            alpha[i]+=1-plant.stress
         except NameError:
            pass
         if i%7==0:
@@ -297,31 +299,34 @@ if __name__=='__main__':
             alpha_plot.set_ydata(alpha)
             draw()
         
+        
+        
         if field.issowing(time_act) == True:
             plant=wheat(c,c)
         if field.isharvest(time_act) == True:
             field.total_harvest.append(plant.Wtot)
             del plant
-        try:
+        if Plant.Count>=1:
             plant(time_act,'day',1.)
             c.flux=[s_h*-1. for s_h in plant.s_h]
-        except NameError:
+        else:
             c.flux=[0]*50
         set_results()        
-        if i%28==0:
-            try:
-                print time_act,plant.stage(plant.thermaltime)
-                #print time_act,plant.stage(plant.thermaltime),'stress',plant.stress,'water',sum(plant.s_h),'etp',plant.ETp,'depth',plant.root.depth
-                #print time_act,"ET= %0.2f" % plant.ETp,"Water uptake=%4.2f" % sum(plant.s_h),plant.ETp/plant.root.depth
+        if i%14==0:
+            if Plant.Count>=1:
+                print time_act,plant.stage(plant.thermaltime),plant.Wtot,plant.root.depth,plant.stress#,'stress',plant.stress,'water',sum(plant.s_h),'etp',plant.ETp,'depth',plant.root.depth,plant.Wtot
+                #print time_act ,'fgi',['%4.2f' %  a for a in plant.root.fgi][:10],sum(plant.root.fgi)
+                print time_act ,'distribution',['%4.2f' %  a for a in plant.root.distribution][:10],sum(plant.root.distribution),plant.root.Wtot
+                print time_act,"ET= %0.2f" % plant.ETp,"Water uptake=%4.2f" % sum(plant.s_h),'depth',plant.root.depth,'stress',plant.stress
                 #print time_act,'penetration' ,['%4.2f' % a for a in plant.penetration][:10]
                 #print time_act,'pF',['%4.2f' % a for a in c.pF][:10]
-                #print time_act,'alpha' ,['%4.2f' % a for a in plant.alpha][:10]
+                #print time_act,'alpha' ,['%4.2f' % a for a in plant.alpha][:10],sum(plant.alpha)
                 #print time_act,'pressure',['%4.2f' % a for a in plant.pressure_head][:10]
                 #print time_act,'matrix',['%4.2f' % -a for a in c.matrix_potential][:10]
                 #print time_act, 's_h', ['%4.2f' % s_h for s_h in plant.s_h][:10]
                 #print time_act, 'flux',['%4.2f' % f for f in c.flux][:10]
-            except NameError: 
-                print 'No crop'
+            else:
+                print 'No plant'
         c.run(cmf.day)
         time_act+=time_step
     elapsed = (time.time() - start)

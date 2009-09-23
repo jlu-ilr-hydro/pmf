@@ -1,5 +1,5 @@
 from pylab import *
-class CropEvapotranspiration:
+class WaterPool:
     """ Calculation of crop evapotranspiration(ETc) with the dual crop coefficient (Kc = Kcb + Ke):
     
         Predicts the effects of specific wetting events on 
@@ -27,11 +27,13 @@ class CropEvapotranspiration:
     """
     def __init__(self):
         pass
-    def calc_ETc(self,ETp,Kcb,Ke):
+    def __call__(self):
+        pass
+    def calc_ETc(self,ETo,Kcb,Ke):
         """ Returns ETc in [mm] from basal crop coefficient (Kcb) and 
             and soil evaporation (Ke)
         """
-        return ETp * (Kcb+Ke)
+        return ETo * (Kcb+Ke)
     def adjust_Kcb(self,Kcb_tab,windspeed,RHmin,h):
         """ - Kcb (Tab) the value for Kcb mid or Kcb end (if 0.45) taken from Table 17,
             - windspeed the mean value for daily wind speed at 2 m height over grass during the mid or late season growth stage [m s-1]
@@ -95,7 +97,7 @@ class CropEvapotranspiration:
     
         Kcb - basal crop coefficient
         """
-        return max((1.12 + (0.04*(windspeed-2.)-0.004*(RHmin-45))*(h/3.)**0.3),Kcb+0.05)
+        return max((1.2 + (0.04*(windspeed-2.)-0.004*(RHmin-45))*(h/3.)**0.3),Kcb+0.05)
     def calc_TEW(self,qFC,qWP,Ze):
         """
         TEW total evaporable water = maximum depth of water 
@@ -158,7 +160,7 @@ class CropEvapotranspiration:
         elif stage == 'CropDevelopment': return 0.5#0.1-0.8
         elif stage == 'Mid-season':return 1.#0.8-1.0
         elif stage == 'Late-season': return 0.5#0.2-0.2
-    def calc_De(self,De,P,RO,I,fw,E,few,DP,Tew=0.):
+    def calc_EvaporationLayer(self,De,P,RO,I,fw,E,few,DPe,Tew=0.):
         """
         The estimation of Ke in the calculation procedure requires a 
         daily water balance computation for the surface soil layer for
@@ -182,67 +184,247 @@ class CropEvapotranspiration:
         T  - depth of transpiration from the exposed and wetted fraction 
              of the soil surface layer on day i [mm],
         DP - deep percolation loss from the topsoil layer on day i if 
-             soil water content exceeds field capacity [mm], fw fraction of 
+             soil water content exceeds field capacity [mm],
+        fw - fraction of 
              soil surface wetted by irrigation [0.01 - 1],
         few- exposed and wetted soil fraction [0.01 - 1]
         """
-        return De-(P-RO)-(I/fw)+(E/few)+Tew+DP
+        return De-(P-RO)-(I/fw)+(E/few)+Tew+DPe
+    def example_ETc(self):
+        FC=0.23;WP=0.1
+        Ze=0.1
+        windspeed=1.6
+        RHmin=35
+        Kcb=[.3,.31,.32,.33,.34,.36,.37,.38,.39,.40]
+        ETo=[4.5,5.0,3.9,4.2,4.8,2.7,5.8,5.1,4.7,5.2]
+        calc_fc= lambda day: 0.92+(0.86-0.92)/(10.-1.)*day
+        De=[18.]
+        REW=8
+        TEW=18
+        Kcmax=1.21
+        day=1
+        while day<=10:
+            I = 40 if day == 1 else 0.
+            P = 6 if day == 6 else 0.
+            Kcmax=1.21
+            fc=calc_fc(day)
+            fw=0.8 if day <=5 else 1
+            few=min(fc,fw)
+            De_start=max(De[day-1]-I/fw-P,0)
+            Kr=self.calc_Kr(De_start, 18.,8.)
+            Ke=self.calc_Ke(Kr, Kcmax, Kcb[day-1], few)
+            E=ETo[day-1]*Ke
+            DPe=max(P + I/fw - De[day-1],0)
+            De_end=(self.calc_EvaporationLayer(De[day-1], P, 0., I, fw, E, few, DPe, 0.))
+            De.append(De_end)
+            Kc=Ke+Kcb[day-1]
+            ETc=self.calc_ETc(ETo[day-1], Kcb[day-1], Ke)
+            print 'day %i, ETo %4.1f, P %i, I/fw %i, 1-fc %4.2f, fw %4.1f, few %4.2f, Kcb % 4.2f, De_start %4.2f, Kr % 4.2f, Ke % 4.2f, E/few %4.1f, DPe %i,De_end %4.2f, E %4.2f, Kc %4.2f, ETc %4.2f' % (day,ETo[day-1],P,I/fw,fc,fw,few,Kcb[day-1],De_start,Kr,Ke,E/few,DPe,De_end,E,Kc,ETc)
+            day+=1
+    def ETc_adj(self,Ks,Kcb,Ke,ETc):
+        """ When the potential energy of the soil water drops below a 
+            threshold value, the crop is said to be water stressed. The 
+            effects of soil water stress are described by multiplying the
+            basal crop coefficient by the water stress coefficient, Ks.
+            
+             For soil water limiting conditions, Ks < 1. 
+             Where there is no soil water stress, Ks = 1.    
+        """
+        return (Ks*Kcb+Ke)*ETc
+    def calc_TAW(self,FC,WP,Zr):
+        """ the total available water in the root zone is the difference 
+            between the water content at field capacity and wilting point.
+            TAW is the amount of water that a crop can extract from its root zone,
+            and its magnitude depends on the type of soil and the rooting depth
+            
+            TAW the total available soil water in the root zone [mm],
+            FC - ater content at field capacity [m3 m-3],
+            WP - water content at wilting point [m3 m-3],
+            Zr - the rooting depth [m].
+        """
+        return 1000*(FC-WP)*Zr
+    def calc_RAW(self,p,TAW):
+        """ The fraction of TAW that a crop can extract from the root zone 
+            without suffering water stress is the readily available soil water.
+            
+            RAW- the readily available soil water in the root zone [mm],
+            p - average fraction of Total Available Soil Water (TAW) that can be depleted 
+            from the root zone before moisture stress (reduction in ET) occurs [0-1].
+            
+            The factor p differs from one crop to another. The factor p normally varies 
+            from 0.30 for shallow rooted plants at high rates of ETc (> 8 mm d-1) to 0.70
+            for deep rooted plants at low rates of ETc (< 3 mm d-1). A value of 0.50 for 
+            p is commonly used for many crops.
+        """
+        return p*TAW
+    def adjust_p(self,p_table,ETc):
+        """ The values for p apply for ETc 5 mm/day can be adjusted. 
+
+        p - fraction and ETc as mm/day. 
+        """
+        return p_table + 0.04*(5-ETc)
+    def calc_Ks(self,TAW,Dr,RAW):
+        """ Water content in me root zone can also be expressed by root zone depletion,
+        Dr, i.e., water shortage relative to field capacity. At field capacity, the root 
+        zone depletion is zero (Dr = 0). When soil water is extracted by evapotranspiration, 
+        the depletion increases and stress will be induced when Dr becomes equal to RAW. After 
+        the root zone depletion exceeds RAW (the water content drops below the threshold q t), 
+        the root zone depletion is high enough to limit evapotranspiration to less than potential 
+        values and the crop evapotranspiration begins to decrease in proportion to the amount of 
+        water remaining in the root zone.
+        
+        Ks - dimensionless transpiration reduction factor dependent on available soil water [0 - 1],
+        Dr - root zone depletion [mm],
+        TAW- total available soil water in the root zone [mm],
+        p  - fraction of TAW that a crop can extract from the root zone without suffering
+             water stress [-].
+        
+        When the root zone depletion is smaller than RAW, Ks = 1
+        For Dr > RAW, Ks:
+        """
+        return (TAW-Dr)/(TAW-RAW) if Dr > RAW else 1.
+    def calc_WaterBalance(self,Dr_previous_day,P,RO,I,CR,ETc,DP):
+        """ Returns Dr - root zone depletion at the end of day i [mm]
+            
+            the root zone can be presented by means of a container in which the water 
+            content may fluctuate. To express the water content as root zone depletion 
+            is useful. It makes the adding and subtracting of losses and gains straightforward 
+            as the various parameters of the soil water budget are usually expressed in terms of 
+            water depth. Rainfall, irrigation and capillary rise of groundwater towards the root 
+            zone add water to the root zone and decrease the root zone depletion. Soil evaporation, 
+            crop transpiration and percolation losses remove water from the root zone and increase 
+            the depletion.
+            
+            Dr_previous_day - water content in the root zone at the end of the previous day, i-1 [mm],
+            P  - precipitation on day i [mm],
+            RO - runoff from the soil surface on day i [mm],
+            I  - net irrigation depth on day i that infiltrates the soil [mm],
+            CR - capillary rise from the groundwater table on day i [mm],
+            ETc- crop evapotranspiration on day i [mm],
+            DP - water loss out of the root zone by deep percolation on day i [mm]
+            
+            By assuming that the root zone is at field capacity following heavy rain or 
+            irrigation, the minimum value for the depletion Dr is zero. At that moment no water is 
+            left for evapotranspiration in the root zone, Ks becomes zero, and the root zone 
+            depletion has reached its maximum value TAW.
+            
+            TAW > Dr >= 0
+            
+            The daily water balance, expressed in terms of depletion at the end of 
+            the day is
+        """
+        return Dr_previous_day - (P-RO) - I - CR + ETc + DP
+    def calc_InitialDepletion(self,FC,q,Zr):
+        """ To initiate the water balance for the root zone, the initial depletion Dr, i-1 should 
+        be estimated. 
+        
+        where q i-1 is the average soil water content for the effective root zone. Following heavy 
+        rain or irrigation, the user can assume that the root zone is near field capacity, 
+        i.e., Dr, i-1  0
+        
+        The initial depletion can be derived from measured soil water content by:
+        """
+        return 1000*(FC-q)*Zr
+    def calc_DP(self,P,RO,I,ETc,Dr_previous_day):
+        """ Returns DP
+            Following heavy rain or irrigation, the soil water content in the root zone might 
+            exceed field capacity. In this simple procedure it is assumed that the soil water content 
+            is at q FC within the same day of the wetting event, so that the depletion Dr 
+            becomes zero. Therefore, following heavy rain or irrigation.
+            
+            
+            The DP calculated for calc_WaterBalance() is independent of the DP calculted in
+            calc_De().As long as the soil water content in the root zone is below field 
+            capacity (i.e., Dr, i > 0), the soil will not drain and DPi = 0.
+        """
+        return max(P - RO + I - ETc - Dr_previous_day,0)
+    def example_irrigation(self): 
+        """ Plan the irrigation applications. It is assumed that:
+
+            - irrigations are to be applied when RAW is depleted,
+            
+            - the depletion factor (p) is 0.6,
+            
+            - all irrigations and precipitations occur early in the day,
+            
+            - the depth of the root zone (Zr) on day 1 is 0.3 m and increases to 0.35 m by day 10,
+            
+            - the root zone depletion at the beginning of day 1 (Dr, i-1) is RAW.
+            
+            From Eq. 82
+                
+            
+            TAW = 1000 (0.23 - 0.10) Zr, i = 130 Zr, i [mm]
+            
+            From Eq. 83
+                
+            
+            RAW = 0.6 TAW = 78 Zr, i [mm]
+            
+            On day 1,
+                
+            
+            when Zr = 0.3 m: Dr, i-1 = RAW = 78 (0.3) = 23 mm
+        """
+        ETo=[4.5,5.0,3.9,4.2,4.8,2.7,5.8,5.1,4.7,5.2]#[mm]
+        Zr=[.3,.31,.31,.32,.32,.33,.33,.34,.34,.35]#[m]
+        I=[40.,0.,0.,0.,0.,0.,0.,0.,0.,27.]
+        day=1
+        ETc=[]
+        Dr=[23.]
+        Ke=[.91,.9,.72,.37,.18,.64,.45,.17,.08,.81]
+        Kcb=[.3,.31,.32,.33,.34,.36,.37,.38,.39,.40]
+        #Constant parameter
+        FC=0.23;WP=0.1
+        p=0.6        
+        De=[18.]
+        
+        while day <= 10:
+            #Get rain:
+            P = 0. if day != 6 else 6.
+            Dr_start=round(max(Dr[day-1]-I[day-1]-P,0.))          
+            
+            #Calculation of Ks paramter:
+            #Total and readiely available water (FC,WP,p are constant)
+            TAW=self.calc_TAW(FC, WP, Zr[day-1])
+            RAW=round(self.calc_RAW(p, TAW))
+            Ks=self.calc_Ks(TAW, Dr_start, RAW)
+            
+            #Calc ETc
+            Kc=Kcb[day-1]+Ke[day-1]
+            ETc=self.calc_ETc(ETo[day-1], Kcb[day-1], Ke[day-1])
+            
+           
+            
+            #Calc soil water balance
+            DP=self.calc_DP(P, 0., I[day-1], 0., Dr[day-1]) if Dr_start == 0. else 0.
+            Dr_end=round(self.calc_WaterBalance(Dr[day-1], P, 0., I[day-1], 0., ETc, DP))
+            
+            #Results end
+            Dr.append(Dr_end)
+            print 'day %i, ETp %4.1f,Zr %4.2f, RAW %4.2f, TAW %4.2f, Dr_start %4.2f, P %4.2f, I %4.2f, Ks %4.2f, Kcb %4.2f, Ke %4.2f, Kc %4.2f, ETc %4.1f, DP %4.2f, Dr_end %4.2f' % (day,ETo[day-1],Zr[day-1],RAW,TAW,Dr_start,P,I[day-1],Ks,Kcb[day-1],Ke[day-1],Kc,ETc,DP,Dr_end)
+            day+=1
+water=WaterPool()
+water.example_irrigation()
 
 
-#qFC = 0.23#sandyloam
-#qWp = 0.1#sandyloam
-#Ze = 0.1
-#h = 0.3
-#windspeed = 1.6#average windspeed in 2m
-#RHmin = 35 #35%
-#Kcb on day 1 0.1, increases to 40 by day 10
 
-get_Kcb = lambda day: 0.3+(0.4-0.3)/(10-1)*day
-get_exposed_fc = lambda day: 0.92+(0.86-0.92)/(10.-1.)*day
-De=[0,5,11,14,16,11,13,16,17,18]
-ETp=[4.5,5.0,3.9,4.2,4.8,2.7,5.8,5.1,4.7,5.2]
-c=CropEvapotranspiration()
-Kc_res=[]
-Ke_res=[]
-Kcb_res=[]
-for i in range(1,10):
-    print i
-    Kcb=get_Kcb(i)
-    h=0.3
-    Kcmax=c.calc_Kcmax(Kcb, 0.3, 1.6, 35)
-    fc = get_exposed_fc(i)
-    fw = 0.8 if i<=5 else 1.
-    few = min(fc,fw)#richtig
-    Kr = c.calc_Kr(De[i-1], 18., 8.)
-    Ke = c.calc_Ke(Kr, Kcmax, Kcb, few)
-    E = ETp[i]*c.calc_Ke(Kr, Kcmax, Kcb, few)
-    DP = 0. if i != 1 else 32.
-    P = 0. if i!=6 else 6.
-    I = 0. if i!=1 else 40.
-    RO=0.
-    Tew=0. #???????
-    #de = c.calc_De(De[i-1], P, RO, I, fw, E, few, DP,Tew)
-    #De.append(de)
-    ETc = c.calc_ETc(ETp[i], Kcb, Ke)
-    Kc_res.append((Ke+Kcb))
-    Ke_res.append(Ke)
-    Kcb_res.append(Kcb)
-    print 'day',i,'ETp','%4.2f' % ETp[i],'P-RO','%4.2f' % P,'I/fw','%4.2f' % (I/fw),'1-fc','%4.2f' % fc,'fw','%4.2f' % fw,'few','%4.2f' % few,'Kcb', '%4.2f' % Kcb,'De_start', '%4.2f' % De[i-1],'Kr', '%4.2f' % Kr,'Ke', '%4.2f' % Ke,'E/few', '%4.2f' % (E/few),'DP', '%4.2f' % DP,'De_end', '%4.2f' % De[i],'E', '%4.2f' % E,'Kc', '%4.2f' % (Kcb+Ke),'ETc', '%4.2f' % ETc                                                           
 
-plot(Kc_res,label='Kc')
-plot(Ke_res,label='Ke')
-plot(Kcb_res,label='Kcb')
-legend(loc=0)
-show()
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+         
