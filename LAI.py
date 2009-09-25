@@ -1,6 +1,9 @@
 class Leaf():
-    def __init(self):
-        pass
+    def __init(self,specific_weight):
+        self.specific_weight=specific_weight
+        self.lai=0.
+    def __call__(self,biomass):
+        self.lai+=self.convert(biomass, self.specific_weight)
     def convert(self,biomass,specific_weight):
         """ Calculates LAI [ha/ha]:
         
@@ -23,3 +26,4 @@ class Leaf():
         """
         weight_factor=1.
         return weight_factor*fixed_specific_weight
+    

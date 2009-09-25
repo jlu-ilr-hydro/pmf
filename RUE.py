@@ -1,6 +1,19 @@
-class GrainYield:
-    def __init__(self):
-        pass
+from pylab import *
+class Biomass:
+    def __init__(self,RUE,k):
+        self.RUE=RUE
+        self.k=k
+        self.total=0.
+        self.growthrate=0.
+    @property
+    def GrowthRate(self):
+        return self.growthrate
+    @property
+    def Total(self):
+        return self.total
+    def __call__(self,Rs,LAI):
+        self.growthrate = self.grow(self.PAR_a(Rs, self.intercept(LAI, self.k)), self.RUE)
+        self.total += self.growthrate
     def PAR_a(self,Rs,interception):
         """ The PARa can be calculated from the fraction 
             of solar radiation at the top of the canopy, which 
@@ -15,10 +28,8 @@ class GrainYield:
                 allowing for a 6 percent albedo and for inactive 
                 radiation absorption
         """
-        
-        
         return Rs*0.5*0.9*(1-interception)
-    def intercept(self,LAI,k=0.5):
+    def intercept(self,LAI,k):
         """ The relationship between I/I0 and LAI fits a
         negative exponential (similar to the Beer Lambert Law).
         
@@ -32,7 +43,7 @@ class GrainYield:
         leaves but a LAI of only about 4.0 for more horizontal leaves
         """
         return exp(-k*LAI)
-    def grow(self,PARa,RUE=3.0):
+    def grow(self,PARa,RUE):
         """ total canopy net photosynthesis is linearly related to PARA and so is 
         crop growth rate (CGR, g/m2 d), which is the net accumulation of dry weight
         
@@ -53,18 +64,60 @@ class GrainYield:
         KW - the kernel weight (g)
         """
         return KNO*KW
-    def harvest(self,GrainYield,HarvestIndex=1.):
-        return GrainYield*HarvestIndex
-    
-    def kernel_number(self,spike_dryweight):
-        """ Spike dry weight appears to be a major determinant of KNO
+class Leaf:
+    def __init__(self,specific_weight):
+        self.specific_weight=specific_weight
+        self.lai=1.
+    @property
+    def LAI(self):
+        return self.lai
+    def __call__(self,biomass):
+        self.lai+=self.convert(biomass, self.specific_weight)
+    def convert(self,biomass,specific_weight):
+        """ Calculates LAI [ha/ha]:
+        
+        The growth of leaf area is related to growth in leaf weight.
+        The specific leaf weight of new leaves change with crop age.
+        Leaf area is determined by dividing the weight of
+        live leaves by the specific leaf weight
+        
+        biomass - biomass of the leafs[kg/ha]
+        specific_weight - dry weight of leaves (no reserves,
+        only structural dry matter) with a total one-sided 
+        leaf area of one hectare [kg/ha]
         """
-        pass
-    
-    
-    
-    
-    
-    
-    
-    
+        return biomass/specific_weight
+    def get_specific_weight(self,thermaltime,fixed_specific_weight):
+        """
+        The specific leaf weight of new leaves is calculated by
+        multiplying the specific leaf weight constant with a factor that depends on the
+        development stage of the crop.
+        """
+        weight_factor=1.
+        return weight_factor*fixed_specific_weight
+     
+plant=Biomass(3.,0.5)
+leaf=Leaf(40.)
+day=1
+res=[]
+Rs=12
+
+
+while day<=100:
+    plant(Rs,leaf.LAI)
+    fraction=.5 if day<50 and day>15 else 0.
+    leaf(plant.GrowthRate*0.75*fraction)
+    res.append(plant.Total)
+    print 'growthrate g/m2 %4.2f, biomass g/m2 %4.2f, PAR MJ/m2 %4.2f, LAI m2/m2 %4.2f' % (plant.GrowthRate,plant.Total,plant.PAR_a(Rs, plant.intercept(leaf.LAI, plant.k)),leaf.LAI)
+    day+=1
+
+
+
+
+
+
+
+
+
+
+

@@ -1,6 +1,5 @@
 from pylab import *
-from CG_plant import *
-from WaterBalance import *
+from FlowerPower import *
 import cmf
 from cmf_setup import cmf1d
 import struct
@@ -100,7 +99,7 @@ def show_graph():
 
     fig.add_subplot(427)
     plot(shoot_fraction,label='shoot')
-    plot(penetrated_layer,label='root')
+    plot(root_layer,label='root')
     legend(loc=0)
     ylim(-0.1,1.1)
     xlabel('Time in days')
@@ -133,18 +132,18 @@ def set_results():
         biomass_root.append(plant.root.Wtot);biomass_stem.append(plant.shoot.stem.Wtot)
         biomass_leaf.append(plant.shoot.leaf.Wtot);biomass_storage.append(plant.shoot.storage_organs.Wtot)
         thermaltime.append(plant.thermaltime);rooting_depth.append(plant.root.depth*-1.)
-        penetrated_layer.append(plant.root.fraction(plant.thermaltime))
-        shoot_fraction.append(plant.shoot.fraction(plant.thermaltime))
-        leaf_fraction.append(plant.shoot.leaf.fraction(plant.thermaltime))
-        stem_fraction.append(plant.shoot.stem.fraction(plant.thermaltime))
-        storage_fraction.append(plant.shoot.storage_organs.fraction(plant.thermaltime))
+        root_fraction.append(plant.root.Fraction)
+        shoot_fraction.append(plant.shoot.Fraction)
+        leaf_fraction.append(plant.shoot.leaf.Fraction)
+        stem_fraction.append(plant.shoot.stem.Fraction)
+        storage_fraction.append(plant.shoot.storage_organs.Fraction)
         ETpot.append(plant.ET.reference)
     except NameError:
         biomass_plant.append(0);biomass_shoot.append(0)
         biomass_root.append(0);biomass_stem.append(0)
         biomass_leaf.append(0);biomass_storage.append(0)
         thermaltime.append(0);rooting_depth.append(0)
-        penetrated_layer.append(0)
+        root_fraction.append(0)
         shoot_fraction.append(0)
         leaf_fraction.append(0)
         stem_fraction.append(0)
@@ -178,36 +177,34 @@ class Field:
                       ,t.datetime(1980,3,1),t.datetime(1981,3,1),t.datetime(1982,3,1),t.datetime(1983,3,1),t.datetime(1984,3,1)
                       ,t.datetime(1985,3,1),t.datetime(1986,3,1),t.datetime(1987,3,1),t.datetime(1988,3,1),t.datetime(1989,3,1)
                       ,t.datetime(1990,3,1)]
-        harvest_date=[t.datetime(1991,9,30),t.datetime(1992,9,30),t.datetime(1993,9,30),t.datetime(1994,9,30),t.datetime(1995,9,30)
-                      ,t.datetime(1996,9,30),t.datetime(1997,9,30),t.datetime(1998,9,30),t.datetime(1999,9,30),t.datetime(2000,9,30)
-                      ,t.datetime(1980,9,30),t.datetime(1981,9,30),t.datetime(1982,9,30),t.datetime(1983,9,30),t.datetime(1984,9,30)
-                      ,t.datetime(1985,9,30),t.datetime(1986,9,30),t.datetime(1987,9,30),t.datetime(1988,9,30),t.datetime(1989,9,30)
-                      ,t.datetime(1990,9,30)]
+        harvest_date=[t.datetime(1991,8,30),t.datetime(1992,8,30),t.datetime(1993,8,30),t.datetime(1994,8,30),t.datetime(1995,8,30)
+                      ,t.datetime(1996,8,30),t.datetime(1997,8,30),t.datetime(1998,8,30),t.datetime(1999,8,30),t.datetime(2000,8,30)
+                      ,t.datetime(1980,8,30),t.datetime(1981,8,30),t.datetime(1982,8,30),t.datetime(1983,8,30),t.datetime(1984,8,30)
+                      ,t.datetime(1985,8,30),t.datetime(1986,8,30),t.datetime(1987,8,30),t.datetime(1988,8,30),t.datetime(1989,8,30)
+                      ,t.datetime(1990,8,30)]
         return [sowing_date,harvest_date]
     def __call__(self,time_act):
         if self.issowing(time_act) == True:
             return True
         elif self.isharvest(time_act) == True:
             return True
-def wheat(soil,atmosphere,WaterBalance):
+def wheat(soil,atmosphere):
     #Parameter development:
-    stage=[['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],
-                   ['Anthesis',901.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]]
-    #Parameter partitioning:
-    root_fraction=[[160.,1.],[901.,0.5],[1665.,0.]]
-    shoot_fraction=[[160.,0.],[901.,0.5,],[1665.,1.,]]
-    leaf_fraction=[[160.,0.],[901.,0.5],[1174.,0.375],[1665.,0.]]
-    stem_fraction=[[160.,0.],[901.,0.5],[1174.,0.375],[1665.,0.]]
-    storage_fraction=[[160.,0.],[901.,0.0],[1174.,0.25],[1665.,1.]]
-    plant=Plant(soil,atmosphere,WaterBalance,stage,root_fraction,shoot_fraction,leaf_fraction,stem_fraction,
-                 storage_fraction)
-    return plant
+    stage=[['Emergence',160.],['Leaf development/Tillering',700.],['Stem elongation',900.],
+                   ['Anthesis',1300.],['Seed fill',1500.],['Maturity',2000.]]
+    #Parameter partitioning
+    root_fraction=[[160.,1.],[1300.,0.25],[2000.,0.]]
+    shoot_fraction=[[160.,0.],[1300.,0.75,],[2000.,1.]]
+    leaf_fraction=[[160.,0.],[700.,0.5],[1300.,0.3],[2000.,0.]]
+    stem_fraction=[[160.,0.],[700.,0.5],[1300.,0.7],[2000.,0.]]
+    storage_fraction=[[1300.,0.0],[2000.,1.]]
+    wheat=Plant(soil,atmosphere,stage,root_fraction,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction)
+    return wheat
 if __name__=='__main__':
     import datetime as t
     import time
     #Create cmf1d instance: sand=60,silt=30,clay=10,c_org=2.0,layercount=20,layerthickness=.1, saturated_depth=2.5
     c=cmf1d(sand=60,silt=30,clay=10,c_org=2.0,layercount=20,layerthickness=.1)
-    w=WaterBalance_MatrixPotential()
     load_meteo(c.project,stationname='Giessen')
     c.cell.saturated_depth=5
     #Create management with sowing and harvest dates
@@ -225,10 +222,10 @@ if __name__=='__main__':
     water_uptkake=[];nutrient_uptake=[]
     shoot_fraction=[];penetrated_layer=[]
     matrix_potential=[];wetness=[];flux=[]
-    penetrated_layer=[];shoot_fraction=[];
+    root_fraction=[];
     leaf_fraction=[];stem_fraction=[];
     storage_fraction =[];ETpot=[];pF=[]
-
+    lai=[]
     start = time.time()
     
     """
@@ -268,7 +265,6 @@ if __name__=='__main__':
     ylabel('Biomass [g * m-1]')
     grid()
     """
-    
     #Simulation period
     while time_act<t.datetime(1980,9,30):
         i+=1
@@ -291,26 +287,32 @@ if __name__=='__main__':
             alpha_plot.set_ydata(alpha)
             draw()
         """
+        
         if field.issowing(time_act) == True:
-            plant=wheat(c,c,w)
+            plant=wheat(c,c)
         if field.isharvest(time_act) == True:
             field.total_harvest.append(plant.Wtot)
         if Plant.Count>=1:
             plant(time_act,'day',1.)
-            c.flux=[s_h*-1. for s_h in plant.water.uptake]
+            c.flux=[s_h*-1. for s_h in plant.water.Uptake]
         else:
             c.flux=[0]*50
         set_results()        
         if i%1==0:
             if Plant.Count>=1:
-                print time_act, 'ET %4.2f, sh %4.2f,comp %4.2f, sh_comp %4.2f' % (plant.ET.reference,sum(plant.water.uptake),sum(plant.water.compensation),sum(plant.water.s_h_compensated))
+                lai.append(plant.shoot.leaf.LAI)
+                #print time_act, 'ET %4.2f, sh %4.2f,comp %4.2f, sh_comp %4.2f, rootingdepth %4.2f' % (plant.ET.reference,sum(plant.water.Uptake),sum(plant.water.compensation),sum(plant.water.s_h_compensated),plant.root.depth)
                 #print time_act ,'fgi',['%4.2f' %  a for a in plant.root.fgi][:10],sum(plant.root.fgi)
                 #print time_act,'pF',['%4.2f' % a for a in c.pF][:10]
-                #print time_act, 's_p', ['%4.2f' % u for u in plant.s_p]
-                #print time_act, 's_h', ['%4.2f' % u for u in plant.water.uptake]
-                #print time_act, 'alpha', ['%4.2f' % u for u in plant.water.alpha]#[:10]
-                #print time_act, 's_h_comp', ['%4.2f' % u for u in plant.water.uptake_comp]#[:10]
+                #print time_act, 's_h', ['%4.2f' % u for u in plant.water.Uptake][:10]
+                #print time_act, 'alpha', ['%4.2f' % u for u in plant.water.alpha][:10]
+                #print time_act, 's_h_comp', ['%4.2f' % u for u in plant.water.Compensated_Uptake][:10]
                 #print time_act, 'flux',['%4.2f' % f for f in c.flux][:10]
+                #print time_act, 'Shoot %4.2f, Root %4.2f, Leaf %4.2f, Stem %4.2f, Storage %4.2f' % (plant.shoot.Fraction,plant.root.Fraction,plant.shoot.leaf.Fraction,plant.shoot.stem.Fraction,plant.shoot.storage_organs.Fraction)
+                #print time_act, 'LAI %4.2f, Growth %4.2f, total %4.2f, Leaf weight %4.2f, Leaf fraction %4.2f' % (plant.shoot.leaf.LAI,plant.biomass.GrowthRate,plant.biomass.Total,plant.shoot.leaf.Dryweight,plant.shoot.leaf.Fraction)
+                #print plant.atmosphere.get_Rn(time_act,0.12,True),plant.atmosphere.get_Rs(time_act),plant.biomass.PAR_a(plant.atmosphere.get_Rs(time_act),plant.biomass.intercept(plant.shoot.leaf.LAI,0.5))
+                print plant.stage(plant.thermaltime),i-90, 'LAI %4.2f, Growth %4.2f, total %4.2f, Leaf weight %4.2f, Leaf fraction %4.2f' % (plant.shoot.leaf.LAI,plant.biomass.GrowthRate,plant.biomass.Total,plant.shoot.leaf.Dryweight,plant.shoot.leaf.Fraction)
+                print 'LAI %4.2f, Leaf weight %4.2f' % (plant.biomass.total*plant.shoot.fraction(plant.thermaltime)*plant.shoot.leaf.fraction(plant.thermaltime)/plant.shoot.leaf.specific_weight,plant.biomass.total*plant.shoot.fraction(plant.thermaltime)*plant.shoot.leaf.fraction(plant.thermaltime))
             else:
                 print 'No plant'
         c.run(cmf.day)
@@ -318,7 +320,6 @@ if __name__=='__main__':
     elapsed = (time.time() - start)
 
 print elapsed
-
  
  
 
