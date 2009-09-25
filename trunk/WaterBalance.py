@@ -52,3 +52,65 @@ class WaterBalance_MatrixPotential:
 class WaterBalance_ContainerApproach:
     pass
 
+class ET_FAO:
+    def __init__(self):
+        self.ETo=0.
+        self.ETc=0.
+        self.ETc_adj=0.
+    @property
+    def reference(self):
+        return self.ETo
+    @property
+    def cropspecific(self):
+        return self.ETc
+    @property
+    def adjusted(self):
+        return self.ETc_adjusted
+    @property
+    def __call__(self,Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance):
+        self.ETo = self.reference_ET(Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt=0,printSteps=0)
+    def reference_ET(self,Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt=0,printSteps=0,daily=True):
+        """Calculates the potential ET using the famous Penmonteith (FAO 1994) eq.
+        daily = if True, the daily average will be calculated, else the hourly
+        Rn = Net radiation in MJ/m2
+        T = Avg. Temp. for the timespan
+        e_s,e_a Sat. vap. press, act. vap. press, Pa
+        windspeed = in m/s
+        alt = Altitude in m o.s.l.
+        vegH = Height of the vegetation in m
+        LAI = Leaf area index (both sides) in m2/m2
+        stomatal_resistance = Resistance of open stomata against transpiration s/m
+        print_steps = if true, some debiug info 
+        """
+        delta=4098*(0.6108*exp(17.27*T/(T+237.3)))/(T+237.3)**2
+        if daily:   G=0
+        else : G=(0.5-greater(Rn,0)*0.4)*Rn
+        P=101.3*((293-0.0065*alt)/293)**5.253
+        c_p=0.001013
+        epsilon=0.622
+        lat_heat=2.45
+        gamma=c_p*P/(lat_heat*epsilon)
+        R=0.287
+        rho_a=P/(1.01*(T+273)*R)
+        d=0.6666667*vegH
+        z_om=0.123*vegH
+        z_oh=0.1*z_om
+        k=0.41
+        r_a_u= log((2-d)/z_om)*log((2-d)/z_oh)/k**2
+        r_a=r_a_u/windspeed
+        r_s=100./(0.5*LAI)
+        nominator=(delta+gamma*(1+r_s/r_a))
+        ATcoeff=epsilon*3.486*86400/r_a_u/1.01
+        #AeroTerm=(rho_a*c_p*(e_s-e_a)/r_a)/nominator
+        AeroTerm=gamma/nominator*ATcoeff/(T+273)*windspeed*(e_s-e_a)
+        RadTerm=(delta*(Rn-G))/(nominator*lat_heat)
+        if printSteps:
+           print "ET= %0.2f,AT= %0.2f,RT=   %0.2f" % (AeroTerm+RadTerm,AeroTerm,RadTerm)
+           print "Rn= %0.2f,G=  %0.2f,Dlt=  %0.2f" % (Rn,G,delta)
+           gamma_star=gamma*(1+r_s/r_a)
+           print "gamma*=%0.2f,dl/(dl+gm*)=%0.2f,gm/(dl+gm*)=%0.2f" % (gamma_star,delta/(delta+gamma_star),gamma/(delta+gamma_star))
+           print "r_a=%0.2f,r_s=%0.2f,gamma=%0.2f" % (r_a,r_s,gamma)
+           print "rho_a=%0.2f,c_p=%0.2f" % (rho_a,c_p)
+           print "P=  %0.2f,e_a=%0.2f,e_s=  %0.2f" % (P,e_a,e_s)
+        return AeroTerm+RadTerm
+
