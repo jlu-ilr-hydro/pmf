@@ -92,14 +92,16 @@ class Plant:
                                    ,self.atmosphere.get_es(time_act),self.atmosphere.get_ea(time_act)
                                    ,self.atmosphere.get_windspeed(time_act),vegH=self.Wtot/900.+0.01
                                    ,LAI=self.shoot.leaf.LAI,stomatal_resistance=self.shoot.leaf.stomatal_resistance)
+        
         #Compute water uptake
             self.water([self.ET.reference/self.root.depth * l.penetration for l in self.root.zone]
                          ,[self.soil.get_pressurehead(l.center) for l in self.root.zone],self.pressure_threshold)
         if self.stage.is_growingseason(self.thermaltime):
             ''' Potential growth  '''
+            self.biomass(self.atmosphere.get_Rs(time_act),self.shoot.leaf.LAI)
             Wpot = self.assimilate(self.Wtot, self.Wmax, self.growth)
             
-            self.biomass(self.atmosphere.get_Rs(time_act),self.shoot.leaf.LAI)
+            
             
             ''' Nutrient uptake '''
             self.R_p=self.nitrogen_demand(Wpot, self.nitrogen_content(self.plant_N, self.thermaltime))
@@ -871,7 +873,7 @@ class Biomass:
         self.total=0.
         self.growthrate=0.
     @property
-    def GrowthRate(self):
+    def CGR(self):
         return self.growthrate
     @property
     def Total(self):
