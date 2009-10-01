@@ -3,6 +3,7 @@ from FlowerPower import *
 import cmf
 from cmf_setup import cmf1d
 import struct
+from swc import *
 def timeseries_from_file(f):
 
     """ Loads a timeseries saved with to_file from a file
@@ -128,15 +129,10 @@ def show_graph():
     show()
 def set_results():    
     try:
-        biomass_plant.append(plant.Wtot);biomass_shoot.append(plant.shoot.Wtot)
+        biomass_plant.append(plant.biomass.Total);biomass_shoot.append(plant.shoot.Wtot)
         biomass_root.append(plant.root.Wtot);biomass_stem.append(plant.shoot.stem.Wtot)
         biomass_leaf.append(plant.shoot.leaf.Wtot);biomass_storage.append(plant.shoot.storage_organs.Wtot)
-        thermaltime.append(plant.thermaltime);rooting_depth.append(plant.root.depth*-1.)
-        root_fraction.append(plant.root.Fraction)
-        shoot_fraction.append(plant.shoot.Fraction)
-        leaf_fraction.append(plant.shoot.leaf.Fraction)
-        stem_fraction.append(plant.shoot.stem.Fraction)
-        storage_fraction.append(plant.shoot.storage_organs.Fraction)
+        thermaltime.append(plant.developmentstage.Thermaltime);rooting_depth.append(plant.root.depth*-1.)
         ETpot.append(plant.ET.reference)
     except NameError:
         biomass_plant.append(0);biomass_shoot.append(0)
@@ -150,13 +146,7 @@ def set_results():
         storage_fraction.append(0);ETpot.append(0)  
     matrix_potential.append(c.matrix_potential);wetness.append(c.wetness);flux.append(c.flux); 
     pF.append([log10(-min(mp,-1e-2))+2 for mp in c.matrix_potential])
-def set_flux(water_uptake):
-    try:
-        c.flux=[s_h*-1. for s_h in plant.s_h]
-    except NameError:
-        c.flux=[0]*50
-        
-def plot_res(labels,res,y_label='x-axes',x_label='y-axes'):
+def plot_res(labels,res,y_label='y',x_label='x'):
     for i in range(len(res[0])):
         plot([part[i] for part in res],label=labels[i])
     grid()
@@ -164,47 +154,16 @@ def plot_res(labels,res,y_label='x-axes',x_label='y-axes'):
     ylabel(y_label)
     legend(loc=0)
     show()
-
-    
-
-class Field:
-    def __init__(self):
-        self.sowing_date=self.set_management()[0]
-        self.harvest_date=self.set_management()[1]
-        self.total_harvest=[]
-        self.dict_of_plants={}
-    def isharvest(self,time_act):
-        for date in self.harvest_date:
-            if time_act==date:
-                return True
-                break
-    def issowing(self,time_act):
-        for date in self.sowing_date:
-            if time_act==date:
-                return True
-                break
-    def set_management(self):
-        sowing_date=[t.datetime(1991,3,1),t.datetime(1992,3,1),t.datetime(1993,3,1),t.datetime(1994,3,1),t.datetime(1995,3,1)
-                      ,t.datetime(1996,3,1),t.datetime(1997,3,1),t.datetime(1998,3,1),t.datetime(1999,3,1),t.datetime(2000,3,1)
-                      ,t.datetime(1980,3,1),t.datetime(1981,3,1),t.datetime(1982,3,1),t.datetime(1983,3,1),t.datetime(1984,3,1)
-                      ,t.datetime(1985,3,1),t.datetime(1986,3,1),t.datetime(1987,3,1),t.datetime(1988,3,1),t.datetime(1989,3,1)
-                      ,t.datetime(1990,3,1)]
-        harvest_date=[t.datetime(1991,8,30),t.datetime(1992,8,30),t.datetime(1993,8,30),t.datetime(1994,8,30),t.datetime(1995,8,30)
-                      ,t.datetime(1996,8,30),t.datetime(1997,8,30),t.datetime(1998,8,30),t.datetime(1999,8,30),t.datetime(2000,8,30)
-                      ,t.datetime(1980,8,30),t.datetime(1981,8,30),t.datetime(1982,8,30),t.datetime(1983,8,30),t.datetime(1984,8,30)
-                      ,t.datetime(1985,8,30),t.datetime(1986,8,30),t.datetime(1987,8,30),t.datetime(1988,8,30),t.datetime(1989,8,30)
-                      ,t.datetime(1990,8,30)]
-        return [sowing_date,harvest_date]
-    def __call__(self,time_act):
-        if self.issowing(time_act) == True:
-            return True
-        elif self.isharvest(time_act) == True:
-            return True
 def wheat(soil,atmosphere):
     #Parameter development:
     stage=[['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],
                    ['Anthesis',901.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]]
     
+    shoot_percent =[.0,.9,.9,.9,.95,1.,1.,1.]
+    root_percent = [.0,.1,.1,.1,.05,.0,.0,.0]
+    leaf_percent = [[.0,.5,.5,.3,0.,.0,.0,.0][i]*perc for i,perc in enumerate(shoot_percent)]
+    stem_percent = [[.0,.5,.5,.7,.3,.0,.0,.0][i]*perc for i,perc in enumerate(shoot_percent)]
+    storage_percent = [[.0,.0,.0,.0,.7,1.,1.,1.][i]*perc for i,perc in enumerate(shoot_percent)]
     #Partitioning coefficiants:
     root=[['Emergence',0.],['Stem elongation',0.1],['Anthesis',0.05],['Maturity',0.]]
     shoot=[['Emergence',0.],['Stem elongation',0.9],['Anthesis',0.95],['Maturity',1.]]
@@ -213,38 +172,115 @@ def wheat(soil,atmosphere):
     storage=[['Seed fill',0.],['Anthesis',0.7],['Maturity',1.]]
     def fractioning(plant_organ,stage):
         return [[max([s[1] if s[0] == item[0] else 0. for i,s in enumerate(stage)]),item[1]] for item in plant_organ]
-    wheat=Plant(soil,atmosphere,stage,fractioning(root,stage),fractioning(shoot,stage),
-                fractioning(leaf,stage),fractioning(stem,stage),fractioning(storage,stage))
+    wheat=Plant(soil,atmosphere,stage,shoot_percent,root_percent,
+                leaf_percent,stem_percent,storage_percent)
     return wheat
+
+class Field:
+    def __init__(self):
+        self.sowing=sowing
+        self.harvest=harvest
 if __name__=='__main__':
     import datetime as t
     import time
-    #Create cmf1d instance: sand=60,silt=30,clay=10,c_org=2.0,layercount=20,layerthickness=.1, saturated_depth=2.5
     c=cmf1d(sand=60,silt=30,clay=10,c_org=2.0,layercount=20,layerthickness=.1)
     load_meteo(c.project,stationname='Giessen')
     c.cell.saturated_depth=5
-    #Create management with sowing and harvest dates
-    field=Field()
-    #Startng time of simulation
     time_act=t.datetime(1980,1,1)
-    #Timestep: must be daily
     time_step=t.timedelta(1)
     c.t=time_act
     i=0
-    
-    #Results
-    biomass_plant=[];biomass_shoot=[];biomass_root=[];biomass_stem=[]
-    biomass_leaf=[];biomass_storage=[];thermaltime=[];rooting_depth=[]
-    water_uptkake=[];nutrient_uptake=[]
-    shoot_fraction=[];penetrated_layer=[]
-    matrix_potential=[];wetness=[];flux=[]
-    root_fraction=[];
-    leaf_fraction=[];stem_fraction=[];
-    storage_fraction =[];ETpot=[];pF=[]
     start = time.time()
-    
-    
-    """
+    sowing_date=[t.datetime(1991,3,1),t.datetime(1992,3,1),t.datetime(1993,3,1),t.datetime(1994,3,1),t.datetime(1995,3,1)
+                      ,t.datetime(1996,3,1),t.datetime(1997,3,1),t.datetime(1998,3,1),t.datetime(1999,3,1),t.datetime(2000,3,1)
+                      ,t.datetime(1980,3,1),t.datetime(1981,3,1),t.datetime(1982,3,1),t.datetime(1983,3,1),t.datetime(1984,3,1)
+                      ,t.datetime(1985,3,1),t.datetime(1986,3,1),t.datetime(1987,3,1),t.datetime(1988,3,1),t.datetime(1989,3,1)
+                      ,t.datetime(1990,3,1)]
+    harvest_date=[t.datetime(1991,8,30),t.datetime(1992,8,30),t.datetime(1993,8,30),t.datetime(1994,8,30),t.datetime(1995,8,30)
+                      ,t.datetime(1996,8,30),t.datetime(1997,8,30),t.datetime(1998,8,30),t.datetime(1999,8,30),t.datetime(2000,8,30)
+                      ,t.datetime(1980,8,30),t.datetime(1981,8,30),t.datetime(1982,8,30),t.datetime(1983,8,30),t.datetime(1984,8,30)
+                      ,t.datetime(1985,8,30),t.datetime(1986,8,30),t.datetime(1987,8,30),t.datetime(1988,8,30),t.datetime(1989,8,30)
+                      ,t.datetime(1990,8,30)]
+    res=[]
+    swc = SWC()
+    swc.calc_InitialDepletion(FC, q, Zr)
+    while time_act<t.datetime(1980,10,1):
+        i+=1        
+        if filter(lambda s: s==time_act, sowing_date):
+            plant=wheat(c,c)
+        if filter(lambda s: s==time_act, harvest_date):
+            Plant.Count - 1#del plant
+        if Plant.Count>=1:
+            plant(time_act,'day',1.)
+            c.flux=[s_h*-1. for s_h in plant.water.Uptake]
+        else:
+            c.flux=[0]*50
+        if i%1==0:
+            if Plant.Count>=1:
+                
+                #Daily waterbalance:
+                
+                
+                
+                
+                
+                
+                
+                print time_act,plant.developmentstage.Stage,i-90#, plant.developmentstage.Thermaltime
+                res.append([plant.ET.Cropspecific,plant.ET.Reference])
+            else:
+                pass#print 'No plant'
+        c.run(cmf.day)
+        time_act+=time_step
+    elapsed = (time.time() - start)
+print elapsed
+plot_res(['ETc','ETo'],res)
+"""
+#print time_act, 'ET %4.2f, sh %4.2f,comp %4.2f, sh_comp %4.2f, rootingdepth %4.2f' % (plant.ET.reference,sum(plant.water.Uptake),sum(plant.water.compensation),sum(plant.water.s_h_compensated),plant.root.depth)
+                #print time_act ,'fgi',['%4.2f' %  a for a in plant.root.fgi][:10],sum(plant.root.fgi)
+                #print time_act,'pF',['%4.2f' % a for a in c.pF][:10]
+                #print time_act, 's_h', ['%4.2f' % u for u in plant.water.Uptake][:10]
+                #print time_act, 'alpha', ['%4.2f' % u for u in plant.water.alpha][:10]
+                #print time_act, 's_h_comp', ['%4.2f' % u for u in plant.water.Compensated_Uptake][:10]
+                #print time_act, 'flux',['%4.2f' % f for f in c.flux][:10]
+                print time_act
+                print time_act, plant.biomass.PotentialGrowth,plant.biomass.ActualGrowth,plant.biomass.Total, plant.shoot.leaf.LAI,plant.shoot.leaf.Wtot
+                
+                
+                
+                
+                new_CGR = plant.atmosphere.get_Rs(time_act) * 0.5 * 0.9 * (1-exp(-0.4 * adjusted_lai)) * 3.0 if plant.thermaltime >=plant.stage[0][1] and plant.thermaltime <= plant.stage[-1][1] else 0.
+                new_biomass += new_CGR
+                new_leaf_biomass += new_CGR * plant.shoot.fraction(plant.thermaltime) * plant.shoot.leaf.fraction(plant.thermaltime)
+                new_lai += new_CGR * plant.shoot.fraction(plant.thermaltime) * plant.shoot.leaf.fraction(plant.thermaltime) / plant.shoot.leaf.specific_weight
+                
+                ajdusted_specific_weight = min(plant.thermaltime/plant.stage[-1][1]+0.25,1) * plant.shoot.leaf.specific_weight
+                adjusted_lai += new_CGR * plant.shoot.fraction(plant.thermaltime) * plant.shoot.leaf.fraction(plant.thermaltime) / ajdusted_specific_weight 
+                
+                #print time_act,plant.stage(plant.thermaltime),i-90,'adj_weight %4.2f, adj_LAI %4.2f, old_LAI %4.2f' % (ajdusted_specific_weight,adjusted_lai,new_lai)
+                                
+                new_root += new_CGR * plant.root.fraction(plant.thermaltime)
+                new_stem += new_CGR * plant.shoot.stem.fraction(plant.thermaltime)
+                new_storage += new_CGR * plant.shoot.storage_organs.fraction(plant.thermaltime)
+                
+                #senescence
+                senescence = (0.001 if plant.thermaltime > plant.stage[-1][1] else 0.)
+                new_biomass -= new_biomass  * senescence
+                new_root -= new_root * senescence
+                new_stem -= new_stem * senescence
+                new_storage -= new_storage * senescence
+                new_leaf_biomass -= new_leaf_biomass * senescence
+              
+                #print time_act,plant.stage(plant.thermaltime),i-90,'LAI %4.2f, Biomass %4.2f, CGR %4.2f, Leaf %4.2f, Stem %4.2f, Storage %4.2f, Root %4.2f, Rs %4.2f' % (adjusted_lai,new_biomass,new_CGR,new_leaf_biomass,new_stem,new_storage,new_root,plant.atmosphere.get_Rs(time_act))
+                res.append([new_root,new_leaf_biomass,new_stem,new_storage,new_biomass])
+                #plot_res(['new_root','new_leaf_biomass','new_stem','new_storage','new_biomass'],res)
+
+
+
+
+
+
+
     ion()
     root=zeros(1826)
     alpha=zeros(1826)
@@ -279,12 +315,9 @@ if __name__=='__main__':
     ylim(0,300)
     ylabel('Biomass [g * m-1]')
     grid()
-    """
-    new_lai=0.4;new_biomass=0.;new_leaf_biomass=0.;new_root=0.;new_stem=0.;new_storage=0.;res=[]
-    #Simulation period
-    while time_act<t.datetime(1980,10,1):
-        i+=1
-        """
+
+
+
         try:
             biomass[i]+=plant.Wtot
             ETp[i]+=plant.ET.reference
@@ -302,47 +335,11 @@ if __name__=='__main__':
             root_plot.set_ydata(root)
             alpha_plot.set_ydata(alpha)
             draw()
-        """
-        
-        if field.issowing(time_act) == True:
-            plant=wheat(c,c)
-        if field.isharvest(time_act) == True:
-            field.total_harvest.append(plant.Wtot)
-        if Plant.Count>=1:
-            plant(time_act,'day',1.)
-            c.flux=[s_h*-1. for s_h in plant.water.Uptake]
-        else:
-            c.flux=[0]*50
-        
-        set_results()        
-        if i%1==0:
-            if Plant.Count>=1:
-                #print time_act, 'ET %4.2f, sh %4.2f,comp %4.2f, sh_comp %4.2f, rootingdepth %4.2f' % (plant.ET.reference,sum(plant.water.Uptake),sum(plant.water.compensation),sum(plant.water.s_h_compensated),plant.root.depth)
-                #print time_act ,'fgi',['%4.2f' %  a for a in plant.root.fgi][:10],sum(plant.root.fgi)
-                #print time_act,'pF',['%4.2f' % a for a in c.pF][:10]
-                #print time_act, 's_h', ['%4.2f' % u for u in plant.water.Uptake][:10]
-                #print time_act, 'alpha', ['%4.2f' % u for u in plant.water.alpha][:10]
-                #print time_act, 's_h_comp', ['%4.2f' % u for u in plant.water.Compensated_Uptake][:10]
-                #print time_act, 'flux',['%4.2f' % f for f in c.flux][:10]
-                new_CGR = plant.atmosphere.get_Rs(time_act) * 0.5 * 0.9 * (1-exp(-0.4 * new_lai)) * 3.0 if plant.thermaltime >=plant.stage[0][1] and plant.thermaltime <= plant.stage[-1][1] else 0.
-                new_biomass += new_CGR
-                new_leaf_biomass += new_CGR * plant.shoot.fraction(plant.thermaltime) * plant.shoot.leaf.fraction(plant.thermaltime)
-                new_lai += new_CGR * plant.shoot.fraction(plant.thermaltime) * plant.shoot.leaf.fraction(plant.thermaltime) / plant.shoot.leaf.specific_weight
-                new_root += new_CGR * plant.root.fraction(plant.thermaltime)
-                new_stem += new_CGR * plant.shoot.stem.fraction(plant.thermaltime)
-                new_storage += new_CGR * plant.shoot.storage_organs.fraction(plant.thermaltime)
-                print time_act,plant.stage(plant.thermaltime),i-90,'LAI %4.2f, Biomass %4.2f, CGR %4.2f, Leaf %4.2f, Stem %4.2f, Storage %4.2f, Root %4.2f, Rs %4.2f' % (new_lai,new_biomass,new_CGR,new_leaf_biomass,new_stem,new_storage,new_root,plant.atmosphere.get_Rs(time_act))
-                res.append([new_root,new_leaf_biomass,new_stem,new_storage,new_biomass])
-            else:
-                print 'No plant'
-        c.run(cmf.day)
-        time_act+=time_step
-    elapsed = (time.time() - start)
+     
 
 
-plot_res(['new_root','new_leaf_biomass','new_stem','new_storage','new_biomass'],res)
 
-
+"""
 
 
 
