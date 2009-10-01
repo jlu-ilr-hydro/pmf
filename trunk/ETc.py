@@ -449,7 +449,7 @@ class WaterPool:
             print 'day %i, ETp %4.1f,Zr %4.2f, RAW %4.2f, TAW %4.2f, Dr_start %4.2f, P %4.2f, I %4.2f, Ks %4.2f, Kcb %4.2f, Ke %4.2f, Kc %4.2f, ETc %4.1f, DP %4.2f, Dr_end %4.2f' % (day,ETo[day-1],Zr[day-1],RAW,TAW,Dr_start,P,I[day-1],Ks,Kcb[day-1],Ke[day-1],Kc,ETc,DP,Dr_end)
             day+=1
 water=WaterPool()
-water.example_ETc()
+water.example_Kbc_beans()
 
 
 

@@ -18,45 +18,36 @@ class Plant:
     Grow call several methods from plant and the growth functions from root
     and shoot. At the end of every time step Wttot and Rtot are updated.    
     """
-    def __init__(self,soil,atmosphere,stage,root_fraction,shoot_fraction,leaf_fraction,stem_fraction,
-                 storage_fraction,tbase=0.,Wmax=1000.,growth=0.05,
+    def __init__(self,soil,atmosphere,stage,shoot_percent,root_percent,
+                leaf_percent,stem_percent,storage_percent,tbase=0.,
                  rootability_thresholds=[1.5,0.5,16000.,.0,0.0,0.0],pressure_threshold=[0.,1.,500.,16000.],
-                 plant_N=[[160.,0.43],[1174.,0.16]],leaf_specific_weight=45.,root_growth=1.2,K_m=0.,c_min=0.):
+                 plant_N=[[160.,0.43],[1174.,0.16]],leaf_specific_weight=50.,root_growth=1.2,K_m=0.,c_min=0.):
         Plant.Count+=1
-        self.biomass=Biomass(self,3.,.5)
-        self.Wtot=1.
-        self.Rtot=0.
-        self.thermaltime=0.
         self.soil=soil
         self.atmosphere=atmosphere
-        self.water=Water_MatrixPotentialApproach(self)
-        self.ET=ET_FAO(self)
+        self.water=Stress_Feddes(self)
+        self.developmentstage=DevelopmentStage(self,stage)
+        
+        seasons = [self.developmentstage[0][1],
+                   self.developmentstage[3][1]-self.developmentstage[0][1],
+                   self.developmentstage[6][1]-self.developmentstage[3][1],
+                   self.developmentstage[-1][1]-self.developmentstage[6][1]]
+        Kcb_values = [0.15,1.1,0.15]
+        self.ET=ET_FAO(self,Kcb_values,seasons)
+        
+        self.root=Root(self,root_percent,rootability_thresholds,root_growth,self.soil.get_profile())
+        self.shoot=Shoot(self,shoot_percent,leaf_percent,stem_percent,storage_percent,leaf_specific_weight,self.developmentstage[4][1],shoot_percent,leaf_percent,stem_percent,storage_percent)
+        self.biomass=Biomass_LUE(self,3.0,0.4)
         self.plant_N=plant_N
         self.K_m=K_m
         self.c_min=c_min
         self.tbase=tbase
-        self.Wmax=Wmax
-        self.growth=growth
-        self.stage=Stage(self,stage)
-        self.root=Root(self,root_fraction,rootability_thresholds,root_growth,self.soil.get_profile())
-        self.shoot=Shoot(self,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction,leaf_specific_weight)
         self.pressure_threshold=pressure_threshold
-        self.Wact=0.
-        self.Wpot=0.
-        self.stress=1.
         self.R_a=0.
         self.R_p=0.
         self.s_p=[]
-    @property
-    def Isgerminated(self):
-        return self.stage.is_growingseason(self.thermaltime)
     def __del__(self):
         Plant.Count-=1
-    def step(self,step,interval):
-        if step=='day':
-            return 1.*interval
-        elif step=='hour':
-            return 1./24.*interval
     def __call__(self,time_act,step,interval):
         """
         call signature:
@@ -83,42 +74,42 @@ class Plant:
         coefficiants for the phenological depending decline of the biomass nitrogen
         content, e.g. [100,0.43,1000,0.16].
         """ 
-        time_step=self.step(step,interval)
+        time_step = 1. * interval if step == 'day' else 1./24. * interval
         self.root.zone(self.root.depth)
-        self.thermaltime += self.develop(self.atmosphere.get_tmin(time_act), self.atmosphere.get_tmax(time_act), self.tbase)
-        if self.Wtot>=1.:
-        #Compute ET
-            self.ET(self.atmosphere.get_Rn(time_act,0.12,True),self.atmosphere.get_tmean(time_act)
-                                   ,self.atmosphere.get_es(time_act),self.atmosphere.get_ea(time_act)
-                                   ,self.atmosphere.get_windspeed(time_act),vegH=self.Wtot/900.+0.01
-                                   ,LAI=self.shoot.leaf.LAI,stomatal_resistance=self.shoot.leaf.stomatal_resistance)
+        self.developmentstage(time_step,self.atmosphere.get_tmin(time_act), self.atmosphere.get_tmax(time_act), self.tbase)
         
-        #Compute water uptake
-            self.water([self.ET.reference/self.root.depth * l.penetration for l in self.root.zone]
-                         ,[self.soil.get_pressurehead(l.center) for l in self.root.zone],self.pressure_threshold)
-        if self.stage.is_growingseason(self.thermaltime):
-            ''' Potential growth  '''
-            self.biomass(self.atmosphere.get_Rs(time_act),self.shoot.leaf.LAI)
-            Wpot = self.assimilate(self.Wtot, self.Wmax, self.growth)
-            
-            
-            
-            ''' Nutrient uptake '''
-            self.R_p=self.nitrogen_demand(Wpot, self.nitrogen_content(self.plant_N, self.thermaltime))
+        #Evapotranspiration
+        self.ET(self.soil.Kr_cmf(),self.developmentstage.Thermaltime,self.atmosphere.get_Rn(time_act,0.12,True),self.atmosphere.get_tmean(time_act)
+                                   ,self.atmosphere.get_es(time_act),self.atmosphere.get_ea(time_act)
+                                   ,self.atmosphere.get_windspeed(time_act),vegH=1.
+                                   ,LAI=self.shoot.leaf.LAI,stomatal_resistance=self.shoot.leaf.stomatal_resistance,)
+        if self.developmentstage.IsGerminated:
+        #Water uptake
+            transpiration_distribution = [self.ET.Reference/self.root.depth * l.penetration for l in self.root.zone]
+            self.water(transpiration_distribution
+                         ,[self.water.soil_values(self.soil,l.center) for l in self.root.zone],self.pressure_threshold)
+        if self.developmentstage.IsGrowingseason:
+            #Nutrient uptake
+            self.R_p=self.nitrogen_demand(self.biomass.PotentialGrowth, self.nitrogen_content(self.plant_N, self.developmentstage.Thermaltime))
             nitrogen=[self.soil.get_nutrients(l.center) for l in self.root.zone]
             self.R_a=self.nutrientuptake(self.root.depth, 
                                          nitrogen, 
                                          self.water.Uptake, self.R_p, [l.penetration for l in self.root.zone], 
-                                         self.c_min, self.K_m)
-            self.stress=self.stress_response(sum(self.water.Uptake), self.ET.reference, self.R_a, self.R_p)*1.
-            Wact=Wpot*self.stress
-            self.Wtot = self.Wtot + Wact*time_step
-            self.Rtot = self.respire(0.5,Wact,0.5,self.Wtot)               
-            ''' root and shoot growth '''
-            self.root(time_step,Wact,self.get_fgi(sum(self.water.Uptake), self.ET.reference, self.R_a, self.R_p, 
+                                         self.c_min, self.K_m)            
+            #Growth
+            self.stress=self.stress_response(sum(self.water.Uptake), self.ET.Reference, self.R_a, self.R_p)*1.
+            self.biomass(self.stress,time_step,self.biomass.atmosphere_values(self.atmosphere,time_act),self.shoot.leaf.LAI)
+            #Partitioning            
+            self.root(time_step,self.get_fgi(sum(self.water.Uptake), self.ET.Reference, self.R_a, self.R_p, 
                                             [nitrogen[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)],
-                                            [self.water.stress[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]))
-            self.shoot(time_step,Wact)
+                                            [self.water.Alpha[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]),
+                                            (self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
+                                            self.soil.get_pressurehead(self.root.depth),self.stress)
+            self.shoot(time_step,(self.shoot.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
+                       (self.shoot.leaf.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
+                       (self.shoot.stem.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
+                       (self.shoot.storage_organs.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
+                       self.developmentstage.Thermaltime)
     def get_fgi(self,s_h,ETp,R_a,R_p,nitrogen_distribution,water_distribution):
         w=1-s_h/ETp
         n=1-(R_a/R_p) if R_p>0. else 0.
@@ -132,38 +123,7 @@ class Plant:
         a_p = A_p/rooting_depth
         michaelis_menten = [(n-c_min)/(K_m+n-c_min) for n in nutrient_conc]
         A_a = [a_p*michaelis_menten[i]*l for i,l in enumerate(layer_penetration)]
-        return sum(P_a) + sum(A_a)     
-    def develop(self,tmin,tmax,tbase):
-        """
-        call signature:
-        
-            thermaltime(tmin,tmax,tbase)
-        
-        Compute thermaltime and is called in the stage.development() method. 
-        
-        The parameter tmin, tmax, tbase and tmin are float-values. Tmin and tmax must
-        be get from the atmosphere interface. Tbase is a crop specific paramter and
-        set by plant.
-            
-        """
-        if tmax < tbase or tmin < tbase:
-            return 0
-        else:
-            return ((tmax+tmin)/2.0-tbase)
-    def assimilate(self,Wtot,Wmax,growth_factor):
-        """
-        call signature:
-            
-            assimilate(Wtot,Wmax,growth_factor)
-        
-        assimilate() calculates the additional biomass for a given
-        timestep.
-        
-        Wtot, Wmax and growth_factor are float values. Wtot is given by
-        the plant class object variable Wtot. Wmax and growth_factor are
-        crop specific parameters.        
-        """
-        return growth_factor*Wtot*(1.0-Wtot/Wmax)
+        return sum(P_a) + sum(A_a)         
     def respire(self,resp_growth,Wact,resp_maintenance,Wtot):
         """
         call signature:
@@ -298,7 +258,6 @@ class Plant:
             if daylength<=plant_photoperiod[0] or daylength>=plant_photoperiod[-1]: return 0.
             elif daylength>plant_photoperiod[0] and daylength<plant_photoperiod[1]: return 1.0
             else: return (plant_photoperiod[-1]-daylength)/(plant_photoperiod[-1]-plant_photoperiod[-2])
-
 class Root:
     """
     call signature:
@@ -316,21 +275,18 @@ class Root:
     The method calls the functions vertical_growth(), physical_constraints(),
     root_paritioning() and calculate the object variables depth and Wtot. 
     """
-    def __init__(self,plant,root_fraction,rootability_thresholds,root_growth,soil_profile):
+    def __init__(self,plant,root_percent,rootability_thresholds,root_growth,soil_profile):
         self.plant=plant
         self.rootability_thresholds=rootability_thresholds
         self.root_growth=root_growth
-        self.fraction=Fraction(root_fraction)
         self.depth=1.
         self.Wtot=0.
         self.zone=SoilLayer()
         self.zone.get_rootingzone(soil_profile)
         self.distribution=[0. for l in self.zone]
         self.fgi=[]
-    @property
-    def Fraction(self):
-        return self.fraction(self.plant.thermaltime)
-    def __call__(self,time_step,Wact,feeling_good_index):
+        self.percent=root_percent
+    def __call__(self,time_step,feeling_good_index,root_biomass,pressure_head,stress):
         """
         call signature:
         
@@ -343,10 +299,9 @@ class Root:
         The parameter time_step  set the duration of the growth process.
         """
         self.fgi=feeling_good_index
-        self.depth=self.depth+self.elongation(self.physical_constraints(self.plant.soil.get_bulkdensity(self.depth),self.plant.soil.get_pressurehead(self.depth),self.rootability_thresholds),self.root_growth)*self.plant.stress*time_step
-        Wact_root=self.root_partitioning(self.fraction(self.plant.thermaltime), Wact)
-        self.Wtot=self.Wtot+Wact_root*time_step
-        self.distribution=self.allocate_biomass(self.distribution, Wact_root, feeling_good_index)
+        self.depth=self.depth+self.elongation(self.physical_constraints(self.plant.soil.get_bulkdensity(self.depth),pressure_head,self.rootability_thresholds),self.root_growth)*stress*time_step
+        self.Wtot=self.Wtot+root_biomass*time_step
+        self.distribution=self.allocate_biomass(self.distribution, root_biomass, feeling_good_index)
     def allocate_biomass(self,distribution,Wact_root,feeling_good_index):
         return [b+(Wact_root*feeling_good_index[i]) for i,b in enumerate(distribution)]
     def elongation(self,physical_constraints,root_growth):
@@ -386,18 +341,6 @@ class Root:
         if h<=rootability_thresholds[4]:oxygen_deficiency=rootability_thresholds[5]
         else: oxygen_deficiency=0.
         return max(mechanical_impendance,water_stress,oxygen_deficiency)
-    def root_partitioning(self,Wact,root_percent):
-        """
-        call signature:
-        
-            grow(Wact,root_percent)
-            
-        Let the root object grow.
-        
-        The parameter Wact is actual growthrate from the plant class and
-        root_percent a crop specific coefficiant. Both are double values.        
-        """
-        return root_percent*Wact
 class Shoot:
     """
     call signature:
@@ -417,17 +360,14 @@ class Shoot:
     The method calls the function shoot_partitioning() and update
     the object variable Wtot.
     """
-    def __init__(self,plant,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction,lai_conversion):
+    def __init__(self,plant,shoot_fraction,leaf_fraction,stem_fraction,storage_fraction,lai_conversion,thermaltime_anthesis,shoot_percent,leaf_percent,stem_percent,storage_percent):
         self.plant=plant
-        self.fraction=Fraction(shoot_fraction)
         self.Wtot=0.
-        self.leaf=Leaf(self,leaf_fraction,lai_conversion)
-        self.stem=Stem(self,stem_fraction)
-        self.storage_organs=Storage_Organs(self,storage_fraction)
-    @property
-    def Fraction(self):
-        return self.fraction(self.plant.thermaltime)
-    def __call__(self,time_step,Wact):
+        self.leaf=Leaf(self,leaf_percent,lai_conversion,thermaltime_anthesis)
+        self.stem=Stem(self,stem_percent)
+        self.storage_organs=Storage_Organs(self,storage_percent)
+        self.percent=shoot_percent
+    def __call__(self,time_step,shoot_biomass,leaf_biomass,stem_biomass,storage_biomass,thermaltime):
         """
         call signature:
         
@@ -440,24 +380,10 @@ class Shoot:
         shoot_percent a crop specific coefficiant. Both are double values.        
         The parameter time_step set the duration of the growth process.
         """
-        Wact_shoot=self.shoot_partitioning(self.fraction(self.plant.thermaltime), Wact)
-        self.Wtot=self.Wtot+Wact_shoot*time_step
-        self.leaf(time_step,Wact_shoot)
-        self.stem(time_step,Wact_shoot)
-        self.storage_organs(time_step,Wact_shoot)
-    def shoot_partitioning(self,shoot_fraction,Wact):
-        """
-        call signature:
-        
-            shoot_partitioning(self,shoot_fraction,Wact):
-            
-        Allocates biomass to shoot biomass.
-        
-        The parameter Wact is actual growthrate from the plant class and
-        shoot_fraction a crop specific coefficiant. Both are double values.        
-        """
-        return shoot_fraction*Wact
-    
+        self.Wtot=self.Wtot+shoot_biomass*time_step
+        self.leaf(time_step,leaf_biomass,thermaltime)
+        self.stem(time_step,stem_biomass)
+        self.storage_organs(time_step,storage_biomass)    
 class Stem:
     """
     call signature:
@@ -474,14 +400,12 @@ class Stem:
         
     The method calculates the stem class variable Wtot.
     """
-    def __init__(self,shoot,stem_fraction):
+    def __init__(self,shoot,stem_percent):
         self.shoot=shoot
-        self.fraction=Fraction(stem_fraction)
         self.Wtot=0.
-    @property
-    def Fraction(self):
-        return self.fraction(self.shoot.plant.thermaltime)
-    def  __call__(self,time_step,Wact_shoot):
+        self.height=0.
+        self.percent=stem_percent
+    def  __call__(self,time_step,stem_biomass):
         """
         call signature:
         
@@ -493,20 +417,10 @@ class Stem:
         The parameter time_step set the duration of the growth process.stem_fraction
         the fraction from shoot, which is allocated to stem
         """
-        self.Wtot=self.Wtot+self.stem_partitioning(self.fraction(self.shoot.plant.thermaltime), Wact_shoot)*time_step
-    def stem_partitioning(self,stem_ratio,Wact_shoot):
-        """
-        call signature:
-        
-            stem_partitioning(self,stem_fraction,Wact):
-            
-        Allocates biomass to stem biomass.
-        
-        The parameter Wact is actual growthrate from the shoot class and
-        stem_fraction a crop specific coefficiant. Both are double values.        
-        """
-        return stem_ratio*Wact_shoot
-    
+        self.height = self.calc_height()
+        self.Wtot=self.Wtot+stem_biomass*time_step
+    def calc_height(self):
+        pass
 class Storage_Organs:
     """
     call signature:
@@ -524,14 +438,11 @@ class Storage_Organs:
         
     The method calculates the Storage_Organs class variable Wtot.
     """
-    def __init__(self,shoot,storage_fraction):
+    def __init__(self,shoot,storage_percent):
         self.shoot=shoot
-        self.fraction=Fraction(storage_fraction)
         self.Wtot=0.
-    @property
-    def Fraction(self):
-        return self.fraction(self.shoot.plant.thermaltime)
-    def  __call__(self,time_step,Wact_shoot):
+        self.percent=storage_percent
+    def  __call__(self,time_step,storage_biomass):
         """
         call signature:
         
@@ -543,20 +454,18 @@ class Storage_Organs:
         
         The parameter time_step set the duration of the growth process.
         """
-        self.Wtot=self.Wtot+self.storage_organs_partitioning(self.fraction(self.shoot.plant.thermaltime),Wact_shoot)*time_step
-    def storage_organs_partitioning(self,storage_organs_fraction,Wact_shoot):
-        """
-        call signature:
+        self.Wtot=self.Wtot+storage_biomass*time_step
+    def grain_yield(self,KNO,KW=0.041):#KW for wheat
+        """ Return GY
         
-            storage_organs_partitioning(self,storage_organs_ratio,Wact_shoot):
-            
-        Allocates biomass to storage_organs biomass.
+        KNO is established in the period between 20 and 30 days 
+        before flowering and ten days after anthesis.
         
-        The parameter Wact is actual growthrate from the plant class and
-        storage_organs_fraction a crop specific coefficiant. Both are double values.        
+        GY - grain yield (g/m2)
+        KNO - the kernel number (m-2)
+        KW - the kernel weight (g)
         """
-        return storage_organs_fraction*Wact_shoot
-    
+        return KNO*KW
 class Leaf:
     """
     call signature:
@@ -574,27 +483,18 @@ class Leaf:
     The method calculates the two leaf class variables leafarea and 
     Wtot.
     """
-    def __init__(self,shoot,leaf_fraction,specific_weight):
+    def __init__(self,shoot,leaf_percent,specific_weight,thermaltime_anthesis):
         self.shoot=shoot
-        self.fraction=Fraction(leaf_fraction)
-        self.stomatal_resistance= 100 if self.shoot.plant.Isgerminated else 300
+        self.stomatal_resistance= 100 if self.shoot.plant.developmentstage.IsGerminated else 300
         self.Wtot=0.
-        self.leafarea=1.
-        self.adjusted_leafarea=1.
+        self.leafarea=0.1
         self.specific_weight=specific_weight
-    @property
-    def LAI_adjusted(self):
-        return self.adjusted_leafarea
+        self.thermaltime_anthesis = thermaltime_anthesis
+        self.percent=leaf_percent
     @property
     def LAI(self):
         return self.leafarea
-    @property
-    def Dryweight(self):
-        return self.Wtot
-    @property
-    def Fraction(self):
-        return self.fraction(self.shoot.plant.thermaltime)
-    def  __call__(self,time_step,Wact_shoot):
+    def  __call__(self,time_step,leaf_biomass,thermaltime):
         """
         call signature:
         
@@ -605,21 +505,8 @@ class Leaf:
         
         The parameter time_step set the duration of the growth process.
         """
-        Wact = self.leaf_partitioning(self.fraction(self.shoot.plant.thermaltime), Wact_shoot)
-        self.Wtot = self.Wtot + Wact * time_step
-        self.leafarea = self.leafarea + self.convert(Wact, self.specific_weight)* time_step
-    def leaf_partitioning(self,leaf_fraction,Wact_shoot):
-        """
-        call signature:
-        
-            leaf_partitioning(self,leaf_fraction,Wact_shoot):
-            
-        Allocates biomass to leaf biomass.
-        
-        The parameter Wact is actual growthrate from the plant class and
-        leaf_fraction a crop specific coefficiant. Both are double values.        
-        """
-        return leaf_fraction*Wact_shoot
+        self.Wtot = self.Wtot + leaf_biomass * time_step
+        self.leafarea += self.convert(leaf_biomass, self.adjust_specific_weight(thermaltime, self.thermaltime_anthesis)*self.specific_weight)
     def convert(self,biomass,specific_weight):
         """ Calculates LAI [ha/ha]:
         
@@ -634,21 +521,35 @@ class Leaf:
         leaf area of one hectare [kg/ha]
         """
         return biomass/specific_weight
-    def adjust_specific_weight(self,thermaltime,thermaltime_anthesis,fixed_specific_weight):
+    def adjust_specific_weight(self,thermaltime,thermaltime_anthesis):
         """
         The specific leaf weight of new leaves is calculated by
         multiplying the specific leaf weight constant with a factor that depends on the
         development stage of the crop.
         """
-        return min((thermaltime/thermaltime_anthesis+0.5)*fixed_specific_weight,1)
-class Stage():
-    Count = 0
+        return min((thermaltime/thermaltime_anthesis+0.25),1.)
+class DevelopmentStage():
     def __init__(self,plant,stage):
         self.plant=plant
         self.stages=[]
-        Stage.Count+=1
+        self.thermaltime=0.
         for s in stage:
             self.__setitem__(s)
+    @property
+    def StageIndex(self):
+        return self.stages.index(self.Stage)
+    @property
+    def IsGrowingseason(self):
+        return True if self.thermaltime>=self.stages[0][1] and self.thermaltime< self.stages[-1][1] else False
+    @property
+    def IsGerminated(self):
+        return True if self.thermaltime > self.stages[0][1] else False
+    @property
+    def Thermaltime(self):
+        return self.thermaltime
+    @property
+    def Stage(self):
+        return filter(lambda i:i[1]>=self.thermaltime, self.stages)[0] if self.thermaltime<=self.stages[-1][1] else 'Development finished'
     def __setitem__(self,stage):
         self.stages.append(stage)
     def __getitem__(self,index):
@@ -656,69 +557,25 @@ class Stage():
     def __iter__(self):
         for s in self.stages:
             yield s
-    def __call__(self,thermaltime):
-        if thermaltime>self.stages[-1][1]: return 'Development finished'
-        else:
-            for stage in self.stages:
-                if thermaltime<=stage[1]:
-                    return stage[0]
-                    break
-    def __del__(self):
-        Stage.Count-=1
-    def is_growingseason(self,thermaltime):
-        if thermaltime>=self.stages[0][1] and thermaltime< self.stages[-1][1]:
-            return True
-        else:
-            return False
-     
-class Fraction:
-    Count = 0
-    """ call siganture:
-    
-        Fraction(events)
-        
-    Fraction is a lists with events for partitioning. Each event
-    must be definded with a thermaltime threshold as first
-    arguement and a fractioning valu as second arguement.
-    """
-    def __init__(self,events):
-        self.events=[]
-        for e in events:
-            self.__setitem__(e[0],e[1])
-        Fraction.Count+=1
-    def __setitem__(self,time,value):
-        self.events.append(Event(time,value))
-    def __getitem__(self,index):
-        return self.events[index]
-    def __iter__(self):
-        for event in self.events:
-            yield event
-    def __del__(self):
-        Fraction.Count-=1
-    def __call__(self,thermaltime):
-        """call signature:
-        
-            __call__(thermaltime)
-            
-        Returns the event, whoch is related to the given
-        thermaltime.
+    def __call__(self,time_step,tmin,tmax,tbase):
+        self.thermaltime = self.thermaltime + self.develop(tmin, tmax, tbase) * time_step
+    def develop(self,tmin,tmax,tbase):
         """
-        if thermaltime>=self.events[-1].time: 
-                return self.events[-1].value
+        call signature:
+        
+            thermaltime(tmin,tmax,tbase)
+        
+        Compute thermaltime and is called in the stage.development() method. 
+        
+        The parameter tmin, tmax, tbase and tmin are float-values. Tmin and tmax must
+        be get from the atmosphere interface. Tbase is a crop specific paramter and
+        set by plant.
+            
+        """
+        if tmax < tbase or tmin < tbase:
+            return 0
         else:
-            for e in self.events:
-                if thermaltime<=e.time:
-                    return e.value
-                    break 
-
-class Event:
-    def __init__(self,time=.0,value=0.):
-        self.time=time
-        self.value=value
-    def __call__(self,time,value):
-        self.time=time
-        self.value=value
-
+            return ((tmax+tmin)/2.0-tbase)
 class SoilLayer:
     def __init__(self,lowerlimit=0.,upperlimit=0.,center=0.,thickness=0.,penetration=0.):
         self.lowerlimit=lowerlimit
@@ -750,24 +607,41 @@ class SoilLayer:
                 layer_penetration = 0.
             else: 
                 layer.penetration = rooting_depth - layer.upperlimit
-
 class ET_FAO:
-    def __init__(self,plant):
+    def __init__(self,plant,kcb_values,seasons):
         self.plant=plant
-        self.ETo=0.
-        self.ETc=0.
-        self.ETc_adj=0.
+        self.kcb_values=kcb_values
+        self.seasons=seasons
+        self.eto=0.
+        self.kcb=0.
+        self.ke=0.
     @property
-    def reference(self):
-        return self.ETo
+    def Transpiration(self):
+        return self.eto * self.kcb
     @property
-    def cropspecific(self):
-        return self.ETc
+    def Evaporation(self):
+        return self.eto * self.ke
     @property
-    def adjusted(self):
-        return self.ETc_adjusted
-    def __call__(self,Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance):
-        self.ETo = self.reference_ET(Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt=0,printSteps=0)
+    def Reference(self):
+        return self.eto
+    @property
+    def Cropspecific(self):
+        return self.eto * (self.kcb+self.ke)
+    @property
+    def Adjusted(self):
+        return self.eto * (self.kcb*self.ks+self.ke)
+    def __call__(self,Kr,thermaltime,Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,RHmin=30.,h=1.):
+        self.eto = self.reference_ET(Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt=0,printSteps=0)
+
+        self.kcb = self.calc_Kcb(thermaltime, self.kcb_values[0], self.kcb_values[1],
+                                 self.kcb_values[2], self.seasons[0], self.seasons[1], 
+                                 self.seasons[2], self.seasons[3])
+        
+        kcmax = self.calc_Kcmax(self.kcb, h, windspeed, RHmin)
+        fc = self.calc_fc_dynamic(self.kcb, kcmax, h, self.kcb_values[0])
+        few = self.calc_few(fc, 1.)
+        self.ke = self.calc_Ke(Kr, kcmax, self.kcb, few)
+        
     def reference_ET(self,Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt=0,printSteps=0,daily=True):
         """Calculates the potential ET using the famous Penmonteith (FAO 1994) eq.
         daily = if True, the daily average will be calculated, else the hourly
@@ -812,8 +686,149 @@ class ET_FAO:
            print "rho_a=%0.2f,c_p=%0.2f" % (rho_a,c_p)
            print "P=  %0.2f,e_a=%0.2f,e_s=  %0.2f" % (P,e_a,e_s)
         return AeroTerm+RadTerm
+    def calc_ETc(self,ETo,Kcb,Ke):
+        """ Returns ETc in [mm] from basal crop coefficient (Kcb) and 
+            and soil evaporation (Ke)
+        """
+        return ETo * (Kcb+Ke)
+    def adjust_Kcb(self,Kcb_tab,windspeed,RHmin,h):
+        """ - Kcb (Tab) the value for Kcb mid or Kcb end (if 0.45) taken from Table 17,
+            - windspeed the mean value for daily wind speed at 2 m height over grass during the mid or late season growth stage [m s-1]
+            - RHmin the mean value for daily minimum relative humidity during the mid- or late season growth stage
+            - h the mean plant height during the mid or late season stage [m] (from Table 12)
+        """
+        return Kcb_tab + (0.04*(windspeed-2.)-0.004*(RHmin-45))*(h/3.)**0.3
+    def calc_Kcb(self,day,Kcb_ini,Kcb_mid,Kcb_end,Lini,Ldev,Lmid,Llate):
+        """ Constructed basal crop coefficient (Kcb) curve 
+            using growth stage lengths.
+            Lini - Length of initial season
+            Ldev - Length of crop development season
+            Lmid - Length of mid season
+            Llate - Length of late season
+            Kcb_ini - Kcb for initial season
+            Kcb_mid - Kcb for mid season
+            Kcb_end - Kcb for late season
+            day - day
+        """
+        if day <=Lini: return Kcb_ini
+        elif day <=Lini+Ldev: return Kcb_ini+(day-Lini)/Ldev*(Kcb_mid-Kcb_ini)
+        elif day <=Lini+Ldev+Lmid: return Kcb_mid
+        elif day <= Lini+Ldev+Lmid+Llate: return Kcb_mid+(day-(Lini+Ldev+Lmid))/Llate*(Kcb_end-Kcb_mid)
+        else: return Kcb_end
+    def calc_Ke(self,Kr,Kcmax,Kcb,few):
+        """
+        Ke - soil evaporation coefficient,
+        Kcb - basal crop coefficient,
+        Kcmax - maximum value of Kc following rain or irrigation,
+        Kr - dimensionless evaporation reduction coefficient dependent
+             on the cumulative depth of water depleted (evaporated) from the topsoil,
+        few - fraction of the soil that is both exposed and wetted,
+              i.e., the fraction of soil surface from which most evaporation occurs.
+        """
+        return min(Kr*(Kcmax - Kcb), few*Kcmax,)
+    def calc_Kcmax(self,Kcb,h,windspeed,RHmin):
+        """ 
+        Kc max represents an upper limit on the evaporation
+        and transpiration from any cropped surface and is imposed
+        to reflect the natural constraints placed on available
+        energy represented by the energy balance difference
+        Rn - G - H(Equation 1). Kc max ranges from about 1.05
+        to 1.30 when using the grass reference ETo.
+        - RHmin the mean value for daily minimum relative humidity during the mid- or late season growth stage
+        h - mean maximum plant height during the period of calculation
+        (initial, development, mid-season, or late-season) [m],
+    
+        Kcb - basal crop coefficient
+        """
+        return max((1.2 + (0.04*(windspeed-2.)-0.004*(RHmin-45))*(h/3.)**0.3),Kcb+0.05)
+    def calc_TEW(self,qFC,qWP,Ze):
+        """
+        TEW total evaporable water = maximum depth of water 
+        that can be evaporated from the soil when the topsoil
+        has been initially completely wetted [mm],
+        qFC - soil water content at field capacity [m3 m-3],
+        q WP - soil water content at wilting point [m3 m-3],
+        Ze - depth of the surface soil layer that is subject to
+             drying by way of evaporation [0.10-0.15m].
+        """
+        return 1000(qFC-0.5*qWP)*Ze
+    def calc_Kr(self,De,TEW,REW):
+        """
+        Kr - dimensionless evaporation reduction coefficient dependent on the soil 
+             water depletion (cumulative depth of evaporation) from the topsoil layer
+        De - cumulative depth of evaporation (depletion) from the soil surface
+                     layer at the end of day i-1 (the previous day) [mm],
+        TEW - maximum cumulative depth of evaporation (depletion) from the soil 
+              surface layer when Kr = 0 (TEW = total evaporable water) [mm],
+        REW - cumulative depth of evaporation (depletion) at the end of stage 1 
+              (REW = readily evaporable water) [mm]
+        """
+        if De > REW:
+            return (TEW-De)/(TEW-REW)
+        else:
+            return 1.
+    def calc_few(self,fc,fw=1.):#fw=1. - precipitation
+        """
+        1 - fc average exposed soil fraction not covered (or shaded) by vegetation [0.01 - 1],
+        fw average fraction of soil surface wetted by irrigation or precipitation [0.01 - 1].
+        """
+        return min(1-fc,fw)
+    def calc_fc_dynamic(self,Kcb,Kcmax,h,Kcmin=0.15):#Kcmin=0.15 - annual crops under nearly bare soil condition
+        """ 
+        !!! This equation should be used with caution and validated from field observations !!!
+        fc - the effective fraction of soil surface covered by vegetation [0 - 0.99],
+        Kcb - the value for the basal crop coefficient for the particular day or period,
+        Kcmin - the minimum Kc for dry bare soil with no ground cover [0.15 - 0.20],
+        Kcmax the maximum Kc immediately following wetting (Equation 72),
+        h - mean plant height [m].
+        """
+        return ((Kcb-Kcmin)/(Kcmax-Kcmin))**(1+0.5*h) 
+    def calc_fc_static(self,thermaltime,seasons):
+        """
+        The value for fc is limited to < 0.99. The user should assume appropriate values
+        for the various growth stages. Typical values for fc :
+        """
+        if thermaltime <= seasons[0]: return 0.1 #0.0-0.1
+        elif thermaltime <= seasons[0]+seasons[1]: return 0.8#0.1-0.8
+        elif thermaltime <= seasons[0]+seasons[1]+seasons[2]:return 1.#0.8-1.
+        else: return 0.8#0.2-0.8
+class Stress_FAO:
+    def __init__(self,average_available_soilwater=0.5):
+        self.ks=0.
+        self.p = average_available_soilwater
+    @property
+    def Stress(self):
+        return self.ks 
+    def __call__(self,ET,TAW,Dr):
+        RAW = WAW * self.adjust_p(self.p, ET)
+        self.ks = self.calc_Ks(TAW, Dr, RAW, self.p)
+    def calc_Ks(self,TAW,Dr,RAW,p):
+        """ Water content in me root zone can also be expressed by root zone depletion,
+        Dr, i.e., water shortage relative to field capacity. At field capacity, the root 
+        zone depletion is zero (Dr = 0). When soil water is extracted by evapotranspiration, 
+        the depletion increases and stress will be induced when Dr becomes equal to RAW. After 
+        the root zone depletion exceeds RAW (the water content drops below the threshold q t), 
+        the root zone depletion is high enough to limit evapotranspiration to less than potential 
+        values and the crop evapotranspiration begins to decrease in proportion to the amount of 
+        water remaining in the root zone.
+        
+        Ks - dimensionless transpiration reduction factor dependent on available soil water [0 - 1],
+        Dr - root zone depletion [mm],
+        TAW- total available soil water in the root zone [mm],
+        p  - fraction of TAW that a crop can extract from the root zone without suffering
+             water stress [-].
+        
+        When the root zone depletion is smaller than RAW, Ks = 1
+        For Dr > RAW, Ks:
+        """
+        return (TAW-Dr)/((1-p)*TAW) if Dr > RAW else 1.
+    def adjust_p(self,p_table,ETc):
+        """ The values for p apply for ETc 5 mm/day can be adjusted. 
 
-class Water_MatrixPotentialApproach:
+        p - fraction and ETc as mm/day. 
+        """
+        return p_table + 0.04*(5-ETc)
+class Stress_Feddes:
     def __init__(self,plant,max_compensation_capacity=2.):
         self.plant=plant
         self.max_compensation_capacity=max_compensation_capacity
@@ -822,13 +837,16 @@ class Water_MatrixPotentialApproach:
         self.compensation=[]
         self.s_h_compensated=[]
     @property
+    def Stress(self):
+        pass
+    @property
     def Uptake(self):
         return self.s_h
     @property
     def Compensated_Uptake(self):
         return self.compensation
     @property
-    def stress(self):
+    def Alpha(self):
         return self.alpha
     def __call__(self,s_p,matrix_potential,pressure_threshold):
         self.s_h =[s * self.sink_term(matrix_potential[i], pressure_threshold)for i,s in enumerate(s_p)]
@@ -864,23 +882,54 @@ class Water_MatrixPotentialApproach:
             else: return (h_plant[-1]-h_soil)/(h_plant[-1]-h_plant[-2])
         except ValueError, err:
             print err
-
-class Biomass:
-    def __init__(self,plant,RUE,k):
+    def soil_values(self,soil,depth):
+        return soil.get_pressurehead(depth)
+class Biomass_LOG:
+    def __init__(self,plant,capacitylimit,growthfactor):
         self.plant=plant
-        self.RUE=RUE
-        self.k=k
-        self.total=0.
-        self.growthrate=0.
+        self.capacitylimit=capacitylimit
+        self.growthfactor=growthfactor
+        self.total=1.
+        self.stress=0.
     @property
-    def CGR(self):
-        return self.growthrate
+    def PotentialGrowth(self):
+        return self.logarithmic_growth(self.total, self.growthfactor, self.capacitylimit)
+    @property
+    def ActualGrowth(self):
+        return self.PotentialGrowth * self.stress
     @property
     def Total(self):
         return self.total
-    def __call__(self,Rs,LAI):
-        self.growthrate = self.grow(self.PAR_a(Rs, self.intercept(LAI, self.k)), self.RUE)
-        self.total += self.growthrate
+    def __call__(self,stress,time_step):
+        self.stress=stress
+        self.total = self.total + self.logarithmic_growth(self.total, self.growthfactor, self.capacitylimit) * stress * time_step
+    def logarithmic_growth(self,total_biomass,growthfactor,capacitylimit):
+        return total_biomass * growthfactor * (1- total_biomass / capacitylimit)
+    def atmosphere_values(self,atmosphere,time_act):
+        pass
+    def senescence(self):
+        pass
+class Biomass_LUE:
+    def __init__(self,plant,RUE,k):
+        self.plant=plant
+        self.rue=RUE
+        self.k=k
+        self.total=0.
+        self.growthrate=0.
+        self.stress=0.
+    @property
+    def PotentialGrowth(self):
+        return self.growthrate
+    @property
+    def ActualGrowth(self):
+        return self.growthrate * self.stress
+    @property
+    def Total(self):
+        return self.total
+    def __call__(self,time_act,stress,Rs,LAI):
+        self.stress=stress
+        self.growthrate = self.grow(self.PAR_a(Rs, self.intercept(LAI, self.k)), self.rue)
+        self.total = self.total + self.growthrate *stress
     def PAR_a(self,Rs,interception):
         """ The PARa can be calculated from the fraction 
             of solar radiation at the top of the canopy, which 
@@ -931,12 +980,233 @@ class Biomass:
         KW - the kernel weight (g)
         """
         return KNO*KW
-    def harvest(self,Biomass,HarvestIndex=1.):
+    def harvest(self,Biomass_LUE,HarvestIndex=1.):
         return GrainYield*HarvestIndex
     def kernel_number(self,spike_dryweight):
         """ Spike dry weight appears to be a major determinant of KNO
         """
         pass
+    def atmosphere_values(self,atmosphere,time_act):
+        return atmosphere.get_Rs(time_act)
+
+
+class SWC:
+    """ SoilWaterContainer (SWC): 
+        
+        The root zone can be presented by means of a container in
+        which the water content may fluctuate. To express the water
+        content as root zone depletion is useful. It makes the adding
+        and subtracting of losses and gains straightforward as the various
+        parameters of the soil water budget are usually expressed in terms
+        of water depth. Rainfall, irrigation and capillary rise of groundwater
+        towards the root zone add water to the root zone and decrease the root
+        zone depletion. Soil evaporation, crop transpiration and percolation
+        losses remove water from the root zone and increase the depletion.
+    """
+    def __ini__(self,sand=.9,clay=.1,initial_Zr=0.1,average_available_soilwater=0.55,Ze=0.1):
+        self.sand=sand
+        self.clay=clay
+        self.silt = max(1-(clay+sand),0.)
+        self.soiltype = self.calc_soiltype(self.sand,self.clay,self.silt)
+        self.fc=self.calc_soilproperties(self.sand, self.clay)[0]
+        self.wp=self.calc_soilproperties(self.sand, self.clay)[1]
+        self.dr = self.calc_InitialDepletion(self.fc, average_water_content, initial_Zr)
+        self.Ze=Ze
+        self.REW = self.calc_REW(soiltype=self.soiltype)
+        self.kr=0.
+        self.de = 0.
+        self.taw = 0.
+    @property
+    def KR(self):
+        return self.kr
+    @property
+    def taw(self):
+        return self.taw
+    def Dr(self):
+        return self.dr
+    def __call__(self,ET,rainfall,Zr,runoff=0.,irrigation=0.,capillarrise=0.):
+        
+        #Calculta dr and taw for water stress factor Ks
+        DP = self.calc_DP(rainfall, runoff, irrigation, ET, self.dr)
+        self.dr = self.calc_WaterBalance(self.dr, rainfall, runoff, irrigation, capillarrise, ET, DP)
+        self.taw = self.calc_TAW(self.fc, self.wp, Zr)
+
+        
+        #Calculate Kr for the evapotranspiration
+        TEW = self.calc_TEW(self.fc, self.wp, self.de)
+        self.de = self.calc_EvaporationLayer(De, P, RO, I, fw, E, few, DPe, Tew)
+        self.kr = self.calc_Kr(self.de, TEW, self.REW)
+    def calc_EvaporationLayer(self,De,P,RO,I,fw,E,few,DPe,Tew=0.):
+        """
+        The estimation of Ke in the calculation procedure requires a 
+        daily water balance computation for the surface soil layer for
+        the calculation of the cumulative evaporation or depletion from 
+        the wet condition. The daily soil water balance equation for the 
+        exposed and wetted soil fraction few is:
+        
+        To initiate water balance for evaporating layer: 
+            De = 0. for topsoil near field capacity
+            De = TEW for evaporated water has been depleted at beginning
+        
+        Returns: cumulative depth of evaporation (depletion) following complete wetting 
+                 at the end of day i [mm]
+                 
+        De - cumulative depth of evaporation following complete wetting from 
+             the exposed and wetted fraction of the topsoil at the end of day i-1 [mm],
+        Pi - precipitation on day i [mm],
+        RO - precipitation run off from the soil surface on day i [mm],
+        I  - irrigation depth on day i that infiltrates the soil [mm],
+        E  - evaporation on day i (i.e., Ei = Ke ETo) [mm],
+        T  - depth of transpiration from the exposed and wetted fraction 
+             of the soil surface layer on day i [mm],
+        DP - deep percolation loss from the topsoil layer on day i if 
+             soil water content exceeds field capacity [mm],
+        fw - fraction of 
+             soil surface wetted by irrigation [0.01 - 1],
+        few- exposed and wetted soil fraction [0.01 - 1]
+        """
+        return De-(P-RO)-(I/fw)+(E/few)+Tew+DPe
+    def calc_TAW(self,FC,WP,Zr):
+        """ the total available water in the root zone is the difference 
+            between the water content at field capacity and wilting point.
+            TAW is the amount of water that a crop can extract from its root zone,
+            and its magnitude depends on the type of soil and the rooting depth
+            
+            TAW the total available soil water in the root zone [mm],
+            FC - ater content at field capacity [m3 m-3],
+            WP - water content at wilting point [m3 m-3],
+            Zr - the rooting depth [m].
+        """
+        return 1000*(FC-WP)*Zr
+    def calc_RAW(self,p,TAW):
+        """ The fraction of TAW that a crop can extract from the root zone 
+            without suffering water stress is the readily available soil water.
+            
+            RAW- the readily available soil water in the root zone [mm],
+            p - average fraction of Total Available Soil Water (TAW) that can be depleted 
+            from the root zone before moisture stress (reduction in ET) occurs [0-1].
+            
+            The factor p differs from one crop to another. The factor p normally varies 
+            from 0.30 for shallow rooted plants at high rates of ETc (> 8 mm d-1) to 0.70
+            for deep rooted plants at low rates of ETc (< 3 mm d-1). A value of 0.50 for 
+            p is commonly used for many crops.
+        """
+        return p*TAW
+    def calc_WaterBalance(self,Dr_previous_day,P,RO,I,CR,ETc,DP):
+        """ Returns Dr - root zone depletion at the end of day i [mm]
+            
+            the root zone can be presented by means of a container in which the water 
+            content may fluctuate. To express the water content as root zone depletion 
+            is useful. It makes the adding and subtracting of losses and gains straightforward 
+            as the various parameters of the soil water budget are usually expressed in terms of 
+            water depth. Rainfall, irrigation and capillary rise of groundwater towards the root 
+            zone add water to the root zone and decrease the root zone depletion. Soil evaporation, 
+            crop transpiration and percolation losses remove water from the root zone and increase 
+            the depletion.
+            
+            Dr_previous_day - water content in the root zone at the end of the previous day, i-1 [mm],
+            P  - precipitation on day i [mm],
+            RO - runoff from the soil surface on day i [mm],
+            I  - net irrigation depth on day i that infiltrates the soil [mm],
+            CR - capillary rise from the groundwater table on day i [mm],
+            ETc- crop evapotranspiration on day i [mm],
+            DP - water loss out of the root zone by deep percolation on day i [mm]
+            
+            By assuming that the root zone is at field capacity following heavy rain or 
+            irrigation, the minimum value for the depletion Dr is zero. At that moment no water is 
+            left for evapotranspiration in the root zone, Ks becomes zero, and the root zone 
+            depletion has reached its maximum value TAW.
+            
+            TAW > Dr >= 0
+            
+            The daily water balance, expressed in terms of depletion at the end of 
+            the day is
+        """
+        return Dr_previous_day - (P-RO) - I - CR + ETc + DP
+    def calc_InitialDepletion(self,FC,q,Zr):
+        """ To initiate the water balance for the root zone, the initial depletion Dr, i-1 should 
+        be estimated. 
+        
+        where q i-1 is the average soil water content for the effective root zone. Following heavy 
+        rain or irrigation, the user can assume that the root zone is near field capacity, 
+        i.e., Dr, i-1  0
+        
+        The initial depletion can be derived from measured soil water content by:
+        """
+        return 1000*(FC-q)*Zr
+    def calc_DP(self,P,RO,I,ETc,Dr_previous_day):
+        """ Returns DP
+            Following heavy rain or irrigation, the soil water content in the root zone might 
+            exceed field capacity. In this simple procedure it is assumed that the soil water content 
+            is at q FC within the same day of the wetting event, so that the depletion Dr 
+            becomes zero. Therefore, following heavy rain or irrigation.
+            
+            
+            The DP calculated for calc_WaterBalance() is independent of the DP calculted in
+            calc_De().As long as the soil water content in the root zone is below field 
+            capacity (i.e., Dr, i > 0), the soil will not drain and DPi = 0.
+        """
+        return max(P - RO + I - ETc - Dr_previous_day,0)
+    def calc_soilproperties(self,sand,clay):
+        """ Returns volumetric water content theta for fieldcapacity
+            and wiltingpoint for  a given fraction of sand and
+            clay.
+            
+            theta_fc     - water content FC [m3/m3]
+            theta_wp     - water content WP [m3/m3]
+            sand_fraction - sand fraction [fraction]
+            clay_fraction - clay fraction [fraction]
+            
+            
+            
+        Soil type                    Theta [m3/m3]
+                            FC            WP            FC - WP
+            sand            0.07 - 0.17 0.02 - 0.07 0.05 - 0.11 
+            
+        """
+        return [0.17,0.07]
+    def calc_Kr(self,De,TEW,REW):
+        """
+        Kr - dimensionless evaporation reduction coefficient dependent on the soil 
+             water depletion (cumulative depth of evaporation) from the topsoil layer
+        De - cumulative depth of evaporation (depletion) from the soil surface
+                     layer at the end of day i-1 (the previous day) [mm],
+        TEW - maximum cumulative depth of evaporation (depletion) from the soil 
+              surface layer when Kr = 0 (TEW = total evaporable water) [mm],
+        REW - cumulative depth of evaporation (depletion) at the end of stage 1 
+              (REW = readily evaporable water) [mm]
+        """
+        if De > REW:
+            return (TEW-De)/(TEW-REW)
+        else:
+            return 1.
+    def calc_TEW(self,qFC,qWP,Ze):
+            """
+            TEW total evaporable water = maximum depth of water 
+            that can be evaporated from the soil when the topsoil
+            has been initially completely wetted [mm],
+            qFC - soil water content at field capacity [m3 m-3],
+            q WP - soil water content at wilting point [m3 m-3],
+            Ze - depth of the surface soil layer that is subject to
+                 drying by way of evaporation [0.10-0.15m].
+            """
+            return 1000(qFC-0.5*qWP)*Ze   
+    def calc_REW(self,soiltype='Sand'):
+        """ Return REW cumulative depth of evaporation (depletion) 
+            at the end of stage 1 (REW = readily evaporable water) [mm].
+        
+            The cumulative depth of evaporation, De, at the end of stage 1 
+            drying is REW (Readily evaporable water, which is the maximum 
+            depth of water that can be evaporated from the topsoil layer 
+            without restriction during stage 1). The depth normally ranges
+            from 5 to 12 mm and is generally highest for medium and fine 
+            textured soils.
+        
+        """
+        return 7. #sand 2-7 mm
+    def soiltype(self,sand,clay,silt):
+        return 'Sand'
+
 
 
 ''' Plant Interfaces:
