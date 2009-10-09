@@ -132,7 +132,7 @@ def set_results():
         biomass_root.append(plant.root.Wtot);biomass_stem.append(plant.shoot.stem.Wtot)
         biomass_leaf.append(plant.shoot.leaf.Wtot);biomass_storage.append(plant.shoot.storage_organs.Wtot)
         thermaltime.append(plant.developmentstage.Thermaltime);rooting_depth.append(plant.root.depth*-1.)
-        ETpot.append(plant.ET.reference)
+        ETpot.append(plant.et.reference)
     except NameError:
         biomass_plant.append(0);biomass_shoot.append(0)
         biomass_root.append(0);biomass_stem.append(0)
@@ -226,7 +226,7 @@ if __name__=='__main__':
         if i%1==0:
             if Plant.Count>=1:
                 print time_act,plant.developmentstage.Stage,i-90,plant.biomass.Total,plant.shoot.leaf.LAI
-                print time_act, 'ET %4.2f, sh %4.2f,comp %4.2f, sh_comp %4.2f, rootingdepth %4.2f' % (plant.ET.reference,sum(plant.water.Uptake),sum(plant.water.compensation),sum(plant.water.s_h_compensated),plant.root.depth)
+                print time_act, 'ET %4.2f, sh %4.2f,comp %4.2f, sh_comp %4.2f, rootingdepth %4.2f' % (plant.et.reference,sum(plant.water.Uptake),sum(plant.water.compensation),sum(plant.water.s_h_compensated),plant.root.depth)
             else:
                 print 'No plant'
         c.run(cmf.day)
