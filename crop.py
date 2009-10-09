@@ -1,3 +1,5 @@
+
+
 from pylab import *
 from FlowerPower import *
 import cmf
@@ -38,7 +40,7 @@ def timeseries_from_file(f):
     return res
 def load_meteo(project,stationname='Giessen'):
     # Load rain timeseries (doubled rain of giessen for more interstingresults)
-    rain=timeseries_from_file(stationname + '.rain')*0.5
+    rain=timeseries_from_file(stationname + '.rain')
     # Create a meteo station
     meteo=project.meteo_stations.add_station(stationname)
     # Meteorological timeseries
@@ -133,7 +135,7 @@ def set_results():
         biomass_root.append(plant.root.Wtot);biomass_stem.append(plant.shoot.stem.Wtot)
         biomass_leaf.append(plant.shoot.leaf.Wtot);biomass_storage.append(plant.shoot.storage_organs.Wtot)
         thermaltime.append(plant.developmentstage.Thermaltime);rooting_depth.append(plant.root.depth*-1.)
-        ETpot.append(plant.ET.reference)
+        ETpot.append(plant.et.reference)
     except NameError:
         biomass_plant.append(0);biomass_shoot.append(0)
         biomass_root.append(0);biomass_stem.append(0)
@@ -156,24 +158,46 @@ def plot_res(labels,res,y_label='y',x_label='x'):
     show()
 def wheat(soil,atmosphere):
     #Parameter development:
+    #Name growth stage, totat thermaltime of ending
     stage=[['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],
                    ['Anthesis',901.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]]
-    
+   
+    #Partitioning coefficiants for each season:
     shoot_percent =[.0,.9,.9,.9,.95,1.,1.,1.]
     root_percent = [.0,.1,.1,.1,.05,.0,.0,.0]
     leaf_percent = [[.0,.5,.5,.3,0.,.0,.0,.0][i]*perc for i,perc in enumerate(shoot_percent)]
     stem_percent = [[.0,.5,.5,.7,.3,.0,.0,.0][i]*perc for i,perc in enumerate(shoot_percent)]
     storage_percent = [[.0,.0,.0,.0,.7,1.,1.,1.][i]*perc for i,perc in enumerate(shoot_percent)]
-    #Partitioning coefficiants:
-    root=[['Emergence',0.],['Stem elongation',0.1],['Anthesis',0.05],['Maturity',0.]]
-    shoot=[['Emergence',0.],['Stem elongation',0.9],['Anthesis',0.95],['Maturity',1.]]
-    leaf=[['Emergence',0.],['Tillering',0.5],['Stem elongation',0.3],['Maturity',0.]]
-    stem=[['Emergence',0.],['Tillering',0.5],['Stem elongation',0.7],['Anthesis',0.3],['Maturity',0.]]
-    storage=[['Seed fill',0.],['Anthesis',0.7],['Maturity',1.]]
-    def fractioning(plant_organ,stage):
-        return [[max([s[1] if s[0] == item[0] else 0. for i,s in enumerate(stage)]),item[1]] for item in plant_organ]
-    wheat=Plant(soil,atmosphere,stage,shoot_percent,root_percent,
-                leaf_percent,stem_percent,storage_percent)
+    
+    #Evapotranspiration crop parameter
+    #Length of initil-, crop development-, mid- and end season
+    seasons = [stage[0][1], stage[3][1]-stage[0][1], stage[6][1]-stage[3][1], stage[-1][1]-stage[3][1]]
+    #basal crop coefficiants for each seasnon
+    Kcb_values = [0.15,1.1,0.15]
+    
+    #LUE-Parameter
+    #Ligth use efficiency
+    LUE = 3.0
+    #Extinction coefficiant
+    k = 0.4
+    
+    #Crop specific paramter
+    tbase=0.
+    rootability_thresholds=[1.5,0.5,16000.,.0,0.0,0.0]
+    pressure_threshold=[0.,1.,500.,16000.]
+    plant_N=[[160.,0.43],[1174.,0.16]]
+    leaf_specific_weight=50.
+    root_growth=1.2
+    K_m=0.
+    c_min=0.
+    
+    #Create Plant
+    wheat=Plant(soil,atmosphere,ET_FAO(Kcb_values,seasons),Water_Feddes(),Biomass_LUE(3.0,0.4),Development(stage),SoilLayer(),
+                Nitrogen(),shoot_percent,root_percent,leaf_percent,stem_percent,storage_percent,
+                tbase,rootability_thresholds,pressure_threshold,plant_N,leaf_specific_weight,root_growth)
+    
+    
+    
     return wheat
 
 class Field:
@@ -183,7 +207,7 @@ class Field:
 if __name__=='__main__':
     import datetime as t
     import time
-    c=cmf1d(sand=60,silt=30,clay=10,c_org=2.0,layercount=20,layerthickness=.1)
+    c=cmf1d(sand=90,silt=0,clay=10,c_org=2.0,layercount=20,layerthickness=.1)
     load_meteo(c.project,stationname='Giessen')
     c.cell.saturated_depth=5
     time_act=t.datetime(1980,1,1)
@@ -198,43 +222,41 @@ if __name__=='__main__':
                       ,t.datetime(1990,3,1)]
     harvest_date=[t.datetime(1991,8,30),t.datetime(1992,8,30),t.datetime(1993,8,30),t.datetime(1994,8,30),t.datetime(1995,8,30)
                       ,t.datetime(1996,8,30),t.datetime(1997,8,30),t.datetime(1998,8,30),t.datetime(1999,8,30),t.datetime(2000,8,30)
-                      ,t.datetime(1980,8,30),t.datetime(1981,8,30),t.datetime(1982,8,30),t.datetime(1983,8,30),t.datetime(1984,8,30)
+                      ,t.datetime(1980,8,1),t.datetime(1981,8,30),t.datetime(1982,8,30),t.datetime(1983,8,30),t.datetime(1984,8,30)
                       ,t.datetime(1985,8,30),t.datetime(1986,8,30),t.datetime(1987,8,30),t.datetime(1988,8,30),t.datetime(1989,8,30)
-                      ,t.datetime(1990,8,30)]
-    res=[]
-    swc = SWC()
-    swc.calc_InitialDepletion(FC, q, Zr)
-    while time_act<t.datetime(1980,10,1):
-        i+=1        
-        if filter(lambda s: s==time_act, sowing_date):
-            plant=wheat(c,c)
-        if filter(lambda s: s==time_act, harvest_date):
-            Plant.Count - 1#del plant
-        if Plant.Count>=1:
+                      ,t.datetime(1990,7,31)]
+    
+    
+    res=[];Kr=[]
+    swc = SoilWaterContainer()
+    while time_act<t.datetime(1980,12,31):
+        i+=1
+        #sowing
+        if filter(lambda s: s==time_act, sowing_date): plant=wheat(c,c)     
+        #harvest
+        if filter(lambda s: s==time_act, harvest_date): 
+            Plant.Count-=1
+        #plant growth
+        if Plant.Count >= 1.:
             plant(time_act,'day',1.)
-            c.flux=[s_h*-1. for s_h in plant.water.Uptake]
-        else:
-            c.flux=[0]*50
+            swc(plant.et.Reference,plant.et.Evaporation,c.cell.rain(time_act),plant.root.depth,plant.et.FieldCover,plant.et.Cropspecific)
+            res.append([swc.de,plant.soil.De_cmf(),c.cell.rain(time_act),plant.et.Evaporation,swc.Dr,plant.et.Transpiration,plant.et.Cropspecific])
+        #water flux from soil to plant
+        c.flux = [s_h*-1. for s_h in plant.water.Uptake] if Plant.Count >= 1. else [0]*50
+        #graphical output
         if i%1==0:
             if Plant.Count>=1:
-                
-                #Daily waterbalance:
-                
-                
-                
-                
-                
-                
-                
-                print time_act,plant.developmentstage.Stage,i-90#, plant.developmentstage.Thermaltime
-                res.append([plant.ET.Cropspecific,plant.ET.Reference])
-            else:
-                pass#print 'No plant'
+               #print time_act,plant.developmentstage.Stage,i-90,'Kr_cmf %4.2f, Kr_swc %4.2f, de_cmf %4.2f, de_swc %4.2f,rain %4.2f,Evaporation %4.2f' % (plant.soil.Kr_cmf(),swc.Kr,plant.soil.De_cmf(),swc.de,c.cell.rain(time_act),plant.ET.Evaporation)#, plant.developmentstage.Thermaltime
+                print time_act,plant.developmentstage.Stage,i,'de_smc %4.2f,de_cmf %4.2f,fieldcover %4.2f,evaporation %4.2f,kcb %4.2f' % (swc.de,plant.soil.De_cmf(),plant.et.FieldCover,plant.et.Evaporation,plant.et.kcb)            
+            else:   
+                print time_act,'No plant'
         c.run(cmf.day)
         time_act+=time_step
     elapsed = (time.time() - start)
 print elapsed
-plot_res(['ETc','ETo'],res)
+
+plot_res(['de_swc','de_cmf', 'rain','evapotranspiration','Dr','Transpiration','ETc'],res)
+
 """
 #print time_act, 'ET %4.2f, sh %4.2f,comp %4.2f, sh_comp %4.2f, rootingdepth %4.2f' % (plant.ET.reference,sum(plant.water.Uptake),sum(plant.water.compensation),sum(plant.water.s_h_compensated),plant.root.depth)
                 #print time_act ,'fgi',['%4.2f' %  a for a in plant.root.fgi][:10],sum(plant.root.fgi)

@@ -1,4 +1,4 @@
-class SWC:
+class SoilWaterContainer:
     """ SoilWaterContainer (SWC): 
         
         The root zone can be presented by means of a container in
@@ -11,42 +11,49 @@ class SWC:
         zone depletion. Soil evaporation, crop transpiration and percolation
         losses remove water from the root zone and increase the depletion.
     """
-    
-    def __ini__(self,sand=.9,clay=.1,initial_Zr=0.1,average_available_soilwater=0.55,Ze=0.1):
+    def __init__(self,sand=.9,clay=.1,initial_Zr=0.1,Ze=0.1):
         self.sand=sand
         self.clay=clay
         self.silt = max(1-(clay+sand),0.)
-        self.soiltype = self.calc_soiltype(self.sand,self.clay,self.silt)
+        self.soiltype = self.soiltype(self.sand, self.clay, self.silt)
         self.fc=self.calc_soilproperties(self.sand, self.clay)[0]
         self.wp=self.calc_soilproperties(self.sand, self.clay)[1]
-        self.dr = self.calc_InitialDepletion(self.fc, average_water_content, initial_Zr)
-        self.Ze=Ze
-        self.REW = self.calc_REW(soiltype=self.soiltype)
+        
+        #self.calc_InitialDepletion(self.fc, average_available_soilwater, initial_Zr)
+        self.dr = 0.
+        
+        #Where unknown, a value for Ze, the effective depth of the soil evaporation layer, of 0.10-0.15 m is recommended
+        self.ze=Ze
+        
+        self.rew = self.calc_REW(soiltype=self.soiltype)
+        self.tew = self.calc_TEW(self.fc, self.wp, self.ze)
         self.kr=0.
-        self.de = 0.
+        
+        #topsoil is near field capacity following a heavy rain or irrigation or 
+        #TEW (long period of time has elapsed since the last wetting) 
+        self.de = self.tew
+        
         self.taw = 0.
+        self.fw = 1. #precipition
     @property
-    def KR(self):
+    def Dr(self):
+        return self.dr
+    @property
+    def Kr(self):
         return self.kr
     @property
     def taw(self):
         return self.taw
-    def Dr(self):
-        return self.dr
-    def __call__(self,ET,rainfall,Zr,runoff=0.,irrigation=0.,capillarrise=0.):
-        
-        #Calculta dr and taw for water stress factor Ks
-        DP = self.calc_DP(rainfall, runoff, irrigation, ET, self.dr)
-        self.dr = self.calc_WaterBalance(self.dr, rainfall, runoff, irrigation, capillarrise, ET, DP)
+    def __call__(self,ET,ETc,evaporation,rainfall,Zr,fc,runoff=0.,irrigation=0.,capillarrise=0.):
+        #Calcultes dr and taw for water stress factor Ks
+        self.dr = self.calc_WaterBalance(self.dr, rainfall, runoff, irrigation, capillarrise, ETc)
         self.taw = self.calc_TAW(self.fc, self.wp, Zr)
-
         
         #Calculate Kr for the evapotranspiration
-        TEW = self.calc_TEW(self.fc, self.wp, self.de)
-        self.de = self.calc_EvaporationLayer(De, P, RO, I, fw, E, few, DPe, Tew)
-        self.kr = self.calc_Kr(self.de, TEW, self.REW)
-
-    def calc_EvaporationLayer(self,De,P,RO,I,fw,E,few,DPe,Tew=0.):
+        self.de = max(self.de-rainfall,0)
+        self.de =  self.calc_EvaporationLayer(self.de, rainfall, runoff, irrigation, self.fw, evaporation, fc)
+        self.kr = self.calc_Kr(self.de, self.tew, self.rew)
+    def calc_EvaporationLayer(self,de,P,RO,I,fw,E,fc,Tew=0.):
         """
         The estimation of Ke in the calculation procedure requires a 
         daily water balance computation for the surface soil layer for
@@ -69,13 +76,27 @@ class SWC:
         E  - evaporation on day i (i.e., Ei = Ke ETo) [mm],
         T  - depth of transpiration from the exposed and wetted fraction 
              of the soil surface layer on day i [mm],
-        DP - deep percolation loss from the topsoil layer on day i if 
+        DPe - deep percolation loss from the topsoil layer on day i if 
              soil water content exceeds field capacity [mm],
         fw - fraction of 
              soil surface wetted by irrigation [0.01 - 1],
         few- exposed and wetted soil fraction [0.01 - 1]
+        
+        Deep percolation:
+        
+            Following heavy rain or irrigation, the soil water content in the topsoil 
+            (Ze layer) might exceed field capacity. However, in this simple procedure it is 
+            assumed that the soil water content is at q FC nearly immediately following a 
+            complete wetting event.
+            
+            As long as the soil water content in the evaporation layer is below 
+            field capacity (i.e., De, i > 0), the soil will not drain and DPe, i = 0. 
         """
-        return De-(P-RO)-(I/fw)+(E/few)+Tew+DPe
+        
+        DPe = max(P + I/fw - de,0)
+        
+        #return de-(P-RO)-(I/fw)+(E*(min(1-fc,fw)))+Tew+DPe
+        return de-(P-RO)-(I/fw)+E+Tew+DPe
     def calc_TAW(self,FC,WP,Zr):
         """ the total available water in the root zone is the difference 
             between the water content at field capacity and wilting point.
@@ -102,7 +123,7 @@ class SWC:
             p is commonly used for many crops.
         """
         return p*TAW
-    def calc_WaterBalance(self,Dr_previous_day,P,RO,I,CR,ETc,DP):
+    def calc_WaterBalance(self,Dr,P,RO,I,CR,ETc):
         """ Returns Dr - root zone depletion at the end of day i [mm]
             
             the root zone can be presented by means of a container in which the water 
@@ -128,11 +149,23 @@ class SWC:
             depletion has reached its maximum value TAW.
             
             TAW > Dr >= 0
+        
+            Depp percolation:
             
-            The daily water balance, expressed in terms of depletion at the end of 
-            the day is
+            Following heavy rain or irrigation, the soil water content in the root zone might 
+            exceed field capacity. In this simple procedure it is assumed that the soil water content 
+            is at q FC within the same day of the wetting event, so that the depletion Dr 
+            becomes zero. Therefore, following heavy rain or irrigation.
+            
+            
+            The DP calculated for calc_WaterBalance() is independent of the DP calculted in
+            calc_De().As long as the soil water content in the root zone is below field 
+            capacity (i.e., Dr, i > 0), the soil will not drain and DPi = 0.
         """
-        return Dr_previous_day - (P-RO) - I - CR + ETc + DP
+        
+        DPr = max(P - RO + I - ETc - Dr,0)
+        
+        return Dr - (P-RO) - I - CR + ETc + DPr
     def calc_InitialDepletion(self,FC,q,Zr):
         """ To initiate the water balance for the root zone, the initial depletion Dr, i-1 should 
         be estimated. 
@@ -144,19 +177,6 @@ class SWC:
         The initial depletion can be derived from measured soil water content by:
         """
         return 1000*(FC-q)*Zr
-    def calc_DP(self,P,RO,I,ETc,Dr_previous_day):
-        """ Returns DP
-            Following heavy rain or irrigation, the soil water content in the root zone might 
-            exceed field capacity. In this simple procedure it is assumed that the soil water content 
-            is at q FC within the same day of the wetting event, so that the depletion Dr 
-            becomes zero. Therefore, following heavy rain or irrigation.
-            
-            
-            The DP calculated for calc_WaterBalance() is independent of the DP calculted in
-            calc_De().As long as the soil water content in the root zone is below field 
-            capacity (i.e., Dr, i > 0), the soil will not drain and DPi = 0.
-        """
-        return max(P - RO + I - ETc - Dr_previous_day,0)
     def calc_soilproperties(self,sand,clay):
         """ Returns volumetric water content theta for fieldcapacity
             and wiltingpoint for  a given fraction of sand and
@@ -200,7 +220,7 @@ class SWC:
             Ze - depth of the surface soil layer that is subject to
                  drying by way of evaporation [0.10-0.15m].
             """
-            return 1000(qFC-0.5*qWP)*Ze   
+            return 1000*(qFC-0.5*qWP)*Ze   
     def calc_REW(self,soiltype='Sand'):
         """ Return REW cumulative depth of evaporation (depletion) 
             at the end of stage 1 (REW = readily evaporable water) [mm].
@@ -216,6 +236,4 @@ class SWC:
         return 7. #sand 2-7 mm
     def soiltype(self,sand,clay,silt):
         return 'Sand'
-
-
-
+    
