@@ -1,0 +1,35 @@
+#SummerWheat
+#Development
+[['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',901.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]]
+#Partitioning shoot
+[.0,.9,.9,.9,.95,1.,1.,1.]
+#Partitioning root
+[.0,.1,.1,.1,.05,.0,.0,.0]
+#Partitioning leaf
+[.0,.5,.5,.3,0.,.0,.0,.0]
+#Partitioning stem
+[.0,.5,.5,.7,.3,.0,.0,.0]
+#Partitioning storage
+[.0,.0,.0,.0,.7,1.,1.,1.]
+#Basal crop coefficiants for each season
+[0.15,1.1,0.15]
+#Ligth use efficiency
+3.0       
+#Extinction coefficiant
+0.4
+#tbase
+0.
+#rootability_thresholds
+[1.5,0.5,16000.,.0,0.0,0.0]
+#pressure_threshold
+[0.,1.,500.,16000.]
+#plant_N
+[[160.,0.43],[1174.,0.16]]
+#leaf_specific_weight
+50.
+#root_growth
+1.2
+#K_m
+0.
+#c_min
+0.
