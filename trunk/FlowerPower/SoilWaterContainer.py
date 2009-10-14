@@ -1,4 +1,4 @@
-class SoilWaterContainer:
+class SWC:
     """ SoilWaterContainer (SWC): 
         
         The root zone can be presented by means of a container in

@@ -1,3 +1,3 @@
 from ProcessLibrary import *
-from Plant import *
+from PlantComponents import *
 from SoilWaterContainer import *
