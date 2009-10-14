@@ -1,3 +1,4 @@
+from pylab import *
 class Development:
     """
     Calculates the developmentstage of plant with the thermaltime concept.
@@ -16,7 +17,7 @@ class Development:
     ==============
     Call development calculates thermaltime.
     """
-    def __init__(self,getParameter):
+    def __init__(self,stage):
         """
         Returns a development instance.
         
@@ -89,7 +90,7 @@ class Development:
         @return: Actual developmentstage.
         """
         return filter(lambda i:i[1]>=self.tt, self.stages)[0] if self.tt<=self.stages[-1][1] else 'Development finished'
-    def __setitem__(self,getParameter):
+    def __setitem__(self,stage):
         self.stages.append(stage)
     def __getitem__(self,index):
         return self.stages[index]
@@ -205,16 +206,16 @@ class SoilLayer:
             #Each layer is a soillayer instance
             self.rootingzone.append(SoilLayer())
             #set lower limit
-            self.rootingzone[i].lowerlimit=layer
+            self.rootingzone[i].lower=layer
             #first layer upper limit = 0.
             if i == 0: 
-                self.rootingzone[i].upperlimit = 0.
+                self.rootingzone[i].upper = 0.
             #all other layers upper limit = lower limit of the above layer
             else: 
-                self.rootingzone[i].upperlimit = (soilprofile[i-1])
+                self.rootingzone[i].upper = (soilprofile[i-1])
             #Center and thickness of each layer
-            self.rootingzone[i].center = (self.rootingzone[i].lowerlimit + self.rootingzone[i].upperlimit) / 2.
-            self.rootingzone[i].thickness = self.rootingzone[i].lowerlimit - self.rootingzone[i].upperlimit 
+            self.rootingzone[i].center = (self.rootingzone[i].lower + self.rootingzone[i].upper) / 2.
+            self.rootingzone[i].thickness = self.rootingzone[i].lower - self.rootingzone[i].upper
     def __call__(self,Zr):
         """
         Calculates the pentration depth for each soillayer in the rootingzone.
@@ -225,14 +226,14 @@ class SoilLayer:
         #For each layer in rootingzone
         for layer in self.rootingzone:
             #If lower limit <= rootingdepth, the soillayer is full penetrated
-            if layer.lowerlimit <= Zr:
-                layer.penetration = layer.depth
+            if layer.lower <= Zr:
+                layer.penetration = layer.thickness
             #If upperlimit above rootingdepth, layer is not penetrated
-            elif layer.upperlimit>Zr:
+            elif layer.upper>Zr:
                 layer_penetration = 0.
             #If only a part from the layer is penetrated, the value is rootingdepth minus upperlimit
             else: 
-                layer.penetration = Zr - layer.upperlimit
+                layer.penetration = Zr - layer.upper
 class ET_FAO:
     """
     Calculates crop specific Evapotranspiration and correponds with the plant inferface evaporation.
@@ -507,7 +508,7 @@ class ET_FAO:
         @return: Kbc depending on the actual time in [-].
         """
         if time <=Lini: return Kcb_ini
-        elif time <=Lini+Ldev: return Kcb_ini+(day-Lini)/Ldev*(Kcb_mid-Kcb_ini)
+        elif time <=Lini+Ldev: return Kcb_ini+(time-Lini)/Ldev*(Kcb_mid-Kcb_ini)
         elif time <=Lini+Ldev+Lmid: return Kcb_mid
         elif time <= Lini+Ldev+Lmid+Llate: return Kcb_mid+(time-(Lini+Ldev+Lmid))/Llate*(Kcb_end-Kcb_mid)
         else: return Kcb_end
