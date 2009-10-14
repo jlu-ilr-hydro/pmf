@@ -121,7 +121,7 @@ class Plant:
         self.nitrogen=nitrogen
         
         #Implemetation of root and shoot class
-        self.root=Root(self,root_percent,rootability,root_growth,self.soil.get_profile(),layer)
+        self.root=Root(self,root_percent,rootability,root_growth,layer)
         self.shoot=Shoot(self,leaf_specific_weight,self.developmentstage[4][1],shoot_percent,leaf_percent,stem_percent,storage_percent)
         
         #Constant variables
@@ -158,7 +158,7 @@ class Plant:
         #compute actual rooting zone with actual rooting depth
         #Rootingzone consists of all layers, which are penetrated from the plant root
         self.root.zone(self.root.depth)
-        
+       
         #Development
         self.developmentstage(time_step,self.atmosphere.get_tmin(time_act), self.atmosphere.get_tmax(time_act), self.tbase)
         
@@ -244,6 +244,8 @@ class Plant:
         n=1-(Ra/Rp) if Rp>0. else 0.
         #Return list for the factor wit hthe higher stress index
         if  w >= n:
+            print H2Odis
+            
             return [w/sum(H2Odis) for w in H2Odis]
         else:
             return [n/sum(NO3dis) for n in NO3dis]
@@ -378,7 +380,7 @@ class Root:
     most limiting resource (nitrogen or water).
     The actual rootzone is calculated form the plant class.
     """
-    def __init__(self,plant,percent,rootability,root_growth,soilprofile,layer):
+    def __init__(self,plant,percent,rootability,root_growth,layer):
         """
         Returns a root instance and creates a rootingzone from the soilprofile.
         
@@ -395,8 +397,6 @@ class Root:
         @param root_growth: Root elongation factor in [cm day-1]
         @type layer: layer
         @param layer: Interface for the calculation of the rooting zone.
-        @type soilprofile: list
-        @param soilprofile: List with the lower limits of the layers in the soilprofile from the soil interface.
         @rtype: root
         @return: Root instance
         """
@@ -413,11 +413,10 @@ class Root:
         self.depth=1.
         #Root biomass
         self.Wtot=0.
-        #Biomass allocation over the rootingzone
-        self.distr=[0. for l in self.zone]
         #Rootingzone
         self.zone=layer
-        self.zone.get_rootingzone(soilprofile)
+        #Biomass allocation over the rootingzone
+        self.distr=[0. for l in self.zone]
         #FeelingGoodIndex
         self.fgi=[]
     def __call__(self,step,fgi,biomass,h,stress):
@@ -816,6 +815,7 @@ class Leaf:
         @see: [De Vries et al, 1989]
         """
         return min((tt/tt_anthesis+0.25),1.)
+
 
 
 ''' Plant Interfaces:

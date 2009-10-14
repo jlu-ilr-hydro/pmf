@@ -81,4 +81,59 @@ class cmf1d(object):
         except TypeError:
             raise TypeError("Fluxes is not a sequence of floats. Fluxes needs to be a sequence with %i float values" % self.cell.layer_count())            
     flux=property(__get_flux,__set_flux,"The boundary fluxes. A sequence with as many elements as layers")
-
+    
+    
+   
+    def get_profile(self):
+        return [l.boundary[0]*100 for l in self.cell.layers]
+    def Kr_cmf(cmf1d):
+        cell=cmf1d.cell
+        # Get top layer
+        layer=cell.layers[0]
+        # get field Capacity and wilting point
+        fc=layer.soil.Wetness_pF(1.8)
+        wp=layer.soil.Wetness_pF(4.2)
+        # Get TEW
+        TEW = 1000 * (fc-0.5*wp) * layer.thickness
+        REW = 1000 * (fc-0.5*(fc+wp)) * layer.thickness
+        
+        # Get storage deplation in mm
+        De = layer.get_capacity() * 1000 / cell.area * (1 - min(1.0,layer.wetness))
+    
+        if De<=REW:
+            return 1.0
+        else:
+            return (TEW-De)/(TEW-REW)
+    def get_pressurehead(self,depth):
+        return [l.matrix_potential for l in self.cell.layers][min(int(depth/0.1),len(self.cell.layers)-1)]
+    def get_nutrients(self,depth):
+       """ Depth in cm; Returns the nitrogen concentration in the soil solution in [mol l-1]"""
+       return 5.
+        
+    
+    def get_tmin(self,time):
+       """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns minimal temperature in Celsius """
+       return self.cell.get_weather(time).Tmin
+    def get_tmax(self,time):
+        """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns maximal temperature in Celsius """
+        return self.cell.get_weather(time).Tmax
+    def get_tmean(self,time):
+        return (self.cell.get_weather(time).Tmin + self.cell.get_weather(time).Tmax) / 2.
+    def get_Rs(self,time):
+        """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns total solar radiation in [MJ m-2]"""
+        return self.cell.get_weather(time).Rs
+    def get_Rn(self,time,albedo,daily=True):
+        """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns total solar radiation in [MJ m-2]"""
+        return self.cell.get_weather(time).Rn(albedo,daily)
+    def get_ea(self,time):
+        """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns actual vapor pressure in [kPa]"""
+        return self.cell.get_weather(time).e_a
+    def get_es(self,time):
+        """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns saturated vapor pressure in [kPa] """
+        return self.cell.get_weather(time).e_s
+    def get_windspeed(self,time):
+        """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns windspeed in [m s-1]"""
+        return self.cell.get_weather(time).Windspeed
+    def get_sunshine(self,time):
+        """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns sunshine hours in [hour]"""
+        return self.cell.get_weather(time).sunshine
