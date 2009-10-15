@@ -24,8 +24,7 @@ def getCropSpecificParameter(path):
     @rtype: list
     @return: List with crop specific parameters.
     """
-    
-    param = filter(lambda line: line[0]!='#',open(path,"r"))
+    param = filter(lambda line: line[0]!='#',open(path+'.txt',"r"))
     return [eval(each) for each in param]
 def timeseries_from_file(f):
 
@@ -148,63 +147,81 @@ def createCrop(soil,atmosphere,CropParams):
     #Creates plant
     return FlowerPower.Plant(soil,atmosphere,et,water,biomass,development,layer,nitrogen,
                  shoot,root,leaf,stem,storage)
-def run(timeact,timeend,timestep):
-     c.t = timeact
-     results = [];label=[]
-     
-     while timeact<timeend:
+def run(start,end,step):
+     #Set cmf time
+     c.t = start
+     #Modelrun for the given time period
+     for index,t in enumerate(drange(start,end,step)):
         #sowing
-        if filter(lambda s: s==timeact, sowing_date): 
-            plant=createCrop(c,c,SummerWheat)
+        if filter(lambda s: s==t, sowingdate): 
+            #for the moment equal to main.flowerpower_params 'crop'
+            crop=createCrop(c,c,SummerWheat)
         #harvest
-        if filter(lambda s: s==timeact, harvest_date): 
+        if filter(lambda h: h==t, harvestdate): 
+            #Deletes plant object
             FlowerPower.Plant.Count-=1
         #plant growth
-        if FlowerPower.Plant.Count > 0: plant(timeact,'day',1.)
+        if FlowerPower.Plant.Count > 0: crop(num2date(t),'day',1.)
         #water flux from soil to plant
-        c.flux = [uptake*-1. for uptake in plant.water.Uptake] if FlowerPower.Plant.Count >0 else [0]*50
+        c.flux = [uptake*-1. for uptake in crop.water.Uptake] if FlowerPower.Plant.Count >0 else [0]*50
         #water balance
         c.run(cmf.day)
-        timeact+=timestep
-        biomass_out([plant.developmentstage.Thermaltime,plant.biomass.Total,plant.shoot.leaf.LAI] if FlowerPower.Plant.Count > 0 else [0.,0.,0.])
-        process_out([plant.et.Potential,plant.water.Uptake] if FlowerPower.Plant.Count > 0 else [0.,0.])
-        print timeact,process_out.Step
+        print t
+        
+        #Save results for each element from output
+        for i,out in enumerate(output):
+            #Call plant only if plant exists
+            if FlowerPower.Plant.Count > 0:
+                #call out objects with flowerpower values
+                out([eval(param) for param in flowerpower_params[i]])
+            else:
+                #call out objects with zero values
+                out(zeros(len(out.labels)))
+            
+        if index % 14 == 0:
+            print index,num2date(t), [out.Step for out in output] 
+            for i,out in enumerate(output):
+                #Draw a dynamic plot, if True
+                if out.dynamic == True:
+                    out.DynamicPlot
+        
 class Output:
-    def __init__(self,labels,start=0.,end=1826.):
+    def __init__(self,labels,start,end,step,dynamic=False):
         """
-        @todo: dynamic plot: function init and call
+        @todo: y limits für dynmaisches plot müssen sich dynamischen anpassen, ansosnten fertog.
         """
+        #Variables with labes and all resutls of the output
         self.labels=labels
         self.results=[]
+        self.delta_time = drange(start,end,step)
         
-        '''
-        #Dynamic plot
-        ion()
-        self.biomass = zeros(end - start)
-        self.thermaltime = zeros(end - start)
+        #Dynamic plotting during the model run
+        self.dynamic=dynamic
         
-        
-        self.fig = Figure()
-        
-        self.dynamicplots = self.create_dynamicplot(labels,start,end)
-        self.x = range(1826) 
-        
-        
-        #plot biomass
-        self.fig.add_subplot(111)
-        self.biomass_plot, = plot(self.x,self.biomass,'g',label = self.labels[1])
-        ylabel('Biomass [g * m-1]')
-        grid()
-        
-        #plot thermaltime
-        ax2=twinx()
-        self.thermaltime_plot, = plot(self.x,self.thermaltime,color='blue',label = self.labels[0])
-        ylabel('DeegreeDays [Celsius]')
-        grid()
-        xlabel('Day of simulation period [day]')
-        legend(loc=0)
-        '''
-        
+        if self.dynamic == True:
+            #Dynamic plot
+            ion()
+            
+            #Zero list for each paramter
+            self.dynamicdata = [zeros(len(self.delta_time)) for l in self.labels]
+            
+            #Create figure with x-axes for the simulation period
+            self.fig = Figure()
+            self.x = self.delta_time
+           
+            #Create list for dynamic plots
+            self.dynamicplots = []
+            
+            #Create subplot with line2d object for each parameter
+            for i,dat in enumerate(self.dynamicdata):
+                #Create subplot
+                res  = subplot(len(self.dynamicdata),1,i+1)
+                #set date plot instance for each subplot
+                res,  = plot_date(self.delta_time,dat,label = self.labels[i])
+                ylim(0,1)
+                legend(loc=0)
+                self.dynamicplots.append(res)
+
     def __setitem__(self,stage):
         self.results.append(stage)
     def __getitem__(self,index):
@@ -217,52 +234,78 @@ class Output:
         return [[self.labels[i] +': ' +  '%4.2f' % r for i,r in enumerate(res)] for res in self.results]
     @property
     def Step(self):
-        return [self.labels[i]+': '+  '%4.2f' % res for i,res in enumerate(self.results[-1])]
+        """
+        Return the last record from the results parameter.
+        The rocord parameter constis of n parameters,
+        which aredefined during the model initialisation.
+        
+        If the paratermer is not a list, the output is
+        formated as 4.2f. Otherwise the function resturns
+        the parameter list.
+        
+        @rtype: list
+        @return: Last record from the output
+        """
+        return [self.labels[i]+': '+  '%4.2f' % res if type(res) != list else self.labels[i]+': '+ str(['%4.2f' % r for r in res]) for i,res in enumerate(self.results[-1])]
     @property
     def Plot(self):
-        return self.plot(self.results,self.labels)
+        list = []
+        for i in range(len(self.results[0])):
+            res  = subplot(len(self.results[0]),1,i+1)
+            res,  = plot_date(self.delta_time,[res[i] for res in self.results])
+            list.append(res)
+        return list
     @property
-    def Dynamic(self):
-        #Reefresh plot data
-        self.biomass_plot.set_ydata(self.biomass)
-        self.thermaltime_plot.set_ydata(self.thermaltime)
+    def DynamicPlot(self):
+        #Refresh plot data
+        for i,plot in enumerate(self.dynamicplots):
+           plot.set_ydata(self.dynamicdata[i])
         draw()
     def __call__(self,results):
         #set resutls
         self.results.append(results)
-        '''
-        #set data for dynamic plot
-        self.biomass[self.results.index(self.results[-1])]+=self.results[-1][0]
-        self.thermaltime[self.results.index(self.results[-1])]+=self.results[-1][1]
-        '''
-    def plot(self,results,labels):
-        for i in range(len(results[0])):
-            plot([res[i] for res in results],label=labels[i])
-        show()
-    def create_dynamicplot(self,labels,start,end):
-        lenght = start - end
-        return [zeros(end - start) for l in labels]
         
+        #set data for dynamic plot
+        if self.dynamic == True:
+            for i,data in enumerate(self.dynamicdata):
+                data[len(self.results)-1]+=self.results[-1][i]       
      
 if __name__=='__main__':
     #Create cmf cell
     c=cmf1d(sand=90,silt=0,clay=10,c_org=2.0,layercount=20,layerthickness=.1)
+    c.cell.saturated_depth=5
     
     #Load meteological data
     load_meteo(c.project,stationname='Giessen')
-    c.cell.saturated_depth=5
     
     #Crop parameter
-    SummerWheat = getCropSpecificParameter('SummerWheat.txt')
+    SummerWheat = getCropSpecificParameter('SummerWheat')
     
     #set management
-    sowing_date=[datetime(1980,3,1),datetime(1981,3,1),datetime(1982,3,1),datetime(1983,3,1),datetime(1984,3,1)]
-    harvest_date=[datetime(1980,8,1),datetime(1981,8,30),datetime(1982,8,30),datetime(1983,8,30),datetime(1984,8,30)]
+    sowingdate=[date2num(d) for d in [datetime(1980,3,1),datetime(1981,3,1),datetime(1982,3,1),
+                 datetime(1983,3,1),datetime(1984,3,1)]]
+    harvestdate=[date2num(d) for d in [datetime(1980,8,1),datetime(1981,8,30),datetime(1982,8,30),
+                  datetime(1983,8,30),datetime(1984,8,30)]]
     
-    #Model output
-    biomass_out = Output(['Thermaltime','Biomass','LAI'])
-    process_out = Output(['Waterdemand','Wateruptake'])
+    #Simulation period
+    start = datetime(1980,1,1)
+    end = datetime(1980,12,31)
+    
+    #timestep = daily
+    step = timedelta(1)
+    
+    #Initialise output classes whith labels for each parameter
+    output = [Output(['Thermaltime','Biomass','LAI','Zr'],start,end,step),
+              Output(['Waterdemand','Wateruptake'],start,end,step)]
+  
+    #Set FlowerPower call function for each parameter in output
+    flowerpower_params = [['crop.developmentstage.Thermaltime*10','crop.biomass.Total',
+                           'crop.shoot.leaf.LAI','crop.root.depth'],
+                          ['crop.et.Reference','crop.water.Uptake']]
     
     #run simulation
-    run(datetime(1980,1,1),datetime(1984,12,31),timedelta(1))
+    run(start,end,step)
     
+    #Show output
+    #output[0].Plot
+    #show()
