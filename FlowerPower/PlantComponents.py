@@ -187,13 +187,11 @@ class Plant:
             #Calls nitrogen interface for nitrogen uptake
             self.nitrogen([self.soil.get_nutrients(l.center) for l in self.root.zone],
                           self.water.Uptake, self.Rp, [l.penetration for l in self.root.zone])  
-            
             #Biomass accumulation
             #Calculates stress index which limits potential growth throug water and nutrient stress
             self.stress=min(sum(self.water.Uptake) / self.et.Cropspecific, sum(self.nitrogen.Total)/ self.Rp,1.)*1.
             #Calls biomass interface for the calculation of the actual biomass
             self.biomass(self.stress,time_step,self.biomass.atmosphere_values(self.atmosphere,time_act),self.shoot.leaf.LAI)
-            
             #Partitioning
             #Calls the root instance.Allocates biomass to root and defines the feeling good index for the root biomass
             #distribution.        
@@ -244,9 +242,7 @@ class Plant:
         n=1-(Ra/Rp) if Rp>0. else 0.
         #Return list for the factor wit hthe higher stress index
         if  w >= n:
-            print H2Odis
-            
-            return [w/sum(H2Odis) for w in H2Odis]
+            return [h2o/sum(H2Odis) for h2o in H2Odis]
         else:
             return [n/sum(NO3dis) for n in NO3dis]
     def respire(self,g,Wact,m,Wtot):
@@ -815,9 +811,6 @@ class Leaf:
         @see: [De Vries et al, 1989]
         """
         return min((tt/tt_anthesis+0.25),1.)
-
-
-
 ''' Plant Interfaces:
 class Soil:
     def pressurehead(self,depth):

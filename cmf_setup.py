@@ -105,7 +105,7 @@ class cmf1d(object):
         else:
             return (TEW-De)/(TEW-REW)
     def get_pressurehead(self,depth):
-        return [l.matrix_potential for l in self.cell.layers][min(int(depth/0.1),len(self.cell.layers)-1)]
+        return [l.matrix_potential*-100 for l in self.cell.layers][min(int(depth/0.1),len(self.cell.layers)-1)]
     def get_nutrients(self,depth):
        """ Depth in cm; Returns the nitrogen concentration in the soil solution in [mol l-1]"""
        return 5.
