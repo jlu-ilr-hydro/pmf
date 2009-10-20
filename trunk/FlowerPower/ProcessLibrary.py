@@ -379,6 +379,7 @@ class ET_FAO:
         @param h: mean maximum plant height during the period of calculation (initial, development, mid-season, or late-season) in [m].
         
         @todo: Unit for stomatal resistance
+        @todo: Altitude berechnen
         """
         #Calculates reference Evapotranspiration
         self.eto = self.calc_ETo(Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt=0,printSteps=0)

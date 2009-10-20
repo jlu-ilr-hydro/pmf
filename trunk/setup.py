@@ -152,6 +152,9 @@ def run(start,end,step):
      c.t = start
      #Modelrun for the given time period
      for index,t in enumerate(drange(start,end,step)):
+        
+        #Manamgement tasks
+        
         #sowing
         if filter(lambda s: s==t, sowingdate): 
             #for the moment equal to main.flowerpower_params 'crop'
@@ -160,13 +163,17 @@ def run(start,end,step):
         if filter(lambda h: h==t, harvestdate): 
             #Deletes plant object
             FlowerPower.Plant.Count-=1
-        #plant growth
+        
+        #Let grow
         if FlowerPower.Plant.Count > 0: crop(num2date(t),'day',1.)
-        #water flux from soil to plant
+        
+        #Water balance
+        
+        #Fwater flux from soil to plant
         c.flux = [uptake*-1. for uptake in crop.water.Uptake] if FlowerPower.Plant.Count >0 else [0]*50
-        #water balance
+        #water cycling
         c.run(cmf.day)
-        print t
+        
         
         #Save results for each element from output
         for i,out in enumerate(output):
@@ -177,7 +184,8 @@ def run(start,end,step):
             else:
                 #call out objects with zero values
                 out(zeros(len(out.labels)))
-            
+        
+        #Output in console    
         if index % 14 == 0:
             print index,num2date(t), [out.Step for out in output] 
             for i,out in enumerate(output):
@@ -188,7 +196,8 @@ def run(start,end,step):
 class Output:
     def __init__(self,labels,start,end,step,dynamic=False):
         """
-        @todo: y limits für dynmaisches plot müssen sich dynamischen anpassen, ansosnten fertog.
+        @todo: ylim, axis labels for deynamic plot and Image property doesen't run, because
+               of the resutls list. 
         """
         #Variables with labes and all resutls of the output
         self.labels=labels
@@ -248,11 +257,32 @@ class Output:
         """
         return [self.labels[i]+': '+  '%4.2f' % res if type(res) != list else self.labels[i]+': '+ str(['%4.2f' % r for r in res]) for i,res in enumerate(self.results[-1])]
     @property
+    def Image(self):
+        list =[]
+        for i in range(len(self.results[0])):
+            res  = subplot(len(self.results[0]),1,i+1)
+            res, = imshow(transpose([res[i] for res in self.results]),cmap=cm.RdYlBu,aspect='auto')
+            colobar()
+            grid()
+            ylabel(self.labels[i])
+        list.append(res)
+        return list
+        """
+        for i in range(len(self.results[0])):
+            res  = subplot(len(self.results[0]),1,i+1)
+            res, = imshow(transpose([res[i] for res in self.results]),cmap=cm.RdYlBu,aspect='auto')
+            colorbar()
+            grid()
+            ylabel(self.labels[i])
+        """
+    @property
     def Plot(self):
         list = []
         for i in range(len(self.results[0])):
             res  = subplot(len(self.results[0]),1,i+1)
-            res,  = plot_date(self.delta_time,[res[i] for res in self.results])
+            res,  = plot_date(self.delta_time,[res[i] for res in self.results],label = self.labels[i])
+            legend(loc=0)
+            
             list.append(res)
         return list
     @property
@@ -272,8 +302,11 @@ class Output:
      
 if __name__=='__main__':
     #Create cmf cell
-    c=cmf1d(sand=90,silt=0,clay=10,c_org=2.0,layercount=20,layerthickness=.1)
+    c = cmf1d(sand=90,silt=0,clay=10,c_org=2.0,layercount=20,layerthickness=.1)
     c.cell.saturated_depth=5
+    
+    #Create swc instance
+    swc = SWC(sand=.9,clay=.1,initial_Zr=0.1,Ze=0.1)
     
     #Load meteological data
     load_meteo(c.project,stationname='Giessen')
@@ -282,9 +315,9 @@ if __name__=='__main__':
     SummerWheat = getCropSpecificParameter('SummerWheat')
     
     #set management
-    sowingdate=[date2num(d) for d in [datetime(1980,3,1),datetime(1981,3,1),datetime(1982,3,1),
+    sowingdate = [date2num(d) for d in [datetime(1980,3,1),datetime(1981,3,1),datetime(1982,3,1),
                  datetime(1983,3,1),datetime(1984,3,1)]]
-    harvestdate=[date2num(d) for d in [datetime(1980,8,1),datetime(1981,8,30),datetime(1982,8,30),
+    harvestdate = [date2num(d) for d in [datetime(1980,8,1),datetime(1981,8,30),datetime(1982,8,30),
                   datetime(1983,8,30),datetime(1984,8,30)]]
     
     #Simulation period
@@ -306,6 +339,3 @@ if __name__=='__main__':
     #run simulation
     run(start,end,step)
     
-    #Show output
-    #output[0].Plot
-    #show()

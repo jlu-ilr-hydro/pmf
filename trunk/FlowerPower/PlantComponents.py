@@ -178,15 +178,18 @@ class Plant:
             self.water(transpiration_distribution
                          ,[self.water.soil_values(self.soil,l.center) for l in self.root.zone],self.pressure_threshold)
         
-        #The following processes occure only in the growing season (Emergence < developmentstge <= maturity)
-        if self.developmentstage.IsGrowingseason:
-            
-            #Nutrient uptake from soil
+       
+        #Nutrient uptake from soil
             #Rp = nitrogen demand, product from the potential nitrogen content in percent and athe actual biomass of plant 
             self.Rp=self.NO3dem(self.biomass.PotentialGrowth, self.NO3cont(self.plantN, self.developmentstage.Thermaltime))
             #Calls nitrogen interface for nitrogen uptake
             self.nitrogen([self.soil.get_nutrients(l.center) for l in self.root.zone],
                           self.water.Uptake, self.Rp, [l.penetration for l in self.root.zone])  
+        
+        
+        
+        #The following processes occure only in the growing season (Emergence < developmentstge <= maturity)
+        if self.developmentstage.IsGrowingseason:
             #Biomass accumulation
             #Calculates stress index which limits potential growth throug water and nutrient stress
             self.stress=min(sum(self.water.Uptake) / self.et.Cropspecific, sum(self.nitrogen.Total)/ self.Rp,1.)*1.

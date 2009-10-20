@@ -1,48 +1,105 @@
 class SWC:
-    """ SoilWaterContainer (SWC): 
-        
-        The root zone can be presented by means of a container in
-        which the water content may fluctuate. To express the water
-        content as root zone depletion is useful. It makes the adding
-        and subtracting of losses and gains straightforward as the various
-        parameters of the soil water budget are usually expressed in terms
-        of water depth. Rainfall, irrigation and capillary rise of groundwater
-        towards the root zone add water to the root zone and decrease the root
-        zone depletion. Soil evaporation, crop transpiration and percolation
-        losses remove water from the root zone and increase the depletion.
+    """ 
+    Soil water calculates a daily water balance.
+    
+    The root zone can be presented by means of a container in
+    which the water content may fluctuate. To express the water
+    content as root zone depletion is useful. It makes the adding
+    and subtracting of losses and gains straightforward as the various
+    parameters of the soil water budget are usually expressed in terms
+    of water depth. Rainfall, irrigation and capillary rise of groundwater
+    towards the root zone add water to the root zone and decrease the root
+    zone depletion. Soil evaporation, crop transpiration and percolation
+    losses remove water from the root zone and increase the depletion.
+    This concept is taken from the "Crop evapotranspiration - Guidelines 
+    for computing crop water requirements - FAO Irrigation and drainage 
+    paper 56 ". 
+
+    Implementation
+    ==============
+    SWC is implemented with the sand and clay fractions from the
+    soil. SWC calculates the usda soiltype, the water cocntent at
+    field capacity and the water content at wilting point. 
+    
+    
+    related total thermaltime for each dtage.
+    
+    Call signature
+    ==============
+    Call development calculates thermaltime.
+    
+    @see: [Allen et al, 1998]
     """
     def __init__(self,sand=.9,clay=.1,initial_Zr=0.1,Ze=0.1):
+        """
+        Returns a SWC instance from a soil  particle size distribution.
+        
+        @type sand: double
+        @param sand: Sand fraction in the soilprofile in [-].
+        @type clay: double
+        @param clay: Clay fraction in the soilprofile in [-].
+        @type initital_Zr: double
+        @param initial_Zr: Initial rooting depth in [m].
+        @type Ze: double
+        @param param: Effective depth of the soil evaporation layer in [m].
+        """
+        #Constant variables
+        #Soiltype and particle size distribution
         self.sand=sand
         self.clay=clay
         self.silt = max(1-(clay+sand),0.)
         self.soiltype = self.soiltype(self.sand, self.clay, self.silt)
+        
+        #Water content at fieldcapacity and wiltingpoint
         self.fc=self.calc_soilproperties(self.sand, self.clay)[0]
         self.wp=self.calc_soilproperties(self.sand, self.clay)[1]
         
-        #self.calc_InitialDepletion(self.fc, average_available_soilwater, initial_Zr)
-        self.dr = 0.
-        
-        #Where unknown, a value for Ze, the effective depth of the soil evaporation layer, of 0.10-0.15 m is recommended
+        #effective depth of the soil evaporation layer, of 0.10-0.15 m is recommended
         self.ze=Ze
         
+        #readily evaporable water
         self.rew = self.calc_REW(soiltype=self.soiltype)
+        #total evaporable water
         self.tew = self.calc_TEW(self.fc, self.wp, self.ze)
-        self.kr=0.
         
-        #topsoil is near field capacity following a heavy rain or irrigation or 
-        #TEW (long period of time has elapsed since the last wetting) 
+        #State variables
+        #Initial depletion = total evaporable water
         self.de = self.tew
         
+        #Dimensionless evaporation reduction coefficient
+        self.kr=0.
+       
+        #total available water in the root zone
         self.taw = 0.
-        self.fw = 1. #precipition
+        
+        #fraction of soil surface wetted by irrigation or precipitation; fw = 1. for pcp
+        self.fw = 1. 
     @property
     def Dr(self):
+        """
+        Returns Root zone depletion at the end of day.
+        
+        @rtype: double
+        @return: Root zone depletion at the end of day in [mm]. 
+        """
         return self.dr
     @property
     def Kr(self):
+        """
+        Returns evaporation reduction coefficient.
+        
+        @rtype: double
+        @return: Revaporation reduction coefficient in [-].
+        """
         return self.kr
     @property
     def taw(self):
+        """
+        Returns total available soil water in the root zone.
+        
+        @rtype: double
+        @return: Total available soil water in the root zone in [mm]
+        """
         return self.taw
     def __call__(self,ET,ETc,evaporation,rainfall,Zr,fc,runoff=0.,irrigation=0.,capillarrise=0.):
         #Calcultes dr and taw for water stress factor Ks
@@ -78,8 +135,7 @@ class SWC:
              of the soil surface layer on day i [mm],
         DPe - deep percolation loss from the topsoil layer on day i if 
              soil water content exceeds field capacity [mm],
-        fw - fraction of 
-             soil surface wetted by irrigation [0.01 - 1],
+        fw - fraction of soil surface wetted by irrigation [0.01 - 1],
         few- exposed and wetted soil fraction [0.01 - 1]
         
         Deep percolation:
