@@ -77,7 +77,11 @@ def createCrop(soil,atmosphere,CropParams):
     """
     Returns a plant instance with the given parameter.
     
+    Creates a plant with the given soil and amtosphere interface.
+    The crop specific parameters must be taken from the input file.
+    All other needed interfaces are set with the default classes.
     
+    Discription of the input file:
     CropParams[0] : Basal crop coefficiants for each season
     CropParams[1] : Ligth use efficiency
     CropParams[2] : Extinction coefficiant
@@ -95,7 +99,16 @@ def createCrop(soil,atmosphere,CropParams):
     CropParams[14] : plant_N
     CropParams[15] : leaf_specific_weight
     CropParams[16] : root_growth
-            
+    
+    @type soil: soil
+    @param soil: Soil instance
+    @type atmosphere: atmosphere
+    @param atmosphere: Atmosphere instance
+    @type CropParams: list
+    @param CropParams: List with specific crop coeffciants.
+    
+    @rtype: FlowerPower.PlantComponents.Plant
+    @return: Plant with specific parameters and soil and atmospere interface.
     """
     #SummerWheat
     #Development
