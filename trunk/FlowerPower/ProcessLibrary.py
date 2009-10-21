@@ -193,6 +193,8 @@ class SoilLayer:
     def __iter__(self):
         for horizon in self.rootingzone:
             yield horizon
+    def __len__(self):
+        return len(self.rootingzone)
     def get_rootingzone(self,soilprofile):
         """ Returns a rootingzone with the geomertical details of each layer.
         
@@ -272,7 +274,7 @@ class ET_FAO:
     
      @see: [Allen et al, 1998]
     """
-    def __init__(self,kcb_values,seasons):
+    def __init__(self,kcb_values,seasons, kcmin = 0.15):
         """
         Returns a ET_FAO instance.
         
@@ -280,6 +282,8 @@ class ET_FAO:
         @param seasons: List with the length of the four development seasons in [degreedays].
         @type kcb_values: list
         @param kcb_values: List with basal crop coefficiants for each season in seasons parameter in [-].
+        @type Kcmin: double
+        @param Kcmin: Minimum Kc for dry bare soil with no ground cover [0.15 - 0.20] in [-].
         
         @rtype: ET_FAO
         @return: ET_FAO instance
@@ -287,21 +291,13 @@ class ET_FAO:
         #Constant variables
         self.kcb_values=kcb_values
         self.seasons=seasons
+        self.kcmin = kcmin
         #State vairables
         self.eto=0.
         self.kcb=0.
         self.ke=0.
         self.fw=1.
         self.fc=0.
-    @property
-    def FieldCover(self):
-        """
-        Returns the fieldcover after the FAO-concept
-        
-        @rtype: double
-        @return: Fieldcover in [-].
-        """
-        return self.fc
     @property
     def Transpiration(self):
         """
@@ -393,7 +389,7 @@ class ET_FAO:
         kcmax = self.calc_Kcmax(self.kcb, h, windspeed, RHmin)
         
         #Calcultes fieldcover afte FAO and exposed and wetted soil fraction
-        self.fc = self.calc_fc_dynamic(self.kcb, kcmax, vegH)
+        self.fc = self.fc_from_LAI(LAI,fullcover = 3.)#self.calc_fc_dynamic(self.kcb, kcmax, vegH,self.kcmin)
         few = self.calc_few(self.fc, self.fw)
         
         #Calculates evaporation coefficiant
@@ -598,7 +594,7 @@ class ET_FAO:
         @return: Fraction of the soil that is both exposed and wetted in [-].
         """
         return min(1-fc,fw)
-    def calc_fc_dynamic(self,Kcb,Kcmax,h,Kcmin=0.15):#
+    def calc_fc_dynamic(self,Kcb,Kcmax,h,Kcmin):#
         """ 
         Dynamic calculates effective fraction of soil surface covered by vegetation.
         
@@ -643,6 +639,23 @@ class ET_FAO:
         elif thermaltime <= seasons[0]+seasons[1]: return 0.8#
         elif thermaltime <= seasons[0]+seasons[1]+seasons[2]:return 1.
         else: return 0.8
+    def fc_from_LAI(self,LAI,fullcover = 3.):
+        """
+        Returns fieldcover calculated from LAI.
+        
+        LAI 3.0 can be assumed as maximum fieldcover.
+        For LAI > 3.0 fc equals one, for values under 3.0
+        fc is computed as fraction from full cover.
+        
+        @type LAI: double
+        @param LAI: Leaf area index in [m2 m-2].
+        @type fullcover: double
+        @param fullcover: LAI which leads to full fieldcover in [m2 m-2].
+        
+        @rtype: double
+        @return: Effective fraction of soil surface covered by vegetation in [-].
+        """ 
+        return min(LAI / fullcover,1.)
 class Water_FAO:
     """
     Simple water uptake model which computes water uptake under stressed condtionins.
@@ -791,22 +804,25 @@ class Water_Feddes:
     
     @see: [Feddes et al, 1978, Feddes & Raats 2004]
     """
-    def __init__(self,maxcomp=2.):
+    def __init__(self,maxcomp=2.,layercount=21.):
         """
         Returns a Water_Feddes instance.
         
         @type maxcomp: double
         @param maxcomp: Maximal compensation capacity factor in [-].
+        @type layercount: double
+        @param layercount: Count of the layer in the soil profile.
+        
         @rtype: water_feddes
         @return: Water_Feddes instance
         """
         #Constant variables
         self.max_compensation_capacity=maxcomp
         #State variables
-        self.Sh=[]
-        self.alpha=[]
-        self.compensation=[]
-        self.Shcomp=[]
+        self.Sh=[0. for l in range(layercount)]
+        self.alpha=[0. for l in range(layercount)]
+        self.compensation=[0. for l in range(layercount)]
+        self.Shcomp=[0. for l in range(layercount)]
     @property
     def Uptake(self):
         """
@@ -1172,7 +1188,7 @@ class Nitrogen:
     
     @see: [Simunek & Hopmans 2009]
     """
-    def __init__(self,Km=0.,NO3_min=0.):
+    def __init__(self,Km=0.,NO3_min=0.,layercount=21.):
         """
         Returns a Biomass_LOG instance.
         
@@ -1180,6 +1196,9 @@ class Nitrogen:
         @param Km: Maximal plant biomass in [g]. 
         @type NO3_min: double
         @param NO3_min: Growth facor of the plant in [g biomass day-1].
+        @type layercount: double
+        @param layercount: Count of the layer in the soil profile.
+        
         @rtype: nitrogen
         @return: Nitrogen instance
         
@@ -1189,8 +1208,8 @@ class Nitrogen:
         self.Km=Km
         self.NO3min=NO3_min
         #State variables
-        self.Pa=[]
-        self.Aa=[]
+        self.Pa=zeros(layercount)
+        self.Aa=zeros(layercount)
     @property
     def Active(self):
         """

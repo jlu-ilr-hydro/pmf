@@ -51,7 +51,7 @@ class SWC:
         self.sand=sand
         self.clay=clay
         self.silt = max(1-(clay+sand),0.)
-        self.soiltype = self.soiltype(self.sand, self.clay, self.silt)
+        self.soiltype = self.soiltype(self.sand, self.clay)
         
         #Water content at fieldcapacity and wiltingpoint
         self.fc=self.calc_soilproperties(self.sand, self.clay)[0]
@@ -68,6 +68,9 @@ class SWC:
         #State variables
         #Initial depletion = total evaporable water
         self.de = self.tew
+        
+        #Initial root zone depletion 
+        self.dr = 0.        
         
         #Dimensionless evaporation reduction coefficient
         self.kr=0.
@@ -104,7 +107,7 @@ class SWC:
         @return: Total available soil water in the root zone in [mm].
         """
         return self.taw
-    def __call__(self,ETc,evaporation,rainfall,Zr,fc,runoff=0.,irrigation=0.,capillarrise=0.):
+    def __call__(self,ETc,evaporation,rainfall,Zr,runoff=0.,irrigation=0.,capillarrise=0.):
         """
         Calculates Root zone depletion Dr, total available soil water TAW, 
         cumulative depth of evaporation De and the evaporation reduction coefficient Kr. 
@@ -137,10 +140,10 @@ class SWC:
         
         #Cumulative depth of evaporation
         self.de = max(self.de-rainfall,0)
-        self.de =  self.calc_EvaporationLayer(self.de, rainfall, runoff, irrigation, self.fw, evaporation, fc)
+        self.de =  self.calc_EvaporationLayer(self.de, rainfall, runoff, irrigation, self.fw, evaporation)
         #Evaporation reduction coefficient
         self.kr = self.calc_Kr(self.de, self.tew, self.rew)
-    def calc_EvaporationLayer(self,de,P,RO,I,fw,E,fc,Tew=0.):
+    def calc_EvaporationLayer(self,de,P,RO,I,fw,E,Tew=0.):
         """
         Returns the cumulative depth of evaporation.
         
@@ -169,8 +172,6 @@ class SWC:
         @param fw: Fraction of soil surface wetted by irrigation in [-],
         @type E: double
         @param E: Evaporation in [mm],
-        @type fc: double
-        @param fc: Fieldcover in [-].
         @type Tew: double
         @param Tew: Depth of transpiration from the exposed and wetted fraction of the soil surface layer on day in [mm].
         
@@ -339,7 +340,7 @@ class SWC:
         @rtype: double
         @return: Total evaporable water in [mm].
         """
-        return 1000*(qFC-0.5*qWP)*Ze   
+        return 1000*(FC-0.5*WP)*Ze   
     def calc_REW(self,soiltype='Sand'):
         """ 
         Return REW cumulative depth of evaporation.
