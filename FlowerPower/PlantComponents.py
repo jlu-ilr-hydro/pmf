@@ -173,7 +173,7 @@ class Plant:
         
         #Water uptake
             #Allocation if the potential transpiration over the rootingzone
-            transpiration_distribution = [self.et.Reference/self.root.depth * l.penetration for l in self.root.zone]
+            transpiration_distribution = [self.et.Transpiration/self.root.depth * l.penetration for l in self.root.zone]
             #Calls water interface for the calculation of the water uptake
             self.water(transpiration_distribution
                          ,[self.water.soil_values(self.soil,l.center) for l in self.root.zone],self.pressure_threshold)
