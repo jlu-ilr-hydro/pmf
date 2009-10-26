@@ -33,3 +33,9 @@
 50.
 #root_growth
 1.2
+#max_height
+1.0
+#Logistic growht rate
+0.05
+#Capacity limit
+1500.

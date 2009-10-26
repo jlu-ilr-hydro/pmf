@@ -85,7 +85,7 @@ class cmf1d(object):
     
    
     def get_profile(self):
-        return [l.boundary[0]*100 for l in self.cell.layers]
+        return [l.boundary[1]*100 for l in self.cell.layers]
     def Kr_cmf(cmf1d):
         cell=cmf1d.cell
         # Get top layer
@@ -104,7 +104,8 @@ class cmf1d(object):
             return 1.0
         else:
             return (TEW-De)/(TEW-REW)
-    def get_pressurehead(self,depth):
+    def get_pressurehead(self,d):
+        depth = d / 100.
         return [l.matrix_potential*-100 for l in self.cell.layers][min(int(depth/0.1),len(self.cell.layers)-1)]
     def get_nutrients(self,depth):
        """ Depth in cm; Returns the nitrogen concentration in the soil solution in [mol l-1]"""

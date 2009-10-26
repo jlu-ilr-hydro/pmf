@@ -371,7 +371,7 @@ class SWC:
         @rtype: string
         @return: USDA soil type.
         
-        @todo: calculation of soil type
+        @todo: Calculation of soil type from sand and clay fraction.
         """
         return 'Sand'
     
