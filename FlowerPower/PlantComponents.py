@@ -51,7 +51,7 @@ class Plant:
                  rootability=[1.5,0.5,16000.,.0,0.0,0.0],
                  pressure_threshold=[0.,1.,500.,16000.],
                  plantN=[[160.,0.43],[1174.,0.16]],
-                 leaf_specific_weight=50.,root_growth=1.2):        
+                 leaf_specific_weight=50.,root_growth=1.2,max_height=1.):        
         """
         Returns plant instance. The plant instance holds the other plant structural classes root and 
         shoot (shoot holds leaf, stem and storageaorgans). Plant interfere between the environmental 
@@ -101,9 +101,9 @@ class Plant:
         @param leaf_specific_weight: Defines leaf specific weight in [g m-2]
         @type root_growth: double
         @param root_growth: Root elongation factor in [cm day-1]
+        
         @rtype:   plant
         @return:  Plant instance
-        @todo: 
         """
         #Raise Count variable for each platn instance
         Plant.Count+=1
@@ -122,7 +122,8 @@ class Plant:
         
         #Implemetation of root and shoot class
         self.root=Root(self,root_percent,rootability,root_growth,layer)
-        self.shoot=Shoot(self,leaf_specific_weight,self.developmentstage[4][1],shoot_percent,leaf_percent,stem_percent,storage_percent)
+        self.shoot=Shoot(self,leaf_specific_weight,self.developmentstage[4][1],shoot_percent,leaf_percent,stem_percent,storage_percent,
+                         max_height,elongation_end=self.developmentstage[3][1])
         
         #Constant variables
         self.plantN=plantN
@@ -151,6 +152,7 @@ class Plant:
         @type interval: double
         @param interval: repeating of the step for the call periode.
         @return: -
+        @todo: vegH equals at the first day of growth zero: ZeroDivisionError. Bad solution: max(0.01,self.shoot.stem.height)
         """
         #Set time step
         time_step = 1. * interval if step == 'day' else 1./24. * interval
@@ -165,7 +167,7 @@ class Plant:
         #Evapotranspiration
         self.et(self.soil.Kr_cmf(),self.developmentstage.Thermaltime,self.atmosphere.get_Rn(time_act,0.12,True),self.atmosphere.get_tmean(time_act)
                                    ,self.atmosphere.get_es(time_act),self.atmosphere.get_ea(time_act)
-                                   ,self.atmosphere.get_windspeed(time_act),vegH=1.
+                                   ,self.atmosphere.get_windspeed(time_act),vegH=max(0.01,self.shoot.stem.height)
                                    ,LAI=self.shoot.leaf.LAI,stomatal_resistance=self.shoot.leaf.stomatal_resistance,)
         
         #Water uptake occurs only if germinination is finished (developmentstage > Emergence)
@@ -177,7 +179,6 @@ class Plant:
             #Calls water interface for the calculation of the water uptake
             self.water(transpiration_distribution
                          ,[self.water.soil_values(self.soil,l.center) for l in self.root.zone],self.pressure_threshold)
-        
        
         #Nutrient uptake from soil
             #Rp = nitrogen demand, product from the potential nitrogen content in percent and athe actual biomass of plant 
@@ -489,7 +490,7 @@ class Root:
         @rtype: double
         @return: Most limiting resitance factor against root penetration in [-].
         
-        @todo: resistanc must be a list with a variable length, plant should call dynamically the soil factors for each resistance factor.
+        @todo: Resistanc must be a list with a variable length, plant should call dynamically the soil factors for each resistance factor.
         """
         
         #Calculates resistance though mechanical stress
@@ -527,7 +528,7 @@ class Shoot:
     above ground biomass and the allocation to the other
     above ground parts.
     """
-    def __init__(self,plant,lai_conversion,thermaltime_anthesis,shoot_percent,leaf_percent,stem_percent,storage_percent):
+    def __init__(self,plant,lai_conversion,thermaltime_anthesis,shoot_percent,leaf_percent,stem_percent,storage_percent,max_height,elongation_end):
         """
         Returns shoot instance. Shoot implements leaf, stem
         and storageorgans.
@@ -554,7 +555,7 @@ class Shoot:
         
         #Shoot owns leaf, tem and storage_organs
         self.leaf=Leaf(self,leaf_percent,lai_conversion,thermaltime_anthesis)
-        self.stem=Stem(self,stem_percent)
+        self.stem=Stem(self,stem_percent,max_height,elongation_end)
         self.storage_organs=Storage_Organs(self,storage_percent)
         
         #Constant values
@@ -564,7 +565,7 @@ class Shoot:
         #total biomass
         self.Wtot=0.
         
-    def __call__(self,step,biomass,Wleaf,Wstem,Wstorage,tt):
+    def __call__(self,step,biomass,Wleaf,Wstem,Wstorage,thermaltime):
         """
         Call shoot calculates the actual above ground biomass and allocates
         these biomass between the above ground plant organs. The allocated
@@ -581,16 +582,16 @@ class Shoot:
         @param Wstem: Gorwhtrate of the stem biomass in [g m-2].
         @type Wstorage: double
         @param Wstorage: Gorwhtrate of the leaf biomass in [g m-2].
-        @type tt: double
-        @param tt: Actual thermaltime in [degreedays].
+        @type thermaltime: double
+        @param thermaltime: Actual thermaltime in [degreedays].
         """
         #Calculate actual total aboveground biomass
         self.Wtot=self.Wtot+biomass*step
         
         #Allocate biomass to above ground plant organs
         #Call leaf with actual thermaltime
-        self.leaf(step,Wleaf,tt)
-        self.stem(step,Wstem)
+        self.leaf(step,Wleaf,thermaltime)
+        self.stem(step,Wstem,thermaltime)
         self.storage_organs(step,Wstorage)    
 class Stem:
     """
@@ -605,7 +606,7 @@ class Stem:
     Stem must be called with timestep and the stem growthrate
     and calcultes the actual stem biomass and plant height.
     """
-    def __init__(self,shoot,percent):
+    def __init__(self,shoot,percent,max_height,elongation_end):
         """
         Returns stem instance.
         
@@ -613,6 +614,10 @@ class Stem:
         @param shoot: Shoot instance which holds stem.
         @type percent: list
         @param percent: List with partitioning coefficiants for each developmentstage as fraction from the plant biomass in [-].
+        @type elongation_end: double
+        @param elongation_end: Total thermal time at the end of stem elongation [degreedays].
+        @type max_height: double
+        @param max_height: Maximum Crop Height in [m].
         @rtype: stem
         @return: stem instance 
         """
@@ -627,8 +632,9 @@ class Stem:
         self.Wtot=0.
         #Plant hight/ stem length
         self.height=0.
-        
-    def  __call__(self,step,biomass):
+        self.max_height = max_height
+        self.elongation_end = elongation_end
+    def  __call__(self,step,biomass,thermaltime):
         """
         Calculates total stem biomass and plant height.
         
@@ -636,13 +642,30 @@ class Stem:
         @param step: Time step of the actual model period in [days or hours].
         @type biomass: double
         @param biomass: Growthrate of stem biomass in [g m-2].
-        
-        @todo: Calculation of plant height/ stem lenght
+        @type thermaltime: double
+        @param thermaltime: Actual thermal time in [degreedays].
+        @return: -
         """
-        self.height = self.calc_height()
+        self.height = self.vertical_stem_growth(self.max_height,self.elongation_end,thermaltime)
         self.Wtot=self.Wtot+biomass*step
-    def calc_height(self):
-        pass
+    def vertical_stem_growth(self,max_height,elongation_end,thermaltime):
+        """
+        Calculates crop height from maximal height and thernaltime.
+        
+        Plant height is calculatd as fraction from a crop specific maximal
+        height. That fraction refers to fraction of actual thermal time
+        form the total thermaltime at the end of stem elongation stage.
+        
+        @type max_height: double
+        @param max_height: Maximum Crop Height in [m].
+        @type thermaltime: double
+        @param thermaltime: Actual thermal time in [degreedays].
+        @type elongation_end: double
+        @param elongation_end: Total thermal time at the end of stem elongation [degreedays].
+        @rtype: double
+        @return: Vertical growth rate depending on development in [m].
+        """
+        return max(thermaltime / elongation_end,1) * max_height
 class Storage_Organs:
     """
     Calcultes storageorgans biomass and yield components.
@@ -688,12 +711,10 @@ class Storage_Organs:
         @type biomass: double
         @param biomass: Growthrate of storageorgans biomass in [g m-2].
         @return: -
-        
-        @todo: Calculation of yield components
         """
         #Calculates biomass
         self.Wtot=self.Wtot+biomass*step
-    def grain_yield(self,KNO,KW=0.041):#KW for wheat
+    def grain_yield(self,KNO,KW=0.041):
         """ 
         Returns the grain yield of a cereal. Yield is the 
         product of kernel number and kernel weight.
@@ -709,6 +730,7 @@ class Storage_Organs:
         @return: Grain yield (g/m2)
         
         @see: [Acevedo et al, 2002]
+        @todo: Calculation of yield components must be implemented. The current approach return only dry mass of the storage components.
         """
         return KNO*KW
 class Leaf:
@@ -771,8 +793,6 @@ class Leaf:
         @type Wleaf: double
         @type tt: double
         @param tt: Actual thermaltime in [degreedays].
-        
-        @todo: Calculation of stomatal resistance.
         """
         #Calculate total biomass
         self.Wtot = self.Wtot + biomass * step
@@ -814,6 +834,26 @@ class Leaf:
         @see: [De Vries et al, 1989]
         """
         return min((tt/tt_anthesis+0.25),1.)
+    def stomatal_resistance(self):
+        """
+        Reduced photosynthesis due to sink size limitation, ageing, or
+        even low air humidity increases stomatal resistance and lowers the potential
+        transpiration rate. The actual transpiration rate is below the potential rate
+        when stomatal resistance increases in response to water shortage.
+        
+        @type param: double
+        @param param: 
+        @rtype: double
+        @return: Stomatal resistance
+        
+        The stomatal resistance is mainly determined by photosynthesis and the
+        CO 2 -internal/external fraction.
+        
+        @see: [O'Toole and Cruz, 1980, De Vries et al, 1989]
+        
+        @todo: Calculation of stomatal resistance
+        """
+        pass
 ''' Plant Interfaces:
 class Soil:
     def pressurehead(self,depth):

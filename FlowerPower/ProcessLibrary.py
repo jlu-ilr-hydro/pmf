@@ -224,6 +224,7 @@ class SoilLayer:
         
         @type Zr: double
         @param: Rootingdepth in [cm].
+        @return: -
         """
         #For each layer in rootingzone
         for layer in self.rootingzone:
@@ -343,7 +344,7 @@ class ET_FAO:
         @return: Adjusted cropspecific Evapotranspiration to water stress in [mm].
         """
         return self.eto * (self.kcb*self.ks+self.ke)
-    def __call__(self,Kr,thermaltime,Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,RHmin=30.,h=1.):
+    def __call__(self,Kr,thermaltime,Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt=0,RHmin=30.,h=1.):
         """
         Calculates reference Evapotranspiration and the crop specific adjustment factors Kcb and Ke.
         
@@ -368,17 +369,16 @@ class ET_FAO:
         @type LAI: double
         @param LAI: Leaf are index in [m2 m-2].
         @type stomatal_resistance: double
-        @param stomatal_resistance: Stomatal ristance in [cm].
+        @param stomatal_resistance: Stomatal ristance in [s m-1].
         @type RHmin: double
         @param RHmin: Mean value for daily minimum relative humidity during the mid- or late season growth stage in [percent].
         @type h: double
         @param h: mean maximum plant height during the period of calculation (initial, development, mid-season, or late-season) in [m].
         
-        @todo: Unit for stomatal resistance
-        @todo: Altitude berechnen
+        @todo: Calculation of altitude.
         """
         #Calculates reference Evapotranspiration
-        self.eto = self.calc_ETo(Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt=0,printSteps=0)
+        self.eto = self.calc_ETo(Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt)
         
         #Calculates basal crop coefficaint for thhe transpiration calculation
         self.kcb = self.calc_Kcb(thermaltime, self.kcb_values[0], self.kcb_values[1],
@@ -414,7 +414,9 @@ class ET_FAO:
         @type LAI: double
         @param LAI: Leaf are index in [m2 m-2].
         @type stomatal_resistance: double
-        @param stomatal_resistance: Stomatal ristance in [cm].
+        @param stomatal_resistance: Stomatal ristance in [s m-1].
+        @type alt: double
+        @param alt: Geographical altitude in [decimal degrees].
         @rtype: double
         @return: Reference evapotranspiration in [mm].
         
@@ -722,8 +724,6 @@ class Water_FAO:
         @type soillayer: list
         @param soillayer: List with soillayer in the rootingzone over which the transpiration is contributed.
         @return: -
-        
-        @todo: what is soillayer?
         """
         # Calculates Readidly avaible water RAW
         RAW = TAW * self.adjust_p(self.p, ETo)
@@ -856,6 +856,7 @@ class Water_Feddes:
         self.Sh =[s * self.sink_term(pressurehead[i], h_threshold)for i,s in enumerate(s_p)]
         #Compute stress therm alpha
         self.alpha = [self.sink_term(m,h_threshold)for m in pressurehead]
+       
         #Compute compensation
         self.compensation = self.compensate(self.Sh,s_p,pressurehead, self.alpha, h_threshold[2],
                                                self.max_compensation_capacity)
@@ -892,6 +893,15 @@ class Water_Feddes:
         """
         Computes sink term alpha.
         
+        The water uptake is limited througt a sink therm variable alpha. 
+        This value vary with the water pressure head in the soil layer. 
+        Alpha is a dimensonless factor between zero and one. The factor 
+        limits water uptake due to the wilting point and oxygen dificiency. 
+        After alpha is determinded with four threshold values for the pressure head 
+        (h1-oxygen deficiency,h-4 wiliting point, h2 and h3 -optimal conditons). 
+        Values for the parameters vary with the crop.  H3 also varies with the 
+        transpiration.
+        
         @type h_soil: list
         @param h_soil: List with soil pressurehead for each layer in [cm water column].
         @type h_plant: list
@@ -899,7 +909,7 @@ class Water_Feddes:
         @rtype: list
         @return: Prescribed crop specific function of soil water pressure head with values between or equal zero and one in [-].
         
-        @todo: Literatur beschreiben und verweisen.
+        @see: [Feddes and Raats, 2004]
         """
         try:
             if h_soil<h_plant[0] or h_soil>h_plant[-1]: return 0
@@ -1015,12 +1025,7 @@ class Biomass_LOG:
         return total_biomass * growthfactor * (1- total_biomass / capacitylimit)
     def atmosphere_values(self,atmosphere,time_act):
         """
-        @todo: set method for getting atmosphere values
-        """
-        pass
-    def senescence(self):
-        """
-        @todo: calculate senescenes
+        Biomass_LOG need no atmosphere values.
         """
         pass
 class Biomass_LUE:
@@ -1035,14 +1040,13 @@ class Biomass_LUE:
     
     Implementation
     ==============
-    Biomass_LUE must be implemented wit hthe crop specific paramters
+    Biomass_LUE must be implemented with the crop specific paramters
     for the LUE-concept.
     
     Call signature
     ==============
     Plant must be calles with crop and environmental factors.
     
-    @todo: besser beschreiben
     """
     def __init__(self,RUE,k):
         """
@@ -1109,23 +1113,23 @@ class Biomass_LUE:
         self.total = self.total + self.growthrate *stress
     def PAR_a(self,Rs,interception):
         """ 
-        Returns PARa
+        Returns photosynthetically active absorbed radiation
         
-        Canopy photosynthesis is closely related to the photosynthetically active (400 to 700 mm)
-        absorbed radiation (PARa) by green tissue in the canopy.
+        Canopy photosynthesis is closely related to the photosynthetically active 
+        (400 to 700 mm) absorbed radiation (PARa) by green tissue in the canopy. 
+        The values 0.5 is the fraction of total solar energy, which is photosynthetically 
+        active interception - fraction of total solar radiation flux, which is 
+        intercepted by the crop. The value 0.9 is the fraction of radiation 
+        absorbed by the crop  allowing for a 6 percent albedo and for inactive radiation absorption.
         
         @type Rs: double
         @param Rs: total solar radiation [MJ m-2 day-1].
         @type interception: double
         @param interception: Fraction of total solar radiation flux, which is intercepted by the crop in [-].
         
-        The values 0.5 is the fraction of total solar energy, which is photosynthetically active interception - 
-        fraction of total solar radiation flux, which is intercepted by the crop
-        The value 0.9 is the fraction of radiation absorbed by the crop  allowing for a 6 percent 
-        albedo and for inactive radiation absorption
+        
         @rtype: double
-        @return: photosynthetically active absorbed radiation in [].????
-        @todo: neu beschreiben
+        @return: Photosynthetically active absorbed radiation in [MJ m-2 day-1].
         """
         return Rs*0.5*0.9*(1-interception)
     def intercept(self,LAI,k):
@@ -1202,7 +1206,7 @@ class Nitrogen:
         @rtype: nitrogen
         @return: Nitrogen instance
         
-        @todo: einheiten fuer alles!!!!!!!!!
+        @todo: Define units for all parameters. 
         """
         #Constant variables
         self.Km=Km
