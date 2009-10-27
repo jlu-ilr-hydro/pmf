@@ -198,12 +198,13 @@ class Plant:
             self.biomass(self.stress,time_step,self.biomass.atmosphere_values(self.atmosphere,time_act),self.shoot.leaf.LAI)
             #Partitioning
             #Calls the root instance.Allocates biomass to root and defines the feeling good index for the root biomass
-            #distribution.        
-            self.root(time_step,self.get_fgi(sum(self.water.Uptake), self.et.Reference, sum(self.nitrogen.Total), self.Rp, 
-                                            [self.nitrogen.Total[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)],
-                                            [self.water.Alpha[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]),
-                                            (self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
-                                            self.soil.get_pressurehead(self.root.depth),self.stress)
+            #distribution.
+            if self.developmentstage.Thermaltime <= self.developmentstage[4][1]:
+                self.root(time_step,self.get_fgi(sum(self.water.Uptake), self.et.Reference, sum(self.nitrogen.Total), self.Rp, 
+                                                 [self.nitrogen.Total[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)],
+                                                 [self.water.Alpha[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]),
+                                                 (self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
+                                                 self.soil.get_pressurehead(self.root.depth),self.stress)
             #Calls the shoot instance. Alocates biomass to shoot and the other above ground plant organs.
             self.shoot(time_step,(self.shoot.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        (self.shoot.leaf.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
@@ -413,10 +414,11 @@ class Root:
         self.depth=1.
         #Root biomass
         self.Wtot=0.
+        self.growth = 0.
         #Rootingzone
         self.zone=layer
         #Biomass allocation over the rootingzone
-        self.distr=[0. for l in self.zone]
+        self.branching=[0. for l in self.zone]
         #FeelingGoodIndex
         self.fgi=[]
     def __call__(self,step,fgi,biomass,h,stress):
@@ -439,9 +441,10 @@ class Root:
         #Calculate actual rooting depth, restricted by plant stress and soil resistance 
         self.depth=self.depth+self.elongation(self.penetrate(1.,h,self.rootability),self.elong)*stress*step
         #Calculate toal biomass
+        self.growth = biomass*step
         self.Wtot=self.Wtot+biomass*step
         #Allocate actual growth between the layers in the rooting zone
-        self.distr=self.allocate(self.distr, biomass, fgi)
+        self.branching=self.allocate(self.branching, biomass, fgi)
     def allocate(self,distr,biomass,fgi):
         """
         Returns the biomass distribution over the rootingzone, depending
