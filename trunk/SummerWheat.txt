@@ -32,7 +32,7 @@
 #leaf_specific_weight
 50.
 #root_growth
-1.2
+1.5
 #max_height
 1.0
 #Logistic growht rate
