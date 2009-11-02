@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from pylab import *
 class Development:
     """
@@ -1191,14 +1193,14 @@ class Nitrogen:
     
     @see: [Simunek & Hopmans 2009]
     """
-    def __init__(self,Km=0.,NO3_min=0.,layercount=21.):
+    def __init__(self,Km=27. * 0.014,NO3_min=0.,layercount=21.):
         """
         Returns a Biomass_LOG instance.
         
         @type Km: double
-        @param Km: Maximal plant biomass in [g]. 
+        @param Km: Half saturation concentration in µmol/l 
         @type NO3_min: double
-        @param NO3_min: Growth facor of the plant in [g biomass day-1].
+        @param NO3_min: Residual N concentration
         @type layercount: double
         @param layercount: Count of the layer in the soil profile.
         
@@ -1261,6 +1263,6 @@ class Nitrogen:
         #distribution of residual demand over rootingzone
         ap = Ap/sum(rootzone)
         #Michelis-menten values for each layer
-        michaelis_menten = [(n-self.NO3min)/(self.Km+n-self.NO3min) for n in NO3_conc]
+        michaelis_menten = [(NO3-self.NO3min)/(self.Km+NO3-self.NO3min) for NO3 in NO3_conc]
         #Active uptake
         self.Aa = [ap*michaelis_menten[i]*l for i,l in enumerate(rootzone)]

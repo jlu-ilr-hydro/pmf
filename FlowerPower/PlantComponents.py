@@ -246,8 +246,14 @@ class Plant:
         w=1-Sh/Tp
         n=1-(Ra/Rp) if Rp>0. else 0.
         #Return list for the factor wit hthe higher stress index
+        H2Odis_sum=sum(H2Odis)
+        if H2Odis_sum<=0: 
+            H2Odis_sum=1 
+        NO3dis_sum=sum(H2Odis)
+        if NO3dis_sum<=0: 
+            NO3dis_sum=1 
         if  w >= n:
-            return [h2o/sum(H2Odis) for h2o in H2Odis]
+            return [h2o/H2Odis_sum for h2o in H2Odis]
         else:
             return [n/sum(NO3dis) for n in NO3dis]
     def respire(self,g,Wact,m,Wtot):
