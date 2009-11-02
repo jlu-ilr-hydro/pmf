@@ -3,9 +3,9 @@ import cmf
 from cmf.soil import layer as ka4_soil
 import numpy as np
 class cmf1d(object):
-    def __init__(self,sand=20,silt=60,clay=20,c_org=2.0,bedrock_K=0.01,layercount=20,layerthickness=0.1):
+    def __init__(self,sand=20,silt=60,clay=20,c_org=2.0,bedrock_K=0.01,layercount=20,layerthickness=0.1,tracertext=''):
         # Create a cmf project
-        self.project=cmf.project()
+        self.project=cmf.project(tracertext)
         #self.project.debug=1
         # Add a cell add the origin (pos=(0,0,0)) with 1000m2 area. The area has the advantage 1m3 = 1mm * Area
         self.cell=self.project.NewCell(0,0,0,1000)
@@ -97,7 +97,8 @@ class cmf1d(object):
         # Add a bedrock layer
         c.add_layer(7,cmf.BrooksCoreyRetentionCurve(bedrock_K,0.1,1,0.01))
         # Add a groundwater boundary (potential=-5.0 m)
-        self.groundwater=cmf.DricheletBoundary(self.project,c.layers[-1].gravitational_potential)
+        self.groundwater=cmf.DricheletBoundary(self.project,-2)
+        #self.groundwater.is_source=True
         self.groundwater.Name="Groundwater"
         # Connect bedrock layer with groundwater boundary, using Richards equation
         cmf.connect(cmf.Richards,c.layers[-1],self.groundwater)
@@ -212,6 +213,22 @@ class cmf1d(object):
     def get_sunshine(self,time):
         """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns sunshine hours in [hour]"""
         return self.cell.get_weather(time).sunshine
+    def load_meteo(self,stationname='Giessen',rain_factor=1.):
+        # Load rain timeseries (doubled rain of giessen for more interstingresults)
+        rain=cmf.timeseries.from_file(stationname + '.rain')*rain_factor
+        # Create a meteo station
+        meteo=self.project.meteo_stations.add_station(stationname)
+        # Meteorological timeseries
+        meteo.Tmax=cmf.timeseries.from_file(stationname+'.Tmax')
+        meteo.Tmin=cmf.timeseries.from_file(stationname+'.Tmin')
+        meteo.rHmean=cmf.timeseries.from_file(stationname+'.rHmean')
+        meteo.Windspeed=cmf.timeseries.from_file(stationname+'.Windspeed')
+        meteo.Sunshine=cmf.timeseries.from_file(stationname+'.Sunshine')
+        # Use the rainfall for each cell in the project
+        cmf.set_precipitation(self.project.cells,rain)
+        # Use the meteorological station for each cell of the project
+        cmf.set_meteo_station(self.project.cells,meteo)
+
 if __name__=='__main__':
     c1=cmf1d()
     print "gw_flux=",c1.groundwater_flux
