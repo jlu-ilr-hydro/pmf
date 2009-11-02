@@ -24,7 +24,7 @@ def getCropSpecificParameter(path):
     @rtype: list
     @return: List with crop specific parameters.
     """
-    param = filter(lambda line: line[0]!='#',open(path+'.txt',"r"))
+    param = [line for line in file(path+'.txt',"r") if line[0]!='#']
     return [eval(each) for each in param]
 def timeseries_from_file(f):
 
@@ -60,7 +60,7 @@ def timeseries_from_file(f):
     return res 
 def load_meteo(project,stationname='Giessen'):
     # Load rain timeseries (doubled rain of giessen for more interstingresults)
-    rain=timeseries_from_file(stationname + '.rain')
+    rain=timeseries_from_file(stationname + '.rain')*1.
     # Create a meteo station
     meteo=project.meteo_stations.add_station(stationname)
     # Meteorological timeseries
@@ -73,7 +73,7 @@ def load_meteo(project,stationname='Giessen'):
     cmf.set_precipitation(project.cells,rain)
     # Use the meteorological station for each cell of the project
     cmf.set_meteo_station(project.cells,meteo)
-def createCrop(soil,atmosphere,CropParams):
+def createCrop_LUEconcept(soil,atmosphere,CropParams):
     """
     Returns a plant instance with the given parameter.
     
@@ -99,6 +99,9 @@ def createCrop(soil,atmosphere,CropParams):
     CropParams[14] : plant_N
     CropParams[15] : leaf_specific_weight
     CropParams[16] : root_growth
+    CropParams[17] : max_height
+    CropParams[18] : Logistic growht rate
+    CropParams[19] : Capacity limit
     
     @type soil: soil
     @param soil: Soil instance
@@ -147,179 +150,93 @@ def createCrop(soil,atmosphere,CropParams):
     leaf_specific_weight = CropParams[15]#50.
     #root_growth
     root_growth = CropParams[16]#1.2
+    #vetical_elongation
+    max_height = CropParams[17]#1.0
     
     #Crop process models from ProcesLibrary
     et = FlowerPower.ET_FAO(kcb,seasons)
-    water = FlowerPower.Water_Feddes()
+    
     biomass = FlowerPower.Biomass_LUE(LUE,k)
     development = FlowerPower.Development(stage)
     layer = FlowerPower.SoilLayer()
     layer.get_rootingzone(c.get_profile())
-    nitrogen = FlowerPower.Nitrogen()
-    
+    nitrogen = FlowerPower.Nitrogen(layercount=len(layer))
+    water = FlowerPower.Water_Feddes(layercount=len(layer))
     #Creates plant
     return FlowerPower.Plant(soil,atmosphere,et,water,biomass,development,layer,nitrogen,
-                 shoot,root,leaf,stem,storage)
+                 shoot,root,leaf,stem,storage,root_growth=3.)
 def run(start,end,step):
-     #Set cmf time
-     c.t = start
-     #Modelrun for the given time period
-     for index,t in enumerate(drange(start,end,step)):
-        
-        #Manamgement tasks
-        
+    #Set cmf time
+    c.t = start
+    
+    Dr_new = 0
+    
+    
+    #Modelrun for the given time period
+    for t in drange(start,end,step):
+        time = num2date(t)
+            
         #sowing
-        if filter(lambda s: s==t, sowingdate): 
-            #for the moment equal to main.flowerpower_params 'crop'
-            crop=createCrop(c,c,SummerWheat)
+        if t in sowingdate: plant = createCrop_LUEconcept(c,c,SummerWheat)
         #harvest
-        if filter(lambda h: h==t, harvestdate): 
-            #Deletes plant object
-            FlowerPower.Plant.Count-=1
-        
+        if t in harvestdate: FlowerPower.Plant.Count-=1
+    
         #Let grow
-        if FlowerPower.Plant.Count > 0: crop(num2date(t),'day',1.)
+        if FlowerPower.Plant.Count > 0: plant(time,'day',1.)
         
-        #Water balance
+        #Calculates evaporation for bare soil conditions
+        #baresoil(c.Kr_cmf(),0.,c.get_Rn(time, 0.12, True),c.get_tmean(time),c.get_es(time),c.get_ea(time),
+        #c.get_windspeed(time), 0.12,0.12,100.,RHmin=30.,h=1.)
         
-        #Fwater flux from soil to plant
-        c.flux = [uptake*-1. for uptake in crop.water.Uptake] if FlowerPower.Plant.Count >0 else [0]*50
-        #water cycling
+        #Water flux from soil to plant
+        
+   
+        
+        #Calculation of water balance with cmf
+        swc(plant.et.Cropspecific if FlowerPower.Plant.Count >0 else 0, plant.et.Evaporation if FlowerPower.Plant.Count >0 else 0, c.cell.rain(time), plant.root.depth if FlowerPower.Plant.Count >0 else 0)
+
+        if FlowerPower.Plant.Count > 0:
+            print time.year,time.month,time.day#,('Thermaltime: %4.3f, Biomass_LUE: %4.2f, LAI: %4.2f') % (plant.developmentstage.Thermaltime,plant.biomass.Total, plant.shoot.leaf.LAI)
+            #print time.year,time.month,time.day, ('Waterdemand: %4.3f, Wateruptake: %4.3f') % (plant.et.Transpiration,sum(plant.water.Uptake))
+            #print time.year,time.month,time.day, 'Wateruptake: ',['%4.2f' % w for w in plant.water.Uptake][:10]
+            #print time.year,time.month,time.day, 'Rootbiomass: ',['%4.2f' % w for w in plant.root.actual_distribution][:10]
+            #print time.year,time.month,time.day, 'Flux: ', ['%4.2f' % f for f in c.flux][:10]
+            #print time.year,time.month,time.day, 'pF         : ', ['%4.2f' % pF for pF in c.pF][:10]
+            #print time.year,time.month,time.day, 'Matrix potential: ', ['%4.2f' % m for m in c.matrix_potential][:10]
+            #print time.year,time.month,time.day,'Pressurehead:', ['%4.2f' % plant.soil.get_pressurehead(l.center) for l in plant.root.zone][:10]
+            #print time.year,time.month,time.day,'Penetration: ', ['%4.2f' % l.penetration for l in plant.root.zone][:10]
+            #print time.year,time.month,time.day,'Alpha      : ', ['%4.2f' % a for a in plant.water.Alpha][:10]
+            #print time.year,time.month,time.day,'FGI        : ', ['%4.2f' % f for f in plant.root.fgi][:10], '%4.2f' % sum(plant.root.fgi)
+            #print time.year,time.month,time.day,'Branchning : ', ['%4.2f' % b for b in plant.root.branching][:10],'%4.2f' % sum(plant.root.branching), '%4.2f' % plant.root.Wtot,plant.root.growth
+            
+            print ('Rain %4.2f, ETc %4.2f, DP %4.2f, Dr %4.2f') % (c.cell.rain(time),plant.et.Cropspecific,max(c.cell.rain(time)-plant.et.Cropspecific,0),swc.Dr)
+            
+        else:
+            print time.year,time.month,time.day
+
+
+
+        
+        flux = [uptake*-1. for uptake in plant.water.Uptake] if FlowerPower.Plant.Count >0 else [0]*21
+        c.flux=flux
         c.run(cmf.day)
         
         
-        #Save results for each element from output
-        for i,out in enumerate(output):
-            #Call plant only if plant exists
-            if FlowerPower.Plant.Count > 0:
-                #call out objects with flowerpower values
-                out([eval(param) for param in flowerpower_params[i]])
-            else:
-                #call out objects with zero values
-                out(zeros(len(out.labels)))
+        res[0].append(c.Kr())
+        res[1].append(swc.Kr)
+        res[2].append(swc.Dr)
+        res[3].append(c.cell.rain(time))
+        res[4].append(sum(res[3])+plant.et.Evaporation if FlowerPower.Plant.Count >0 else 0)
+        res[5].append(sum(res[3]))
+        res[6].append(sum(res[4]))
         
-        #Output in console    
-        if index % 14 == 0:
-            print index,num2date(t), [out.Step for out in output] 
-            for i,out in enumerate(output):
-                #Draw a dynamic plot, if True
-                if out.dynamic == True:
-                    out.DynamicPlot
-        
-class Output:
-    def __init__(self,labels,start,end,step,dynamic=False):
-        """
-        @todo: ylim, axis labels for deynamic plot and Image property doesen't run, because
-               of the resutls list. 
-        """
-        #Variables with labes and all resutls of the output
-        self.labels=labels
-        self.results=[]
-        self.delta_time = drange(start,end,step)
-        
-        #Dynamic plotting during the model run
-        self.dynamic=dynamic
-        
-        if self.dynamic == True:
-            #Dynamic plot
-            ion()
-            
-            #Zero list for each paramter
-            self.dynamicdata = [zeros(len(self.delta_time)) for l in self.labels]
-            
-            #Create figure with x-axes for the simulation period
-            self.fig = Figure()
-            self.x = self.delta_time
-           
-            #Create list for dynamic plots
-            self.dynamicplots = []
-            
-            #Create subplot with line2d object for each parameter
-            for i,dat in enumerate(self.dynamicdata):
-                #Create subplot
-                res  = subplot(len(self.dynamicdata),1,i+1)
-                #set date plot instance for each subplot
-                res,  = plot_date(self.delta_time,dat,label = self.labels[i])
-                ylim(0,1)
-                legend(loc=0)
-                self.dynamicplots.append(res)
-
-    def __setitem__(self,stage):
-        self.results.append(stage)
-    def __getitem__(self,index):
-        return self.results[index]
-    def __iter__(self):
-        for res in self.results:
-            yield res
-    @property
-    def Whole(self):
-        return [[self.labels[i] +': ' +  '%4.2f' % r for i,r in enumerate(res)] for res in self.results]
-    @property
-    def Step(self):
-        """
-        Return the last record from the results parameter.
-        The rocord parameter constis of n parameters,
-        which aredefined during the model initialisation.
-        
-        If the paratermer is not a list, the output is
-        formated as 4.2f. Otherwise the function resturns
-        the parameter list.
-        
-        @rtype: list
-        @return: Last record from the output
-        """
-        return [self.labels[i]+': '+  '%4.2f' % res if type(res) != list else self.labels[i]+': '+ str(['%4.2f' % r for r in res]) for i,res in enumerate(self.results[-1])]
-    @property
-    def Image(self):
-        list =[]
-        for i in range(len(self.results[0])):
-            res  = subplot(len(self.results[0]),1,i+1)
-            res, = imshow(transpose([res[i] for res in self.results]),cmap=cm.RdYlBu,aspect='auto')
-            colobar()
-            grid()
-            ylabel(self.labels[i])
-        list.append(res)
-        return list
-        """
-        for i in range(len(self.results[0])):
-            res  = subplot(len(self.results[0]),1,i+1)
-            res, = imshow(transpose([res[i] for res in self.results]),cmap=cm.RdYlBu,aspect='auto')
-            colorbar()
-            grid()
-            ylabel(self.labels[i])
-        """
-    @property
-    def Plot(self):
-        list = []
-        for i in range(len(self.results[0])):
-            res  = subplot(len(self.results[0]),1,i+1)
-            res,  = plot_date(self.delta_time,[res[i] for res in self.results],label = self.labels[i])
-            legend(loc=0)
-            
-            list.append(res)
-        return list
-    @property
-    def DynamicPlot(self):
-        #Refresh plot data
-        for i,plot in enumerate(self.dynamicplots):
-           plot.set_ydata(self.dynamicdata[i])
-        draw()
-    def __call__(self,results):
-        #set resutls
-        self.results.append(results)
-        
-        #set data for dynamic plot
-        if self.dynamic == True:
-            for i,data in enumerate(self.dynamicdata):
-                data[len(self.results)-1]+=self.results[-1][i]       
-     
 if __name__=='__main__':
     #Create cmf cell
-    c = cmf1d(sand=90,silt=0,clay=10,c_org=2.0,layercount=20,layerthickness=.1)
+    c = cmf1d(sand=20,silt=0,clay=10,c_org=2.0,bedrock_K=0.01,layercount=20,layerthickness=0.1)
     c.cell.saturated_depth=5
     
-    #Create swc instance
-    swc = SWC(sand=.9,clay=.1,initial_Zr=0.1,Ze=0.1)
+    #Simple water balance model
+    swc = FlowerPower.SWC()
     
     #Load meteological data
     load_meteo(c.project,stationname='Giessen')
@@ -339,16 +256,27 @@ if __name__=='__main__':
     
     #timestep = daily
     step = timedelta(1)
-    
-    #Initialise output classes whith labels for each parameter
-    output = [Output(['Thermaltime','Biomass','LAI','Zr'],start,end,step),
-              Output(['Waterdemand','Wateruptake'],start,end,step)]
-  
-    #Set FlowerPower call function for each parameter in output
-    flowerpower_params = [['crop.developmentstage.Thermaltime*10','crop.biomass.Total',
-                           'crop.shoot.leaf.LAI','crop.root.depth'],
-                          ['crop.et.Reference','crop.water.Uptake']]
-    
+   
+    #List for results
+    res = [[],[],[],[],[],[],[]]
+    print res
     #run simulation
+    timer = datetime.now()
     run(start,end,step)
+    print datetime.now() - timer
+    
+    
+    timeline = drange(start,end,step)
+    subplot(211)
+    plot_date(timeline,res[0],fmt='r-',label='cmf_Kr')
+    plot_date(timeline,res[1],fmt='b-',label='swc_Kr')
+    plot_date(timeline,res[2],fmt='g-',label='swc_Dr')
+    ylim(0,20)
+    legend(loc=0)
+    subplot(212)
+    plot_date(timeline,res[5],fmt='b-',label='Rain')
+    plot_date(timeline,res[6],fmt='g-',label='ETc')
+    legend(loc=0)
+    
+    show()
     

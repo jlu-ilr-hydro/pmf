@@ -135,7 +135,7 @@ class SWC:
         """
         #Root zone depletion
         self.dr = self.calc_WaterBalance(self.dr, rainfall, runoff, irrigation, capillarrise, ETc)
-        #Total available soil
+        #Total available soil watet
         self.taw = self.calc_TAW(self.fc, self.wp, Zr)
         
         #Cumulative depth of evaporation
@@ -158,7 +158,6 @@ class SWC:
         complete wetting event. As long as the soil water content in the 
         evaporation layer is below field capacity (i.e., De, i > 0), 
         the soil will not drain and DPe, i = 0. 
-        
         
         @type De: double
         @param De: Cumulative depth of evaporation in [mm]

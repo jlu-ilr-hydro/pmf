@@ -6,19 +6,19 @@
 #Extinction coefficiant
 0.4
 #Development
-[['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',901.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]]
+[['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',1200.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]]
 #K_m
 0.
 #NO3_min
 0.
 #Partitioning shoot
-[.0,.9,.9,.9,.95,1.,1.,1.]
+[.0,.5,.5,.9,.95,1.,1.,1.]
 #Partitioning root
-[.0,.1,.1,.1,.05,.0,.0,.0]
+[.0,.5,.5,.1,.05,.0,.0,.0]
 #Partitioning leaf
-[.0,.5,.5,.3,0.,.0,.0,.0]
+[.0,.5,.5,.5,0.,.0,.0,.0]
 #Partitioning stem
-[.0,.5,.5,.7,.3,.0,.0,.0]
+[.0,.5,.5,.5,.3,.0,.0,.0]
 #Partitioning storage
 [.0,.0,.0,.0,.7,1.,1.,1.]
 #tbase

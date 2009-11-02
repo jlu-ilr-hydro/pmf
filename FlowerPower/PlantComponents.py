@@ -165,10 +165,10 @@ class Plant:
         self.developmentstage(time_step,self.atmosphere.get_tmin(time_act), self.atmosphere.get_tmax(time_act), self.tbase)
         
         #Evapotranspiration
-        self.et(self.soil.Kr_cmf(),self.developmentstage.Thermaltime,self.atmosphere.get_Rn(time_act,0.12,True),self.atmosphere.get_tmean(time_act)
+        self.et(self.soil.Kr(),self.developmentstage.Thermaltime,self.atmosphere.get_Rn(time_act,0.12,True),self.atmosphere.get_tmean(time_act)
                                    ,self.atmosphere.get_es(time_act),self.atmosphere.get_ea(time_act)
                                    ,self.atmosphere.get_windspeed(time_act),vegH=max(0.01,self.shoot.stem.height)
-                                   ,LAI=self.shoot.leaf.LAI,stomatal_resistance=self.shoot.leaf.stomatal_resistance,)
+                                   ,LAI=self.shoot.leaf.LAI,stomatal_resistance=self.shoot.leaf.stomatal_resistance)
         
         #Water uptake occurs only if germinination is finished (developmentstage > Emergence)
         if self.developmentstage.IsGerminated:
@@ -193,7 +193,7 @@ class Plant:
         if self.developmentstage.IsGrowingseason:
             #Biomass accumulation
             #Calculates stress index which limits potential growth throug water and nutrient stress
-            self.stress=min(sum(self.water.Uptake) / self.et.Cropspecific, sum(self.nitrogen.Total)/ self.Rp,1.)*1.
+            self.stress=min(sum(self.water.Uptake) / self.et.Cropspecific, sum(self.nitrogen.Total)/ self.Rp,1.)*1
             #Calls biomass interface for the calculation of the actual biomass
             self.biomass(self.stress,time_step,self.biomass.atmosphere_values(self.atmosphere,time_act),self.shoot.leaf.LAI)
             #Partitioning
@@ -380,6 +380,8 @@ class Root:
     the layers, which have the highest amount of the
     most limiting resource (nitrogen or water).
     The actual rootzone is calculated form the plant class.
+    
+    @todo: Root elongation mit alpha Wert verknuepfen
     """
     def __init__(self,plant,percent,rootability,root_growth,layer):
         """
@@ -419,6 +421,9 @@ class Root:
         self.zone=layer
         #Biomass allocation over the rootingzone
         self.branching=[0. for l in self.zone]
+        
+        self.actual_distribution = [0. for l in self.zone]
+        
         #FeelingGoodIndex
         self.fgi=[]
     def __call__(self,step,fgi,biomass,h,stress):
@@ -445,6 +450,7 @@ class Root:
         self.Wtot=self.Wtot+biomass*step
         #Allocate actual growth between the layers in the rooting zone
         self.branching=self.allocate(self.branching, biomass, fgi)
+        self.actual_distribution = [index*biomass for index in self.fgi]
     def allocate(self,distr,biomass,fgi):
         """
         Returns the biomass distribution over the rootingzone, depending
@@ -668,7 +674,7 @@ class Stem:
         @rtype: double
         @return: Vertical growth rate depending on development in [m].
         """
-        return max(thermaltime / elongation_end,1) * max_height
+        return min(thermaltime / elongation_end,max_height) * max_height
 class Storage_Organs:
     """
     Calcultes storageorgans biomass and yield components.

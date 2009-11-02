@@ -1,8 +1,9 @@
+import __main__
 import cmf
 from cmf.soil import layer as ka4_soil
 import numpy as np
 class cmf1d(object):
-    def __init__(self,sand=70,silt=20,clay=10,c_org=2.0,bedrock_K=0.01,layercount=50,layerthickness=0.1):
+    def __init__(self,sand=20,silt=60,clay=20,c_org=2.0,bedrock_K=0.01,layercount=20,layerthickness=0.1):
         # Create a cmf project
         self.project=cmf.project()
         #self.project.debug=1
@@ -14,20 +15,93 @@ class cmf1d(object):
         r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap)
         # Add 50 layers with 10cm thickness, and 50 Neumann boundary conditions
         self.__bc=[]
-        for i in range(1,layercount+1):
-            c.add_layer(i*layerthickness,r_curve) # Create the layer
+        
+        self.soiltype = []
+        
+        
+        #Add topsoil layer
+        KA4_soil=ka4_soil(0.5,clay,silt,sand,Corg=c_org)
+        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap)
+        c.add_layer(.05,r_curve) # Create the layer
+        nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        nbc.Name="Boundary condition #%i" % 1
+        self.__bc.append(nbc)
+        
+        self.soiltype.append(KA4_soil)
+        
+        #Add topsoil layer
+        KA4_soil=ka4_soil(0.5,clay,silt,sand,Corg=c_org)
+        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap)
+        c.add_layer(.1,r_curve) # Create the layer
+        nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        nbc.Name="Boundary condition #%i" % 2
+        self.__bc.append(nbc)
+        
+        self.soiltype.append(KA4_soil)
+        
+        #Add topsoil layer
+        KA4_soil=ka4_soil(0.5,clay,silt,sand,Corg=c_org)
+        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap)
+        c.add_layer(.15,r_curve) # Create the layer
+        nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        nbc.Name="Boundary condition #%i" % 3
+        self.__bc.append(nbc)
+        
+        self.soiltype.append(KA4_soil)
+        
+        #Add topsoil layer
+        KA4_soil=ka4_soil(0.5,clay,silt,sand,Corg=c_org)
+        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap)
+        c.add_layer(.2,r_curve) # Create the layer
+        nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        nbc.Name="Boundary condition #%i" % 4
+        self.__bc.append(nbc)
+        
+        self.soiltype.append(KA4_soil)
+        
+        #Add topsoil layer
+        KA4_soil=ka4_soil(0.5,clay,silt,sand,Corg=c_org)
+        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap)
+        c.add_layer(.25,r_curve) # Create the layer
+        nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        nbc.Name="Boundary condition #%i" % 5
+        self.__bc.append(nbc)
+        
+        self.soiltype.append(KA4_soil)
+        
+        #Add topsoil layer
+        KA4_soil=ka4_soil(0.5,clay,silt,sand,Corg=c_org)
+        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap)
+        c.add_layer(.3,r_curve) # Create the layer
+        nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        nbc.Name="Boundary condition #%i" % 6
+        self.__bc.append(nbc)
+        
+        self.soiltype.append(KA4_soil)
+
+         
+        KA4_soil=ka4_soil(0.1,clay,silt,sand,Corg=c_org)
+        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap)
+        
+        for i in range(7,layercount+1):
+            c.add_layer((i*layerthickness),r_curve) # Create the layer
             # Create a boundary condition
-            nbc=cmf.NeumannBoundary(self.project,cmf.point(0.0,0.0,-i*layerthickness))
+            nbc=cmf.NeumannBoundary.create(c.layers[-1])
             nbc.Name="Boundary condition #%i" % i
-            nbc.connect_to(c.layers[-1])
             self.__bc.append(nbc)
+            self.soiltype.append(KA4_soil)
+        
+       
+        
+        
         # Add a bedrock layer
         c.add_layer(7,cmf.BrooksCoreyRetentionCurve(bedrock_K,0.1,1,0.01))
         # Add a groundwater boundary (potential=-5.0 m)
         self.groundwater=cmf.DricheletBoundary(self.project,c.layers[-1].gravitational_potential)
         self.groundwater.Name="Groundwater"
         # Connect bedrock layer with groundwater boundary, using Richards equation
-        cmf.connect(cmf.Richards,c.layers[-1],self.groundwater,c.area,c.layers[-1].thickness)
+        cmf.connect(cmf.Richards,c.layers[-1],self.groundwater)
+        
         
         # Use Richards equation for percolation
         c.install_connection(cmf.Richards)
@@ -86,7 +160,7 @@ class cmf1d(object):
    
     def get_profile(self):
         return [l.boundary[1]*100 for l in self.cell.layers]
-    def Kr_cmf(cmf1d):
+    def Kr(cmf1d):
         cell=cmf1d.cell
         # Get top layer
         layer=cell.layers[0]
@@ -138,3 +212,7 @@ class cmf1d(object):
     def get_sunshine(self,time):
         """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns sunshine hours in [hour]"""
         return self.cell.get_weather(time).sunshine
+if __name__=='__main__':
+    c1=cmf1d()
+    print "gw_flux=",c1.groundwater_flux
+    print "P(750cm)=",c1.get_pressurehead(750)

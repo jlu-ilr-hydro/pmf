@@ -344,7 +344,7 @@ class ET_FAO:
         @return: Adjusted cropspecific Evapotranspiration to water stress in [mm].
         """
         return self.eto * (self.kcb*self.ks+self.ke)
-    def __call__(self,Kr,thermaltime,Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt=0,RHmin=30.,h=1.):
+    def __call__(self,Kr,thermaltime,Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt=0.,RHmin=30.,h=1.):
         """
         Calculates reference Evapotranspiration and the crop specific adjustment factors Kcb and Ke.
         
@@ -378,7 +378,7 @@ class ET_FAO:
         @todo: Calculation of altitude.
         """
         #Calculates reference Evapotranspiration
-        self.eto = self.calc_ETo(Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt)
+        self.eto = self.calc_ETo(Rn,T,e_s,e_a,windspeed,LAI,stomatal_resistance,alt)
         
         #Calculates basal crop coefficaint for thhe transpiration calculation
         self.kcb = self.calc_Kcb(thermaltime, self.kcb_values[0], self.kcb_values[1],
@@ -394,8 +394,7 @@ class ET_FAO:
         
         #Calculates evaporation coefficiant
         self.ke = self.calc_Ke(Kr, kcmax, self.kcb, few)
-        
-    def calc_ETo(self,Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt=0,printSteps=0,daily=True):
+    def calc_ETo(self,Rn,T,e_s,e_a,windspeed,LAI,stomatal_resistanc=70,alt=0,printSteps=0,vegH=0.12,daily=True):
         """
         Calculates the reference Evapotranspiration.
         

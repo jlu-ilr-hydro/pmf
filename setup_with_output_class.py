@@ -284,7 +284,7 @@ def run(start,end,step):
         A hypothetical reference crop with an assumed crop height of
         0.12 m, a fixed surface resistance of 70 s m-1 and an albedo of 0.23.
         '''
-        baresoil(c.Kr_cmf(),0.,c.get_Rn(time, 0.12, True),c.get_tmean(time),c.get_es(time),c.get_ea(time),
+        baresoil(c.Kr(),0.,c.get_Rn(time, 0.12, True),c.get_tmean(time),c.get_es(time),c.get_ea(time),
                   c.get_windspeed(time), 0.12,0.12,100.,RHmin=30.,h=1.)
 
         #Evaporation from top soil layer
