@@ -23,14 +23,17 @@ class cmf_fp_interface:
         return self.get_layer(depth).matrix_potential
     def get_nutrients(self,depth):
         """ Depth in cm; Returns the nitrogen concentration in the soil solution in [mol l-1]"""
+        """
         l=self.get_layer(depth)
         if isinstance(self.N,cmf.solute):
             return l.conc(self.N)
         else:
             return self.default_Nconc
+        """
+        return 100
     def soilprofile(self):
         """ Returns a list with the lower limits of the layers in the whole soilprofile in [cm]. """
-        return [l.lower_boundary for l in self.cmf_cell.layers]
+        return [l.lower_boundary*100 for l in self.cmf_cell.layers]
     def get_fc(self,depth):
         """ soil water content at field capacity [m3 m-3] """
         return  c.layers[0].soil.Wetness_pF(2.5)
@@ -40,7 +43,6 @@ class cmf_fp_interface:
     def get_wetness(self,depth):
         """ wetness in the top soil layer in [m3 m-3] """
         return self.get_layer(depth).wetness
-        
     def get_layer(self,depth):
         if depth<0:
             return self.cmf_cell.layers[0]
