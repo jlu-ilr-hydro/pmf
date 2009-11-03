@@ -131,7 +131,7 @@ class Plant:
         self.pressure_threshold=pressure_threshold
         
         #sState ariables
-        self.supply = 0.
+        self.stress = 0.
     def __del__(self):
         """
         Decrease class variable Plant.Count about one.
@@ -167,8 +167,8 @@ class Plant:
         #Evapotranspiration
         self.et(self.soil.Kr(),self.developmentstage.Thermaltime,self.atmosphere.get_Rn(time_act,0.12,True),self.atmosphere.get_tmean(time_act)
                                    ,self.atmosphere.get_es(time_act),self.atmosphere.get_ea(time_act)
-                                   ,self.atmosphere.get_windspeed(time_act),vegH=max(0.01,self.shoot.stem.height)
-                                   ,LAI=self.shoot.leaf.LAI,stomatal_resistance=self.shoot.leaf.stomatal_resistance)
+                                   ,self.atmosphere.get_windspeed(time_act)
+                                   ,LAI=self.shoot.leaf.LAI)
         #Water uptake occurs only if germinination is finished (developmentstage > Emergence)
         if self.developmentstage.IsGerminated:
         #Water uptake
@@ -186,17 +186,17 @@ class Plant:
         #The following processes occure only in the growing season (Emergence < developmentstge <= maturity)
         if self.developmentstage.IsGrowingseason:
             #Biomass accumulation
-            #Calculates supply index which limits potential growth throug water and nutrient supply
-            self.supply=min(sum(self.water.Uptake) / self.et.Cropspecific, sum(self.nitrogen.Total)/ self.Rp,1.)
+            #Calculates stress index which limits potential growth throug water and nutrient stress
+            self.stress=0#-min(sum(self.water.Uptake) / self.et.Cropspecific, sum(self.nitrogen.Total)/ self.Rp,1.)            
             #Calls biomass interface for the calculation of the actual biomass
-            self.biomass(time_step,self.supply,self.biomass.atmosphere_values(self.atmosphere,time_act),self.shoot.leaf.LAI)
+            self.biomass(time_step,self.stress,self.biomass.atmosphere_values(self.atmosphere,time_act),self.shoot.leaf.LAI)
             #Root partitining
             if self.developmentstage.Thermaltime <= self.developmentstage[4][1]:
                 self.root(time_step,self.get_fgi(sum(self.water.Uptake), self.et.Reference, sum(self.nitrogen.Total), self.Rp, 
                                                  [self.nitrogen.Total[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)],
                                                  [self.water.Alpha[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]),
                                                  (self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
-                                                 self.soil.get_pressurehead(self.root.depth),self.supply)
+                                                 self.soil.get_pressurehead(self.root.depth),self.stress)
             #Shoot partitioning
             self.shoot(time_step,(self.shoot.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        (self.shoot.leaf.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
@@ -212,7 +212,7 @@ class Plant:
         coefficants for one timestept must be one (100%). 
         
         The water conditions can be represented through watercontent in [m3 m-3],
-        wateruptake [mm] or a supply index depending on the pressure head [-]. The 
+        wateruptake [mm] or a stress index depending on the pressure head [-]. The 
         nitrogen conditions are represented with the nitrogen concentration.
         
         First the most limiting resource is determined (water or nitrogen). In the
@@ -234,10 +234,10 @@ class Plant:
         @rtype: list
         @return: List with distribution coefficiants for the root biomass.
         """
-        #Compute supply index for nitrogen and water
+        #Compute stress index for nitrogen and water
         w=1-Sh/Tp
         n=1-(Ra/Rp) if Rp>0. else 0.
-        #Return list for the factor wit hthe higher supply index
+        #Return list for the factor wit hthe higher stress index
         H2Odis_sum=sum(H2Odis)
         if H2Odis_sum<=0: 
             H2Odis_sum=1 
@@ -370,7 +370,7 @@ class Root:
     distribution.The elongation process is the vertical 
     growth witha constant growth coefficaiant. This constant 
     growth is limited through physical soil factors, which 
-    limit root penetration. The whole plant supply can
+    limit root penetration. The whole plant stress can
     alos restrict root elongation.
     The distribution process is the allocation of root
     biomass over the rootingzone. The allocation is based
@@ -436,13 +436,13 @@ class Root:
         @param fgi: FeelingGoodIndex for root biomass distritbution for each layer in rootingzone in [-].
         @type h: double
         @param h: Pressurehead at rootingdepth in [cm]
-        @type supply: double
-        @param supply: Stress index from plant water/nitrogen supply in [-].
+        @type stress: double
+        @param stress: Stress index from plant water/nitrogen stress in [-].
         """
         #FeelingGoodIndex
         self.fgi=fgi
-        #Calculate actual rooting depth, restricted by plant supply and soil resistance 
-        self.depth=self.depth+self.elongation(self.penetrate(1.,h,self.rootability),self.elong)*stress*step
+        #Calculate actual rooting depth, restricted by plant stress and soil resistance 
+        self.depth=self.depth+self.elongation(self.penetrate(1.,h,self.rootability),self.elong)*(1-stress)*step
         #Calculate toal biomass
         self.growth = biomass*step
         self.Wtot=self.Wtot+biomass*step
@@ -500,15 +500,15 @@ class Root:
         @todo: Resistanc must be a list with a variable length, plant should call dynamically the soil factors for each resistance factor.
         """
         
-        #Calculates resistance though mechanical supply
+        #Calculates resistance though mechanical stress
         if bd>=rootability[0]: mechanical_impendance=rootability[1]
         else: mechanical_impendance=0.
         
-        #Calculates resistance through water supply
+        #Calculates resistance through water stress
         if h>=rootability[2]:water_stress=rootability[3]
         else: water_stress=0.
         
-        #Calculates restiance through oxygen supply
+        #Calculates restiance through oxygen stress
         if h<=rootability[4]:oxygen_deficiency=rootability[5]
         else: oxygen_deficiency=0.
         
@@ -942,5 +942,4 @@ class Nitrogen()
     def Total()
         pass
 '''
-        
         
