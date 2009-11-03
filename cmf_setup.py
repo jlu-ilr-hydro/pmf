@@ -11,6 +11,7 @@ class cmf1d(object):
         KA4_soil=ka4_soil(0.1,clay,silt,sand,Corg=c_org)
         
         r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap)
+        print r_curve
         # Add 50 layers with 10cm thickness, and 50 Neumann boundary conditions
         self.__bc=[]
         
@@ -29,7 +30,7 @@ class cmf1d(object):
         c.add_layer(7,cmf.BrooksCoreyRetentionCurve(bedrock_K,0.1,1,0.01))
         # Add a groundwater boundary (potential=-5.0 m)
         self.groundwater=cmf.DricheletBoundary(self.project,-2)
-        #self.groundwater.is_source=True
+        self.groundwater.is_source=True
         self.groundwater.Name="Groundwater"
         # Connect bedrock layer with groundwater boundary, using Richards equation
         cmf.connect(cmf.Richards,c.layers[-1],self.groundwater)

@@ -16,21 +16,18 @@ class cmf_fp_interface:
         assert(isinstance(cmf_cell,cmf.Cell))
         self.cmf_cell=cmf_cell
         self.N = cmf_tracer_N
-        self.default_Nconc=0.5
+        self.default_Nconc=100
         self.bulk_density=1.5
     def get_pressurehead(self,depth):
         """ Depth in cm; Returns the capillary suction for a given depth in [cm]."""
-        return self.get_layer(depth).matrix_potential
+        return -100 * self.get_layer(depth).matrix_potential
     def get_nutrients(self,depth):
         """ Depth in cm; Returns the nitrogen concentration in the soil solution in [mol l-1]"""
-        """
         l=self.get_layer(depth)
         if isinstance(self.N,cmf.solute):
             return l.conc(self.N)
         else:
             return self.default_Nconc
-        """
-        return 100
     def soilprofile(self):
         """ Returns a list with the lower limits of the layers in the whole soilprofile in [cm]. """
         return [l.lower_boundary*100 for l in self.cmf_cell.layers]
