@@ -36,10 +36,10 @@ class cmf_fp_interface:
         return [l.lower_boundary*100 for l in self.cmf_cell.layers]
     def get_fc(self,depth):
         """ soil water content at field capacity [m3 m-3] """
-        return  c.layers[0].soil.Wetness_pF(2.5)
+        return self.cmf_cell.layers[0].soil.Wetness_pF(2.5)
     def get_wp(self,depth):
         """ soil water content at wilting point [m3 m-3] """
-        return  c.layers[0].soil.Wetness_pF(4.2)
+        return self.cmf_cell.layers[0].soil.Wetness_pF(4.2)
     def get_wetness(self,depth):
         """ wetness in the top soil layer in [m3 m-3] """
         return self.get_layer(depth).wetness
