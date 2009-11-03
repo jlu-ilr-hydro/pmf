@@ -346,7 +346,7 @@ class ET_FAO:
         @return: Adjusted cropspecific Evapotranspiration to water stress in [mm].
         """
         return self.eto * (self.kcb*self.ks+self.ke)
-    def __call__(self,Kr,thermaltime,Rn,T,e_s,e_a,windspeed,vegH,LAI,stomatal_resistance,alt=0.,RHmin=30.,h=1.):
+    def __call__(self,Kr,thermaltime,Rn,T,e_s,e_a,windspeed,LAI,alt=0.,RHmin=30.,h=1.):
         """
         Calculates reference Evapotranspiration and the crop specific adjustment factors Kcb and Ke.
         
@@ -1091,7 +1091,7 @@ class Biomass_LUE:
         @rtype: double
         @return: Actual growth in [g biomass day-1].
         """ 
-        return self.growthrate * self.supply
+        return self.growthrate * self.stress
     @property
     def Total(self):
         """
@@ -1101,7 +1101,7 @@ class Biomass_LUE:
         @return: Actual growth in [g biomass day-1].
         """ 
         return self.total
-    def __call__(self,step,supply,Rs,LAI):
+    def __call__(self,step,stress,Rs,LAI):
         """
         Calcultes the stressed and unstressed growth of the plant.
         
@@ -1109,16 +1109,16 @@ class Biomass_LUE:
         @param step: Time step in [ddays
         @type Rs: double
         @param Rs: total solar radiation [MJ m-2 day-1].
-        @type supply: double
-        @param supply: Parameter for water and nitrogen supply between 0 - 1. in [-].
+        @type stress: double
+        @param stress: Parameter for water and nitrogen stress between 0 - 1. in [-].
         @type LAI: double
         @param LAI: Leaf area index of the plant in [m2 m-2].
         @param Rs: total solar radiation [MJ m-2 day-1].
-        @type supply: double
+        @type stress: double
         """
-        self.supply = supply
+        self.stress = 1-stress
         self.growthrate = self.PAR_a(Rs, self.intercept(LAI, self.k))* self.rue
-        self.total = self.total + self.growthrate *supply * step
+        self.total = self.total + self.growthrate * self.stress * step
     def PAR_a(self,Rs,interception):
         """ 
         Returns photosynthetically active absorbed radiation
