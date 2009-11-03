@@ -129,6 +129,9 @@ class Plant:
         self.plantN=plantN
         self.tbase=tbase
         self.pressure_threshold=pressure_threshold
+        
+        #sState ariables
+        self.supply = 0.
     def __del__(self):
         """
         Decrease class variable Plant.Count about one.
@@ -156,56 +159,45 @@ class Plant:
         """
         #Set time step
         time_step = 1. * interval if step == 'day' else 1./24. * interval
-        
         #compute actual rooting zone with actual rooting depth
         #Rootingzone consists of all layers, which are penetrated from the plant root
         self.root.zone(self.root.depth)
-       
         #Development
         self.developmentstage(time_step,self.atmosphere.get_tmin(time_act), self.atmosphere.get_tmax(time_act), self.tbase)
-        
         #Evapotranspiration
         self.et(self.soil.Kr(),self.developmentstage.Thermaltime,self.atmosphere.get_Rn(time_act,0.12,True),self.atmosphere.get_tmean(time_act)
                                    ,self.atmosphere.get_es(time_act),self.atmosphere.get_ea(time_act)
                                    ,self.atmosphere.get_windspeed(time_act),vegH=max(0.01,self.shoot.stem.height)
                                    ,LAI=self.shoot.leaf.LAI,stomatal_resistance=self.shoot.leaf.stomatal_resistance)
-        
         #Water uptake occurs only if germinination is finished (developmentstage > Emergence)
         if self.developmentstage.IsGerminated:
-        
         #Water uptake
             #Allocation if the potential transpiration over the rootingzone
             transpiration_distribution = [self.et.Transpiration/self.root.depth * l.penetration for l in self.root.zone]
             #Calls water interface for the calculation of the water uptake
             self.water(transpiration_distribution
                          ,[self.water.soil_values(self.soil,l.center) for l in self.root.zone],self.pressure_threshold)
-       
         #Nutrient uptake from soil
             #Rp = nitrogen demand, product from the potential nitrogen content in percent and athe actual biomass of plant 
             self.Rp=self.NO3dem(self.biomass.PotentialGrowth, self.NO3cont(self.plantN, self.developmentstage.Thermaltime))
             #Calls nitrogen interface for nitrogen uptake
             self.nitrogen([self.soil.get_nutrients(l.center) for l in self.root.zone],
                           self.water.Uptake, self.Rp, [l.penetration for l in self.root.zone])  
-        
-        
-        
         #The following processes occure only in the growing season (Emergence < developmentstge <= maturity)
         if self.developmentstage.IsGrowingseason:
             #Biomass accumulation
-            #Calculates stress index which limits potential growth throug water and nutrient stress
-            self.stress=min(sum(self.water.Uptake) / self.et.Cropspecific, sum(self.nitrogen.Total)/ self.Rp,1.)*1
+            #Calculates supply index which limits potential growth throug water and nutrient supply
+            self.supply=min(sum(self.water.Uptake) / self.et.Cropspecific, sum(self.nitrogen.Total)/ self.Rp,1.)
             #Calls biomass interface for the calculation of the actual biomass
-            self.biomass(self.stress,time_step,self.biomass.atmosphere_values(self.atmosphere,time_act),self.shoot.leaf.LAI)
-            #Partitioning
-            #Calls the root instance.Allocates biomass to root and defines the feeling good index for the root biomass
-            #distribution.
+            self.biomass(time_step,self.supply,self.biomass.atmosphere_values(self.atmosphere,time_act),self.shoot.leaf.LAI)
+            #Root partitining
             if self.developmentstage.Thermaltime <= self.developmentstage[4][1]:
                 self.root(time_step,self.get_fgi(sum(self.water.Uptake), self.et.Reference, sum(self.nitrogen.Total), self.Rp, 
                                                  [self.nitrogen.Total[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)],
                                                  [self.water.Alpha[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]),
                                                  (self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
-                                                 self.soil.get_pressurehead(self.root.depth),self.stress)
-            #Calls the shoot instance. Alocates biomass to shoot and the other above ground plant organs.
+                                                 self.soil.get_pressurehead(self.root.depth),self.supply)
+            #Shoot partitioning
             self.shoot(time_step,(self.shoot.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        (self.shoot.leaf.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        (self.shoot.stem.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
@@ -220,7 +212,7 @@ class Plant:
         coefficants for one timestept must be one (100%). 
         
         The water conditions can be represented through watercontent in [m3 m-3],
-        wateruptake [mm] or a stress index depending on the pressure head [-]. The 
+        wateruptake [mm] or a supply index depending on the pressure head [-]. The 
         nitrogen conditions are represented with the nitrogen concentration.
         
         First the most limiting resource is determined (water or nitrogen). In the
@@ -242,10 +234,10 @@ class Plant:
         @rtype: list
         @return: List with distribution coefficiants for the root biomass.
         """
-        #Compute stress index for nitrogen and water
+        #Compute supply index for nitrogen and water
         w=1-Sh/Tp
         n=1-(Ra/Rp) if Rp>0. else 0.
-        #Return list for the factor wit hthe higher stress index
+        #Return list for the factor wit hthe higher supply index
         H2Odis_sum=sum(H2Odis)
         if H2Odis_sum<=0: 
             H2Odis_sum=1 
@@ -378,7 +370,7 @@ class Root:
     distribution.The elongation process is the vertical 
     growth witha constant growth coefficaiant. This constant 
     growth is limited through physical soil factors, which 
-    limit root penetration. The whole plant stress can
+    limit root penetration. The whole plant supply can
     alos restrict root elongation.
     The distribution process is the allocation of root
     biomass over the rootingzone. The allocation is based
@@ -444,12 +436,12 @@ class Root:
         @param fgi: FeelingGoodIndex for root biomass distritbution for each layer in rootingzone in [-].
         @type h: double
         @param h: Pressurehead at rootingdepth in [cm]
-        @type stress: double
-        @param stress: Stress index from plant water/nitrogen stress in [-].
+        @type supply: double
+        @param supply: Stress index from plant water/nitrogen supply in [-].
         """
         #FeelingGoodIndex
         self.fgi=fgi
-        #Calculate actual rooting depth, restricted by plant stress and soil resistance 
+        #Calculate actual rooting depth, restricted by plant supply and soil resistance 
         self.depth=self.depth+self.elongation(self.penetrate(1.,h,self.rootability),self.elong)*stress*step
         #Calculate toal biomass
         self.growth = biomass*step
@@ -508,15 +500,15 @@ class Root:
         @todo: Resistanc must be a list with a variable length, plant should call dynamically the soil factors for each resistance factor.
         """
         
-        #Calculates resistance though mechanical stress
+        #Calculates resistance though mechanical supply
         if bd>=rootability[0]: mechanical_impendance=rootability[1]
         else: mechanical_impendance=0.
         
-        #Calculates resistance through water stress
+        #Calculates resistance through water supply
         if h>=rootability[2]:water_stress=rootability[3]
         else: water_stress=0.
         
-        #Calculates restiance through oxygen stress
+        #Calculates restiance through oxygen supply
         if h<=rootability[4]:oxygen_deficiency=rootability[5]
         else: oxygen_deficiency=0.
         

@@ -380,7 +380,7 @@ class ET_FAO:
         @todo: Calculation of altitude.
         """
         #Calculates reference Evapotranspiration
-        self.eto = self.calc_ETo(Rn,T,e_s,e_a,windspeed,LAI,stomatal_resistance,alt)
+        self.eto = self.calc_ETo(Rn,T,e_s,e_a,windspeed)
         
         #Calculates basal crop coefficaint for thhe transpiration calculation
         self.kcb = self.calc_Kcb(thermaltime, self.kcb_values[0], self.kcb_values[1],
@@ -396,9 +396,17 @@ class ET_FAO:
         
         #Calculates evaporation coefficiant
         self.ke = self.calc_Ke(Kr, kcmax, self.kcb, few)
-    def calc_ETo(self,Rn,T,e_s,e_a,windspeed,LAI,stomatal_resistanc=70,alt=0,printSteps=0,vegH=0.12,daily=True):
+    def calc_ETo(self,Rn,T,e_s,e_a,windspeed=2.,LAI=24*0.12,stomatal_resistanc=100,alt=0,printSteps=0,vegH=0.12,daily=True):
         """
         Calculates the reference Evapotranspiration.
+        
+        The reference surface is a hypothetical grass reference crop with an 
+        assumed crop height of 0.12 m, a fixed surface resistance of 70 s m-1 
+        and an albedo of 0.23. The reference surface closely resembles an 
+        extensive surface of green, well-watered grass of uniform height, 
+        actively growing and completely shading the ground. The fixed surface 
+        resistance of 70 s m-1 implies a moderately dry soil surface resulting 
+        from about a weekly irrigation frequency. 
         
         @type Rn: double
         @param Rn: Net radiation at the crop surface in [MJ m-2].
@@ -439,7 +447,7 @@ class ET_FAO:
         k=0.41
         r_a_u= log((2-d)/z_om)*log((2-d)/z_oh)/k**2
         r_a=r_a_u/windspeed
-        r_s=100./(0.5*LAI)
+        r_s=100./(0.5*LAI) # LAIactive = LAI * 0.5
         nominator=(delta+gamma*(1+r_s/r_a))
         ATcoeff=epsilon*3.486*86400/r_a_u/1.01
         #AeroTerm=(rho_a*c_p*(e_s-e_a)/r_a)/nominator
@@ -1066,7 +1074,6 @@ class Biomass_LUE:
         #State variables
         self.total=0.
         self.growthrate=0.
-        self.stress=0.
     @property
     def PotentialGrowth(self):
         """
@@ -1084,7 +1091,7 @@ class Biomass_LUE:
         @rtype: double
         @return: Actual growth in [g biomass day-1].
         """ 
-        return self.growthrate * self.stress
+        return self.growthrate * self.supply
     @property
     def Total(self):
         """
@@ -1094,24 +1101,24 @@ class Biomass_LUE:
         @return: Actual growth in [g biomass day-1].
         """ 
         return self.total
-    def __call__(self,time_act,stress,Rs,LAI):
+    def __call__(self,step,supply,Rs,LAI):
         """
         Calcultes the stressed and unstressed growth of the plant.
         
-        @type time_act: datetime
-        @param time_act: Actual time in [DD,MM,JJJ].
+        @type step: double
+        @param step: Time step in [ddays
         @type Rs: double
         @param Rs: total solar radiation [MJ m-2 day-1].
-        @type stress: double
-        @param stress: Parameter for water and nitrogen stress between 0 - 1. in [-].
+        @type supply: double
+        @param supply: Parameter for water and nitrogen supply between 0 - 1. in [-].
         @type LAI: double
         @param LAI: Leaf area index of the plant in [m2 m-2].
         @param Rs: total solar radiation [MJ m-2 day-1].
-        @type stress: double
+        @type supply: double
         """
-        self.stress=stress
+        self.supply = supply
         self.growthrate = self.PAR_a(Rs, self.intercept(LAI, self.k))* self.rue
-        self.total = self.total + self.growthrate *stress
+        self.total = self.total + self.growthrate *supply * step
     def PAR_a(self,Rs,interception):
         """ 
         Returns photosynthetically active absorbed radiation
@@ -1198,7 +1205,7 @@ class Nitrogen:
         Returns a Biomass_LOG instance.
         
         @type Km: double
-        @param Km: Half saturation concentration in µmol/l 
+        @param Km: Half saturation concentration in ï¿½mol/l 
         @type NO3_min: double
         @param NO3_min: Residual N concentration
         @type layercount: double
