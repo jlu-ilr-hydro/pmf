@@ -18,11 +18,10 @@ def run(t,res,plant):
     #Calculate water flux
     flux = [uptake*-1. for uptake in plant.water.Uptake] if plant  else zeros(c.cell.layer_count())
     #flux[0] -= plant.et.Evaporation if plant else baresoil.Evaporation
-    #if t > datetime(1980,3,25) and t < datetime(1980,7,1): flux[0] -= c.wetness[0]*5
+    if t > datetime(1980,3,25) and t < datetime(1980,7,1): flux[0] -= c.wetness[0]*5
     c.flux=flux
     c.run(cmf.day)
-    if plant:
-        print c.matrix_potential[0], c.get_pressurehead(2.5),plant.developmentstage.Stage
+
     res.water_uptake.append(plant.water.Uptake) if plant else res.water_uptake.append(zeros(c.cell.layer_count()))
     res.branching.append(plant.root.branching) if plant else res.branching.append(zeros(c.cell.layer_count()))
     res.transpiration.append(plant.et.Transpiration) if plant else res.transpiration.append(0)
@@ -77,7 +76,6 @@ if __name__=='__main__':
     cmf_fp = cmf_fp_interface(c.cell)
     print "Interface to FlowerPower"
     c.cell.saturated_depth=5.
-   
     #Create evapotranspiration instance or bare soil conditions
     baresoil = FlowerPower.ProcessLibrary.ET_FAO([0.,0.,0.,0.],[0.,0.,0.,0.],kcmin = 0.)
     #set management
@@ -88,11 +86,9 @@ if __name__=='__main__':
     end = datetime(1980,12,31)
     #Simulation
     res = Res()
-    c.t = start    
     plant = None
-    print "Run ... "
-    
-    
+    print "Run ... "    
+    c.t = start
     while c.t<end:
         plant=run(c.t,res,plant)
         print c.t,res
@@ -104,13 +100,10 @@ if __name__=='__main__':
     stages = FlowerPower.Development(FlowerPower.make_plant.getCropSpecificParameter('SummerWheat')[3])
     #Days after sowing (DAS) unit maturity
     DAS = filter(lambda res: res!=0,res.DAS)[-1]
-  
     #Fraction of each development stage from maturity 
     relStages = [s[1] / stages[-1][1] for s in stages]
     #DAS for each stage
     DAS = [DAS.days * s for s in relStages]
-    
-    
     figtext(.01, .97, ('Rain %4.2f, Radiation %4.2f, Temperature: %4.2f') % (sum(res.rain),sum(res.radiation),sum(res.temperature)))
     figtext(.01, .95, ('ETo %4.2f, ETc %4.2f, Transpiration %4.2f, Evaporation %4.2f') % (sum(res.ETo),sum(res.ETc),sum(res.transpiration),sum(res.evaporation)))
     #figtext(.01, .93, ('Plant biomass %4.2f, Root biomass %4.2f, Shoot biomass %4.2f, LAI %4.2f, Water uptake: %4.2f') % (filter(lambda res: res>0,res.biomass)[-1], filter(lambda res: res>0,res.root_biomass)[-1], filter(lambda res: res>0,res.shoot_biomass)[-1], filter(lambda res: res>0,res.lai)[-1],sum(res.water_uptake)))
