@@ -45,13 +45,11 @@ class Plant:
     #Class variable which counts plant instances
     Count=0.
     
-    def __init__(self,soil,atmosphere,et,water,biomass,developmentstage,layer,nitrogen,
+    def __init__(self,soil,atmosphere,et,water,biomass,developmentstage,
+                 layer,nitrogen,
                  shoot_percent,root_percent,leaf_percent,stem_percent,
-                 storage_percent,tbase=0.,
-                 rootability=[1.5,0.5,16000.,.0,0.0,0.0],
-                 pressure_threshold=[0.,1.,500.,16000.],
-                 plantN=[[160.,0.43],[1174.,0.16]],
-                 leaf_specific_weight=50.,root_growth=1.2,max_height=1.):        
+                 storage_percent,tbase,pressure_threshold,
+                 plantN,leaf_specific_weight,root_growth,max_height):        
         """
         Returns plant instance. The plant instance holds the other plant structural classes root and 
         shoot (shoot holds leaf, stem and storageaorgans). Plant interfere between the environmental 
@@ -85,11 +83,6 @@ class Plant:
         @param storage_percent: List with partitioning coefficiants for each developmentstage as fraction from the plant biomass in [-].
         @type tbase: double
         @param tbase: Minimum temperature above growth can take place in Celsius.
-        @type rootability: List
-        @param rootability: List with critical thresholds for the root penetration resistance of the soil and the 
-                            related growth limiting coefficiants as 
-                            fraction from the root elongation in [-]. 
-                            Example: [critical bulkdensity, limiting coefficiant, critical pressurehead, limiting coefficant, ...]
         @type pressure_threshold: list
         @param pressure_threshold: List with soil pressurehead. These conditions limiting wate uptake and regulate root 
                                    biomass distribution in [cm water column].
@@ -121,7 +114,7 @@ class Plant:
         self.nitrogen=nitrogen
         
         #Implemetation of root and shoot class
-        self.root=Root(self,root_percent,rootability,root_growth,layer)
+        self.root=Root(self,root_percent,root_growth,layer)
         self.shoot=Shoot(self,leaf_specific_weight,self.developmentstage[4][1],shoot_percent,leaf_percent,stem_percent,storage_percent,
                          max_height,elongation_end=self.developmentstage[3][1])
         
@@ -187,7 +180,7 @@ class Plant:
         if self.developmentstage.IsGrowingseason:
             #Biomass accumulation
             #Calculates stress index which limits potential growth throug water and nutrient stress
-            self.stress=0#-min(sum(self.water.Uptake) / self.et.Cropspecific, sum(self.nitrogen.Total)/ self.Rp,1.)            
+            self.stress=min(sum(self.water.Uptake) / self.et.Cropspecific, sum(self.nitrogen.Total)/ self.Rp,1.)*0.2            
             #Calls biomass interface for the calculation of the actual biomass
             self.biomass(time_step,self.stress,self.biomass.atmosphere_values(self.atmosphere,time_act),self.shoot.leaf.LAI)
             #Root partitining
@@ -196,7 +189,8 @@ class Plant:
                                                  [self.nitrogen.Total[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)],
                                                  [self.water.Alpha[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]),
                                                  (self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
-                                                 self.soil.get_pressurehead(self.root.depth),self.stress)
+                                                 self.soil.get_pressurehead(self.root.depth),self.stress,
+                                                 physical_constraints=[self.sink_term(self.soil.get_pressurehead(self.root.depth), self.pressure_threshold)])
             #Shoot partitioning
             self.shoot(time_step,(self.shoot.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        (self.shoot.leaf.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
@@ -335,17 +329,46 @@ class Plant:
         @rtype: double
         @return: Relative photoperiod coefficiant in [-].
         """  
-        if plant_type=='longday':
-            if daylength<=plant_photoperiod[0] or daylength>=plant_photoperiod[-1]: 
+        if type=='longday':
+            if dl<=plant_photoperiod[0] or dl>=plant_photoperiod[-1]: 
                 return 0.
-            elif daylength>plant_photoperiod[1] and daylength<plant_photoperiod[2]: 
+            elif dl>plant_photoperiod[1] and dl<plant_photoperiod[2]: 
                 return 1.0
             else: 
-                return (plant_photoperiod[1]-daylength)/(plant_photoperiod[1]-plant_photoperiod[0])
+                return (plant_photoperiod[1]-dl)/(plant_photoperiod[1]-plant_photoperiod[0])
         else:
-            if daylength<=plant_photoperiod[0] or daylength>=plant_photoperiod[-1]: return 0.
-            elif daylength>plant_photoperiod[0] and daylength<plant_photoperiod[1]: return 1.0
-            else: return (plant_photoperiod[-1]-daylength)/(plant_photoperiod[-1]-plant_photoperiod[-2])
+            if dl<=plant_photoperiod[0] or dl>=plant_photoperiod[-1]: return 0.
+            elif dl>plant_photoperiod[0] and dl<plant_photoperiod[1]: return 1.0
+            else: return (plant_photoperiod[-1]-dl)/(plant_photoperiod[-1]-plant_photoperiod[-2])
+    def sink_term(self,h_soil,h_plant): 
+        """
+        Computes sink term alpha.
+        
+        The water uptake is limited througt a sink therm variable alpha. 
+        This value vary with the water pressure head in the soil layer. 
+        Alpha is a dimensonless factor between zero and one. The factor 
+        limits water uptake due to the wilting point and oxygen dificiency. 
+        After alpha is determinded with four threshold values for the pressure head 
+        (h1-oxygen deficiency,h-4 wiliting point, h2 and h3 -optimal conditons). 
+        Values for the parameters vary with the crop.  H3 also varies with the 
+        transpiration.
+        
+        @type h_soil: list
+        @param h_soil: List with soil pressurehead for each layer in [cm water column].
+        @type h_plant: list
+        @param h_plant: List with soil pressurehead. These conditions limiting wate uptake in. [cm water column].
+        @rtype: list
+        @return: Prescribed crop specific function of soil water pressure head with values between or equal zero and one in [-].
+        
+        @see: [Feddes and Raats, 2004]
+        """
+        try:
+            if h_soil<h_plant[0] or h_soil>h_plant[-1]: return 0
+            if h_soil>=h_plant[1] and h_soil<=h_plant[2]: return 1
+            elif h_soil<h_plant[1]: return (h_soil-h_plant[0])/(h_plant[1]-h_plant[0])
+            else: return (h_plant[-1]-h_soil)/(h_plant[-1]-h_plant[-2])
+        except ValueError, err:
+            print err
 class Root:
     """
     Allocates underground biomass to rootoingzone and controls underground growth processes.
@@ -381,7 +404,7 @@ class Root:
     
     @todo: Root elongation mit alpha Wert verknuepfen
     """
-    def __init__(self,plant,percent,rootability,root_growth,layer):
+    def __init__(self,plant,percent,root_growth,layer):
         """
         Returns a root instance and creates a rootingzone from the soilprofile.
         
@@ -389,11 +412,6 @@ class Root:
         @param plant: Plant class, which owns root.
         @type  root_percent: list
         @param root_percent: List with partitioning coefficiants for each developmentstage as fraction from the plant biomass in [-].
-        @type rootability: List
-        @param rootability: List with critical thresholds for the root penetration resistance of the soil and the 
-                            related growth limiting coefficiants as 
-                            fraction from the root elongation in [-]. 
-                            Example: [critical bulkdensity, limiting coefficiant, critical pressurehead, limiting coefficant, ...]
         @type root_growth: double
         @param root_growth: Root elongation factor in [cm day-1]
         @type layer: layer
@@ -405,7 +423,6 @@ class Root:
         self.plant=plant
         
         #Constant variables
-        self.rootability=rootability
         self.elong=root_growth
         self.percent=percent
         
@@ -424,12 +441,14 @@ class Root:
         
         #FeelingGoodIndex
         self.fgi=[]
-    def __call__(self,step,fgi,biomass,h,stress):
+    def __call__(self,step,fgi,biomass,h,stress,physical_constraints):
         """
         Root call calculates the actual rootingdepth and the allocates
         the biomass between the layers in the rootingzone and
         calculats the actual total bioamss of root.
         
+        @type physical_constraints: double
+        @param physical_constraints: Restricts root elongation to soil resitance against root penetration [-].
         @type step: double
         @param step: Time step of the run period.
         @type fgi: list
@@ -442,7 +461,7 @@ class Root:
         #FeelingGoodIndex
         self.fgi=fgi
         #Calculate actual rooting depth, restricted by plant stress and soil resistance 
-        self.depth=self.depth+self.elongation(self.penetrate(1.,h,self.rootability),self.elong)*(1-stress)*step
+        self.depth=self.depth+self.elong*min(physical_constraints)*(1-stress)*step
         #Calculate toal biomass
         self.growth = biomass*step
         self.Wtot=self.Wtot+biomass*step
@@ -467,53 +486,9 @@ class Root:
         @return: List with the total biomass in each layer in the rootingzone in [g].
         """
         return [b+(biomass*fgi[i]) for i,b in enumerate(distr)]
-    def elongation(self,physical_constraints,root_growth):
-        """
-        Return vertical growthrate depending on the potential rate
-        and the soil resistance represented through physical impendance.
-        
-        @type physical_imdendance: double
-        @param physical_imdendance: Soil resistance against root penetration in [-].
-        @type root_growth: double
-        @param root_growth: Potential vertical root growth in [cm day-1]
-        @rtype: double
-        @return: Actual root elongation in [cm day-1]
-        """
-        return root_growth-physical_constraints*root_growth
-    def penetrate(self,bd,h,rootability):
-        """
-        Returns the most limiting soil resitance factor against
-        root penetration.
-        
-        @type bd: double
-        @param bd: Bulkdensity of the soil at rootingdepth in [g cm-3]
-        @type h: double
-        @param h: Pressurehead at rootingdepth in [cm]
-        @type rootability: List
-        @param rootability: List with critical thresholds for the root penetration resistance of the soil and the 
-                            related growth limiting coefficiants as 
-                            fraction from the root elongation in [-]. 
-                            Example: [critical bulkdensity, limiting coefficiant, critical pressurehead, limiting coefficant, ...]
-        @rtype: double
-        @return: Most limiting resitance factor against root penetration in [-].
-        
-        @todo: Resistanc must be a list with a variable length, plant should call dynamically the soil factors for each resistance factor.
-        """
-        
-        #Calculates resistance though mechanical stress
-        if bd>=rootability[0]: mechanical_impendance=rootability[1]
-        else: mechanical_impendance=0.
-        
-        #Calculates resistance through water stress
-        if h>=rootability[2]:water_stress=rootability[3]
-        else: water_stress=0.
-        
-        #Calculates restiance through oxygen stress
-        if h<=rootability[4]:oxygen_deficiency=rootability[5]
-        else: oxygen_deficiency=0.
-        
-        #Returns the most limiting facor against root penetration
-        return max(mechanical_impendance,water_stress,oxygen_deficiency)
+   
+    
+    
 class Shoot:
     """
     Allocates aboveground biomass to leaf, stem and sotrageorgans.

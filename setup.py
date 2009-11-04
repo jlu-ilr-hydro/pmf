@@ -18,10 +18,10 @@ def run(t,res,plant):
     #Calculate water flux
     flux = [uptake*-1. for uptake in plant.water.Uptake] if plant  else zeros(c.cell.layer_count())
     flux[0] -= plant.et.Evaporation if plant else baresoil.Evaporation*0.1
-    #if t > datetime(1980,3,25) and t < datetime(1980,7,1): flux[0] -= c.wetness[0]*5
+    if t > datetime(1980,3,25) and t < datetime(1980,8,1): flux[1] -= c.wetness[0] * 0
     c.flux=flux
     c.run(cmf.day)
-    
+    if plant: print plant.root.depth
     res.water_uptake.append(plant.water.Uptake) if plant else res.water_uptake.append(zeros(c.cell.layer_count()))
     res.branching.append(plant.root.branching) if plant else res.branching.append(zeros(c.cell.layer_count()))
     res.transpiration.append(plant.et.Transpiration) if plant else res.transpiration.append(0)

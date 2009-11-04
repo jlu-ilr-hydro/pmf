@@ -89,22 +89,19 @@ def createCrop_LUEconcept(soil,atmosphere,CropParams):
     storage = [CropParams[10][i]*perc for i,perc in enumerate(shoot)]#[[.0,.0,.0,.0,.7,1.,1.,1.][i]*perc for i,perc in enumerate(shoot)]
     #tbase
     tbase = CropParams[11]#0.
-    #rootability_thresholds
-    rootability = CropParams[12]#[1.5,0.5,16000.,.0,0.0,0.0]
     #pressure_threshold
-    pressure_thresholds = CropParams[13]#[0.,1.,500.,16000.]
+    pressure_thresholds = CropParams[12]#[0.,1.,500.,16000.]
     #plant_N
-    plantN = CropParams[14]#[[160.,0.43],[1174.,0.16]]
+    plantN = CropParams[13]#[[160.,0.43],[1174.,0.16]]
     #leaf_specific_weight
-    leaf_specific_weight = CropParams[15]#50.
+    leaf_specific_weight = CropParams[14]#50.
     #root_growth
-    root_growth = CropParams[16]#1.2
+    root_growth = CropParams[15]#1.2
     #vetical_elongation
-    max_height = CropParams[17]#1.0
+    max_height = CropParams[16]#1.0
     
     #Crop process models from ProcesLibrary
     et = FlowerPower.ET_FAO(kcb,seasons)
-    
     biomass = FlowerPower.Biomass_LUE(LUE,k)
     development = FlowerPower.Development(stage)
     layer = FlowerPower.SoilLayer()
@@ -113,4 +110,6 @@ def createCrop_LUEconcept(soil,atmosphere,CropParams):
     water = FlowerPower.Water_Feddes(layercount=len(layer))
     #Creates plant
     return FlowerPower.Plant(soil,atmosphere,et,water,biomass,development,layer,nitrogen,
-                 shoot,root,leaf,stem,storage,root_growth=3.)
+                 shoot,root,leaf,stem,storage,tbase,pressure_thresholds,plantN,
+                 leaf_specific_weight,root_growth,max_height)
+    
