@@ -1,13 +1,6 @@
-from pylab import *
-from datetime import *
-import FlowerPower
-import cmf
-from cmf_setup import cmf1d
-from cmf_fp_interface import cmf_fp_interface
-
 def run(t,res,plant):
     if t.day==1 and t.month==3:
-        plant = FlowerPower.create_crop(cmf_fp, cmf_fp,"SummerWheat")
+        plant = FlowerPower.createPlant(cmf_fp, cmf_fp)
     if t.day==1 and t.month==8:
         plant =  None
     #Let grow
@@ -16,12 +9,13 @@ def run(t,res,plant):
     #Calculates evaporation for bare soil conditions
     baresoil(c.Kr(),0.,c.get_Rn(t, 0.12, True),c.get_tmean(t),c.get_es(t),c.get_ea(t), c.get_windspeed(t),0.,RHmin=30.,h=1.)
     #Calculate water flux
+    
     flux = [uptake*-1. for uptake in plant.water.Uptake] if plant  else zeros(c.cell.layer_count())
     flux[0] -= plant.et.Evaporation if plant else baresoil.Evaporation*0.1
     if t > datetime(1980,3,25) and t < datetime(1980,8,1): flux[1] -= c.wetness[0] * 0
     c.flux=flux
     c.run(cmf.day)
-    if plant: print plant.root.depth
+    
     res.water_uptake.append(plant.water.Uptake) if plant else res.water_uptake.append(zeros(c.cell.layer_count()))
     res.branching.append(plant.root.branching) if plant else res.branching.append(zeros(c.cell.layer_count()))
     res.transpiration.append(plant.et.Transpiration) if plant else res.transpiration.append(0)
@@ -68,7 +62,14 @@ class Res(object):
         return "Shoot=%gg, Root=%gg, ETc = %gmm, Wateruptake=%gmm, Stress=%g" % (self.shoot_biomass[-1],self.root_biomass[-1],self.ETc[-1],sum(self.water_uptake[-1]),self.stress[-1])
     
 if __name__=='__main__':
-    #Create cmf cell
+    from pylab import *
+    from datetime import *
+    import FlowerPower
+    import cmf
+    from cmf_setup import cmf1d
+    from cmf_fp_interface import cmf_fp_interface
+    
+    #Create cmf cell    
     c=cmf1d(sand=20,silt=60,clay=20,c_org=2.0,bedrock_K=0.01,layercount=20,layerthickness=0.1)
     print "cmf is setup"
     c.load_meteo(rain_factor=1.)
@@ -97,7 +98,7 @@ if __name__=='__main__':
         imshow(transpose(a),aspect='auto',interpolation='nearest',**kwargs)
         colorbar()
     #Calculates DAS for each development stage
-    stages = FlowerPower.Development(FlowerPower.make_plant.getCropSpecificParameter('SummerWheat')[3])
+    stages = FlowerPower.make_plant.CropCoefficiants().stage
     #Days after sowing (DAS) unit maturity
     DAS = filter(lambda res: res!=0,res.DAS)[-1]
     #Fraction of each development stage from maturity 

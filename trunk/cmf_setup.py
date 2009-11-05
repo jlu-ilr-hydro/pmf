@@ -90,7 +90,7 @@ class cmf1d(object):
     
     
    
-    def get_profile(self):
+    def soilprofile(self):
         return [l.boundary[1]*100 for l in self.cell.layers]
     def Kr(cmf1d):
         cell=cmf1d.cell

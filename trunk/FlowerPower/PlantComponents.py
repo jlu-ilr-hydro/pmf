@@ -45,11 +45,19 @@ class Plant:
     #Class variable which counts plant instances
     Count=0.
     
-    def __init__(self,soil,atmosphere,et,water,biomass,developmentstage,
-                 layer,nitrogen,
-                 shoot_percent,root_percent,leaf_percent,stem_percent,
-                 storage_percent,tbase,pressure_threshold,
-                 plantN,leaf_specific_weight,root_growth,max_height):        
+    def __init__(self,et,water,biomass,development,layer,nitrogen,
+                 shoot_percent =[.0,.5,.5,.9,.95,1.,1.,1.],
+                 root_percent = [.0,.5,.5,.1,.05,.0,.0,.0],
+                 leaf_percent = [.0,.5,.5,.5,0.,.0,.0,.0],
+                 stem_percent = [.0,.5,.5,.5,.3,.0,.0,.0],
+                 storage_percent = [.0,.0,.0,.0,.7,1.,1.,1.],
+                 tbase = 0.,
+                 pressure_threshold = [0.,1.,500.,16000.],
+                 plantN = [[160.,0.43],[1200.,0.16]],
+                 leaf_specific_weight = 50.,
+                 root_growth=1.5,
+                 max_height = 1.,
+                 soil=None,atmosphere=None):        
         """
         Returns plant instance. The plant instance holds the other plant structural classes root and 
         shoot (shoot holds leaf, stem and storageaorgans). Plant interfere between the environmental 
@@ -65,22 +73,22 @@ class Plant:
         @param water: Calculates water uptake from the soil.
         @type  biomass: biomass
         @param biomass: Calculates potential and actual growth, total biomass.
-        @type  developmentstage: DevelopmentStage
-        @param developmentstage: Calculatese thermal time and actual developmentstage.
+        @type  development: DevelopmentStage
+        @param development: Calculatese thermal time and actual development.
         @type  et: ET
         @param et: Calculatese potential and actual transpiration and evaporation.
         @type  nitrogen: Nitrogen
         @param nitrogen: Calculatese nitrogen uptake from soil
         @type  shoot_percent: list
-        @param shoot_percent: List with partitioning coefficiants for each developmentstage as fraction from the plant biomass in [-].
+        @param shoot_percent: List with partitioning coefficiants for each development as fraction from the plant biomass in [-].
         @type  root_percent: list
-        @param root_percent: List with partitioning coefficiants for each developmentstage as fraction from the plant biomass in [-].
+        @param root_percent: List with partitioning coefficiants for each development as fraction from the plant biomass in [-].
         @type  leaf_percent: list
-        @param leaf_percent: List with partitioning coefficiants for each developmentstage as fraction from the plant biomass in [-].
+        @param leaf_percent: List with partitioning coefficiants for each development as fraction from the plant biomass in [-].
         @type  stem_percent: list
-        @param stem_percent: List with partitioning coefficiants for each developmentstage as fraction from the plant biomass in [-].
+        @param stem_percent: List with partitioning coefficiants for each development as fraction from the plant biomass in [-].
         @type  storage_percent: list
-        @param storage_percent: List with partitioning coefficiants for each developmentstage as fraction from the plant biomass in [-].
+        @param storage_percent: List with partitioning coefficiants for each development as fraction from the plant biomass in [-].
         @type tbase: double
         @param tbase: Minimum temperature above growth can take place in Celsius.
         @type pressure_threshold: list
@@ -101,6 +109,11 @@ class Plant:
         #Raise Count variable for each platn instance
         Plant.Count+=1
         
+        #Constant variables
+        self.plantN=plantN
+        self.tbase=tbase
+        self.pressure_threshold=pressure_threshold
+      
         #Handing over environmental interfaces
         self.soil=soil
         self.atmosphere=atmosphere
@@ -109,7 +122,7 @@ class Plant:
         #Interfaces holds state variables for each process as properties
         self.water=water
         self.biomass=biomass
-        self.developmentstage=developmentstage
+        self.developmentstage=development
         self.et=et
         self.nitrogen=nitrogen
         
@@ -118,10 +131,6 @@ class Plant:
         self.shoot=Shoot(self,leaf_specific_weight,self.developmentstage[4][1],shoot_percent,leaf_percent,stem_percent,storage_percent,
                          max_height,elongation_end=self.developmentstage[3][1])
         
-        #Constant variables
-        self.plantN=plantN
-        self.tbase=tbase
-        self.pressure_threshold=pressure_threshold
         
         #sState ariables
         self.stress = 0.
@@ -169,7 +178,7 @@ class Plant:
             transpiration_distribution = [self.et.Transpiration/self.root.depth * l.penetration for l in self.root.zone]
             #Calls water interface for the calculation of the water uptake
             self.water(transpiration_distribution
-                         ,[self.water.soil_values(self.soil,l.center) for l in self.root.zone],self.pressure_threshold)
+                         ,[self.soil.get_pressurehead(l.center) for l in self.root.zone],self.pressure_threshold)
         #Nutrient uptake from soil
             #Rp = nitrogen demand, product from the potential nitrogen content in percent and athe actual biomass of plant 
             self.Rp=self.NO3dem(self.biomass.PotentialGrowth, self.NO3cont(self.plantN, self.developmentstage.Thermaltime))

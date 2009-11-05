@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from pylab import *
+import pylab as pylab
 class Development:
     """
     Calculates the developmentstage of plant with the thermaltime concept.
@@ -160,7 +160,7 @@ class SoilLayer:
     on the pentration depth of the plant root.For that
     the root penetration for each layer is calculated.
     """
-    def __init__(self,lower=0.,upper=0.,center=0.,thickness=0.,penetration=0.):
+    def __init__(self,lower=0.,upper=0.,center=0.,thickness=0.,penetration=0.,soilprofile=[]):
         """
         Returns a soillayer instance with zero values for all attributes.
         
@@ -185,8 +185,12 @@ class SoilLayer:
         self.upper=upper
         self.center=center
         self.thickness=thickness
+        
+        
         #List with all layers in the soilprofile, which is created with get_rootingzone()
         self.rootingzone=[]
+        
+        self.get_rootingzone(soilprofile)
         
         #State variables updated in every timestep
         self.penetration=penetration
@@ -290,6 +294,8 @@ class ET_FAO:
         
         @rtype: ET_FAO
         @return: ET_FAO instance
+        
+        @todo: Calculation of seasons!!!
         """
         #Constant variables
         self.kcb_values=kcb_values
@@ -431,9 +437,9 @@ class ET_FAO:
         
         @todo: defintion of altitude
         """
-        delta=4098*(0.6108*exp(17.27*T/(T+237.3)))/(T+237.3)**2
+        delta=4098*(0.6108*pylab.exp(17.27*T/(T+237.3)))/(T+237.3)**2
         if daily:   G=0
-        else : G=(0.5-greater(Rn,0)*0.4)*Rn
+        else : G=(0.5-pylab.greater(Rn,0)*0.4)*Rn
         P=101.3*((293-0.0065*alt)/293)**5.253
         c_p=0.001013
         epsilon=0.622
@@ -445,7 +451,7 @@ class ET_FAO:
         z_om=0.123*vegH
         z_oh=0.1*z_om
         k=0.41
-        r_a_u= log((2-d)/z_om)*log((2-d)/z_oh)/k**2
+        r_a_u= pylab.log((2-d)/z_om)*pylab.log((2-d)/z_oh)/k**2
         r_a=r_a_u/windspeed
         r_s=100./(0.5*LAI) # LAIactive = LAI * 0.5
         nominator=(delta+gamma*(1+r_s/r_a))
@@ -739,7 +745,7 @@ class Water_FAO:
         #Calcualtes stres coefficiant
         self.ks = self.calc_Ks(TAW, Dr, RAW, self.p)
         #Calculates actual water uptake and contributes the uptake over the layer in the soil profile
-        self.uptake = [Eto * (self.ks * Kcb + Ke)/len(soillayer) for l in soillayer]
+        self.uptake = [ETo * (self.ks * Kcb + Ke)/len(soillayer) for l in soillayer]
     def calc_Ks(self,TAW,Dr,RAW,p):
         """ 
         Calculates transpiration reduction factor
@@ -813,7 +819,7 @@ class Water_Feddes:
     
     @see: [Feddes et al, 1978, Feddes & Raats 2004]
     """
-    def __init__(self,maxcomp=2.,layercount=21.):
+    def __init__(self,maxcomp=2.,layercount=21):
         """
         Returns a Water_Feddes instance.
         
@@ -1155,7 +1161,7 @@ class Biomass_LUE:
         @type k: double
         @param k: Canopy extinction coefficient in [-].
         """
-        return exp(-k*LAI)
+        return pylab.exp(-k*LAI)
     def atmosphere_values(self,atmosphere,time_act):
         """
         Returns a method to interfere with the atmosphere interface over the plant instance.
@@ -1220,8 +1226,8 @@ class Nitrogen:
         self.Km=Km
         self.NO3min=NO3_min
         #State variables
-        self.Pa=zeros(layercount)
-        self.Aa=zeros(layercount)
+        self.Pa=[0. for l in range(layercount)]
+        self.Aa=[0. for l in range(layercount)]
     @property
     def Active(self):
         """
