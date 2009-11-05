@@ -1,115 +1,130 @@
-'''
-Created on 02.11.2009
+"""
+Make a plant and connect it to the soil and atmosphere interface in three steps:
 
-@author: philkraf
-'''
+1. Set Processes from ProcessLibrary (note *1):
+    et = FlowerPower.ET_FAO(kcb_values = [0.15,1.1,0.15],seasons = [160.0, 499.0, 897.0, 1006.0])
+    biomass = FlowerPower.Biomass_LUE(RUE = 3.,k=.4)
+    development = FlowerPower.Development(stage = [['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',1200.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]])
+    layer = FlowerPower.SoilLayer(soillayer=[10,20,30,40,50,60,100])
+    nitrogen = FlowerPower.Nitrogen(layercount = len(layer))
+    water = FlowerPower.Water_Feddes(layercount = len(layer))
+
+
+2.Create plant (note*2,*3):
+    a) wheat_instance = makePlant(FlowerPower.Plant,et=et,biomass=biomass,development=development,layer=layer,nitrogen=nitrogen,water=water)
+    b) wheat_classobj = FlowerPower.Plant
+
+3. Couple plant with soil and amtosphere interface (note*2,*3):
+    Loess = Soil()
+    Meteo_Giessen = Atmosphere()
+    a) connect(wheat_instance,Loess,Meteo_Giessen)
+    b) connect(wheat_classobj,Loess,Meteo_Giessen,et=et,biomass=biomass,development=development,layer=layer,nitrogen=nitrogen,water=water)
+
+
+ *1 A plant instance must be implemented with six process instances from the FlowerPower.ProcessLibrary
+ 
+ *2 a) Plant is instance and created with soil,atmosphere = None
+    b) Plant is an classobject of FlowerPower plant; all atributes must be setted during the connection
+    
+ *3  make_plant() and connect() accept additional crop specific parameters,
+     to create crop which differ from the default setting. The default paramters
+     refer to summerwheat.
+     
+         shoot=[.0,.5,.5,.9,.95,1.,1.,1.],
+         root = [.0,.5,.5,.1,.05,.0,.0,.0],
+         leaf = [.0,.5,.5,.5,0.,.0,.0,.0],
+         stem = [.0,.5,.5,.5,.3,.0,.0,.0],
+         storage = [.0,.0,.0,.0,.7,1.,1.,1.],
+         tbase = 0.,
+         pressure_threshold = [[160.,0.43],[1200.,0.16]],
+         plantN= [[160.,0.43],[1200.,0.16]],
+         leaf_specific_weight = 50.,
+         root_growth=1.5,
+         max_height = 1.
+     
+    Example: make_plant(FlowerPower.Plant,et=et, ..., root_growth=3.,tbase=5.)
+"""
+
 import FlowerPower
-def create_crop(soil,atmosphere,filename):
-    return createCrop_LUEconcept(soil, atmosphere, getCropSpecificParameter(filename))
-    
 
-def getCropSpecificParameter(path):
-    """
-    Reads crop specific parameters from a
-    parameterisation file
-    
-    @type path: String
-    @param path: Path from the parametrisation file.
-    @rtype: list
-    @return: List with crop specific parameters.
-    """
-    param = [line for line in file(path+'.txt',"r") if line[0]!='#']
-    return [eval(each) for each in param]
+def createPlant(soil,atmosphere):
+    et = FlowerPower.ET_FAO(kcb_values = [0.15,1.1,0.15],seasons = [160.0, 499.0, 897.0, 1006.0])
+    print 'Evapotranspiration: FAO - Penman-Monteith'
+    biomass = FlowerPower.Biomass_LUE(RUE = 3.,k=.4)
+    print 'Biomass: Light-use-efficiency concept' 
+    development = FlowerPower.Development(stage = [['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',1200.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]])
+    layer = FlowerPower.SoilLayer(soilprofile = soil.soilprofile())
+    nitrogen = FlowerPower.Nitrogen(layercount = len(soil.soilprofile()))
+    water = FlowerPower.Water_Feddes(layercount = len(soil.soilprofile()))
+    print 'Waterstress: Feddes'
+    wheat_instance = makePlant(FlowerPower.Plant,et=et,biomass=biomass,development=development,layer=layer,nitrogen=nitrogen,water=water)
+    return connect(wheat_instance,soil,atmosphere)
+
+class CropCoefficiants:
+    def __init__(self,shoot=[.0,.5,.5,.9,.95,1.,1.,1.],
+                 root = [.0,.5,.5,.1,.05,.0,.0,.0],
+                 leaf = [.0,.5,.5,.5,0.,.0,.0,.0],
+                 stem = [.0,.5,.5,.5,.3,.0,.0,.0],
+                 storage = [.0,.0,.0,.0,.7,1.,1.,1.],
+                 tbase = 0.,
+                 pressure_threshold = [0.,1.,500.,16000.],
+                 plantN= [[160.,0.43],[1200.,0.16]],
+                 leaf_specific_weight = 50.,
+                 root_growth=1.5,
+                 max_height = 1.,
+                 stage = [['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',1200.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]],
+                 RUE=3.,
+                 k=4.,
+                 seasons =[160.0, 499.0, 897.0, 1006.0],
+                 kcb =[0.15,1.1,0.15] ):
+        self.shoot = shoot
+        self.root = root
+        self.leaf = leaf
+        self.stem = stem
+        self.storage = storage
+        self.tbase = tbase
+        self.pressure_threshold = pressure_threshold
+        self.plantN = plantN
+        self.leaf_specific_weight = leaf_specific_weight
+        self.root_growth= root_growth
+        self.max_height =max_height
+        self.stage=stage
+        self.seasons = seasons
+        self.k=k
+        self.kcb=kcb
+
+def setProcess(p,**args):
+    return p(**args)
+
+def makePlant(plant,**args):
+    return plant(**args)
+
+def connect(plant,soil,atmosphere,**args):
+    if isinstance(plant,FlowerPower.Plant):
+        plant.atmosphere=atmosphere
+        plant.soil=soil
+        return plant
+    else:
+        return makePlant(plant,soil=soil,atmosphere=atmosphere,**args)
 
 
-def createCrop_LUEconcept(soil,atmosphere,CropParams):
-    """
-    Returns a plant instance with the given parameter.
-    
-    Creates a plant with the given soil and amtosphere interface.
-    The crop specific parameters must be taken from the input file.
-    All other needed interfaces are set with the default classes.
-    
-    Discription of the input file:
-    CropParams[0] : Basal crop coefficiants for each season
-    CropParams[1] : Ligth use efficiency
-    CropParams[2] : Extinction coefficiant
-    CropParams[3] : Development
-    CropParams[4] : K_m
-    CropParams[5] : NO3_min
-    CropParams[6] : Partitioning shoot
-    CropParams[7] : Partitioning root
-    CropParams[8] : Partitioning leaf
-    CropParams[9] : Partitioning stem
-    CropParams[10] : Partitioning storage
-    CropParams[11] : tbase
-    CropParams[12] : rootability_thresholds
-    CropParams[13] : pressure_threshold
-    CropParams[14] : plant_N
-    CropParams[15] : leaf_specific_weight
-    CropParams[16] : root_growth
-    CropParams[17] : max_height
-    CropParams[18] : Logistic growht rate
-    CropParams[19] : Capacity limit
-    
-    @type soil: soil
-    @param soil: Soil instance
-    @type atmosphere: atmosphere
-    @param atmosphere: Atmosphere instance
-    @type CropParams: list
-    @param CropParams: List with specific crop coeffciants.
-    
-    @rtype: FlowerPower.PlantComponents.Plant
-    @return: Plant with specific parameters and soil and atmospere interface.
-    """
-    #SummerWheat
-    #Development
-    stage = CropParams[3]#[['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',901.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]]
-    #Basal crop coefficiants for each season
-    kcb = CropParams[0]#[0.15,1.1,0.15]
-    #Lenght of seasons
-    seasons = [stage[0][1], stage[3][1]-stage[0][1], stage[6][1]-stage[3][1], stage[-1][1]-stage[3][1]]
-    #Ligth use efficiency
-    LUE = CropParams[1]#3.0       
-    #Extinction coefficiant
-    k = CropParams[2]#0.4
-    #K_m
-    K_m = CropParams[4]#0.
-    #NO3_min
-    NO3_min = CropParams[5]#0.
-    #Partitioning shoot
-    shoot = CropParams[6]#[.0,.9,.9,.9,.95,1.,1.,1.]
-    #Partitioning root
-    root = CropParams[7]#[.0,.1,.1,.1,.05,.0,.0,.0]
-    #Partitioning leaf
-    leaf = [CropParams[8][i]*perc for i,perc in enumerate(shoot)]#[[.0,.5,.5,.3,0.,.0,.0,.0][i]*perc for i,perc in enumerate(shoot)]
-    #Partitioning stem
-    stem = [CropParams[9][i]*perc for i,perc in enumerate(shoot)]#[[.0,.5,.5,.7,.3,.0,.0,.0][i]*perc for i,perc in enumerate(shoot)]
-    #Partitioning storage
-    storage = [CropParams[10][i]*perc for i,perc in enumerate(shoot)]#[[.0,.0,.0,.0,.7,1.,1.,1.][i]*perc for i,perc in enumerate(shoot)]
-    #tbase
-    tbase = CropParams[11]#0.
-    #pressure_threshold
-    pressure_thresholds = CropParams[12]#[0.,1.,500.,16000.]
-    #plant_N
-    plantN = CropParams[13]#[[160.,0.43],[1174.,0.16]]
-    #leaf_specific_weight
-    leaf_specific_weight = CropParams[14]#50.
-    #root_growth
-    root_growth = CropParams[15]#1.2
-    #vetical_elongation
-    max_height = CropParams[16]#1.0
-    
-    #Crop process models from ProcesLibrary
-    et = FlowerPower.ET_FAO(kcb,seasons)
-    biomass = FlowerPower.Biomass_LUE(LUE,k)
-    development = FlowerPower.Development(stage)
-    layer = FlowerPower.SoilLayer()
-    layer.get_rootingzone(soil.soilprofile())
-    nitrogen = FlowerPower.Nitrogen(layercount=len(layer))
-    water = FlowerPower.Water_Feddes(layercount=len(layer))
-    #Creates plant
-    return FlowerPower.Plant(soil,atmosphere,et,water,biomass,development,layer,nitrogen,
-                 shoot,root,leaf,stem,storage,tbase,pressure_thresholds,plantN,
-                 leaf_specific_weight,root_growth,max_height)
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
