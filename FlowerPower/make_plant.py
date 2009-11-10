@@ -60,6 +60,32 @@ def createPlant(soil,atmosphere):
     wheat_instance = makePlant(FlowerPower.Plant,et=et,biomass=biomass,development=development,layer=layer,nitrogen=nitrogen,water=water)
     return connect(wheat_instance,soil,atmosphere)
 
+def setProcess(p,**args):
+    return p(**args)
+
+def makePlant(plant,**args):
+    return plant(**args)
+
+def connect(plant,soil,atmosphere,**args):
+    if isinstance(plant,FlowerPower.Plant):
+        plant.atmosphere=atmosphere
+        plant.soil=soil
+        return plant
+    else:
+        return makePlant(plant,soil=soil,atmosphere=atmosphere,**args)
+
+def makePlant_defaultSettings(plant,**args):
+    et = FlowerPower.ET_FAO(kcb_values = [0.15,1.1,0.15],seasons = [160.0, 499.0, 897.0, 1006.0])
+    print 'Evapotranspiration: FAO - Penman-Monteith'
+    biomass = FlowerPower.Biomass_LUE(RUE = 3.,k=.4)
+    print 'Biomass: Light-use-efficiency concept' 
+    development = FlowerPower.Development(stage = [['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',1200.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]])
+    layer = FlowerPower.SoilLayer(soilprofile=[100.])
+    nitrogen = FlowerPower.Nitrogen(layercount = 1)
+    water = FlowerPower.Water_Feddes(layercount = 1)
+    print 'Waterstress: Feddes'
+    return plant(et=et,biomass=biomass,development=development,layer=layer,nitrogen=nitrogen,water=water,**args)
+
 class CropCoefficiants:
     def __init__(self,shoot=[.0,.5,.5,.9,.95,1.,1.,1.],
                  root = [.0,.5,.5,.1,.05,.0,.0,.0],
@@ -92,25 +118,6 @@ class CropCoefficiants:
         self.seasons = seasons
         self.k=k
         self.kcb=kcb
-
-def setProcess(p,**args):
-    return p(**args)
-
-def makePlant(plant,**args):
-    return plant(**args)
-
-def connect(plant,soil,atmosphere,**args):
-    if isinstance(plant,FlowerPower.Plant):
-        plant.atmosphere=atmosphere
-        plant.soil=soil
-        return plant
-    else:
-        return makePlant(plant,soil=soil,atmosphere=atmosphere,**args)
-
-
-
-
-
 
 
 

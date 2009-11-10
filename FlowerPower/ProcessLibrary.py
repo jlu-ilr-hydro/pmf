@@ -1206,7 +1206,7 @@ class Nitrogen:
     
     @see: [Simunek & Hopmans 2009]
     """
-    def __init__(self,Km=27. * 0.014,NO3_min=0.,layercount=21.):
+    def __init__(self,Km=27. * 0.014,NO3_min=0.,max_passive_uptake=0.,layercount=21):
         """
         Returns a Biomass_LOG instance.
         
@@ -1216,6 +1216,9 @@ class Nitrogen:
         @param NO3_min: Residual N concentration
         @type layercount: double
         @param layercount: Count of the layer in the soil profile.
+        @type max_passive_uptake: double
+        @param max_passive_uptake: ...
+        
         
         @rtype: nitrogen
         @return: Nitrogen instance
@@ -1225,6 +1228,7 @@ class Nitrogen:
         #Constant variables
         self.Km=Km
         self.NO3min=NO3_min
+        self.max_passive_uptake=max_passive_uptake
         #State variables
         self.Pa=[0. for l in range(layercount)]
         self.Aa=[0. for l in range(layercount)]
@@ -1238,7 +1242,7 @@ class Nitrogen:
         """
         return self.Aa
     @property
-    def Passvie(self):
+    def Passive(self):
         """
         Returns passive nitrogen uptake.
         
@@ -1255,7 +1259,7 @@ class Nitrogen:
         @return: Total nitrogen uptake.
         """
         return [a + self.Pa[i] for i,a in enumerate(self.Aa)]
-    def __call__(self,NO3_conc,Sh,Rp,rootzone):
+    def __call__(self,NO3_conc,Sh,Rp,root_fraction):
         """
         Calculates active and passive nitrogen uptake
         
@@ -1265,17 +1269,17 @@ class Nitrogen:
         @param Sh: Plant water uptake from the rootzone in [mm].
         @type Rp: list
         @param Rp: Potential nutrient demand of the plant in [g].
-        @type rootzone: list
-        @param rootzone: Layer from the plant rootingzone.
+        @type root_fraction: list
+        @param root_fraction: Root biomass fraction form whole biomass for each layer in the soil profile in [-].
+        
         @return: -
         """
         #Passive uptake
-        self.Pa = [w*NO3_conc[i] for i,w in enumerate(Sh)]
+        self.Pa = [min(w*NO3_conc[i],self.max_passive_uptake) for i,w in enumerate(Sh)]
         #Residual demand
         Ap = max(Rp-sum(self.Pa),0.)
-        #distribution of residual demand over rootingzone
-        ap = Ap/sum(rootzone)
         #Michelis-menten values for each layer
         michaelis_menten = [(NO3-self.NO3min)/(self.Km+NO3-self.NO3min) for NO3 in NO3_conc]
-        #Active uptake
-        self.Aa = [ap*michaelis_menten[i]*l for i,l in enumerate(rootzone)]
+        #Active uptake        
+        self.Aa = [Ap * michaelis_menten[i] * fraction for fraction in root_fraction]
+
