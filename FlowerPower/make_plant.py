@@ -54,10 +54,10 @@ def createPlant(soil,atmosphere):
     print 'Biomass: Light-use-efficiency concept' 
     development = FlowerPower.Development(stage = [['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',1200.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]])
     layer = FlowerPower.SoilLayer(soilprofile = soil.soilprofile())
-    nitrogen = FlowerPower.Nitrogen(layercount = len(soil.soilprofile()))
+    nitrogen = FlowerPower.Nitrogen(max_passive_uptake=100, layercount=len(soil.soilprofile()))
     water = FlowerPower.Water_Feddes(layercount = len(soil.soilprofile()))
     print 'Waterstress: Feddes'
-    wheat_instance = makePlant(FlowerPower.Plant,et=et,biomass=biomass,development=development,layer=layer,nitrogen=nitrogen,water=water)
+    wheat_instance = makePlant(FlowerPower.Plant,et=et,biomass=biomass,development=development,layer=layer,nitrogen=nitrogen,water=water,stress_adaption=1.0)
     return connect(wheat_instance,soil,atmosphere)
 
 def setProcess(p,**args):

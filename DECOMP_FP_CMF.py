@@ -6,7 +6,8 @@ Created on 02.11.2009
 '''
 
 import cmf
-from cmf_DECOMP import DECOMPcmf, DECOMP
+import DECOMP
+from DECOMP.cmf_DECOMP import DECOMPcmf
 from cmf_fp_interface import cmf_fp_interface
 from datetime import datetime
 import FlowerPower
@@ -22,7 +23,7 @@ print "Interface to FlowerPower"
 DECOMPcell=DECOMPcmf(c1.cell)
 print "DECOMP layers ok"
 # G�lle schmeissen
-DECOMPcell.DECOMPlayers[0] = DECOMP.SOM(0.1*1e0,1e0)
+DECOMPcell.DECOMPlayers[0] = DECOMP.SOM(0.1*1e6,1e6)
 c1.cell.saturated_depth=2.0
 #set management
 sowingdate = set(datetime(i,3,1) for i in range(1980,2100))
@@ -44,16 +45,18 @@ class Res(object):
         self.cDOC=[]
         self.Nflux_fp=[]
         self.Nflux=[]
+        self.Ndemand=[]
+        self.Nuptake=[]
     def __repr__(self):
-        return "M=%gg, Mr=%gg, [N]=%g" % (self.shoot_biomass[-1],sum(self.root_biomass[-1]),mean(self.cN[-1]))
+        return "biomass=%gg, root biomass=%gg, avg[N]=%g" % (self.shoot_biomass[-1],sum(self.root_biomass[-1]),mean(self.cN[-1]))
 
 c1.t = start
 
 def run_step(t,res,plant):
     if t.day==1 and t.month==3:
-        plant=FlowerPower.crconnectCropmf_fp, cmf_fp,"SummerWheat")
+        plant=FlowerPower.createPlant(cmf_fp,cmf_fp)
     if t.day==1 and t.month==8:
-        DECOMPcell.depose_litter(plant.shoot.leaf.Wtot+plant.shoot.stem.Wtot,0.0)
+        DECOMPcell.depose_litter(plant.shoot.leaf.Wtot + plant.shoot.stem.Wtot,0.0)
         DECOMPcell.set_root_litter(plant.root.branching)
         plant=None
     if plant:
@@ -76,23 +79,31 @@ def run_step(t,res,plant):
     res.cDOC.append([l.conc(DOC) for l in c1.cell.layers])
     res.Nflux_fp.append(plant.nitrogen.Active if plant else [0.0] * c1.cell.layer_count())
     res.Nflux.append([l.Solute(N).source for l in c1.cell.layers])
+    res.Ndemand.append(plant.Rp if plant else 0.0)
+    res.Nuptake.append(sum(plant.nitrogen.Total) if plant else 0.0)
     return plant
 res=Res()
 print "Run..."
 while c1.t<end:
     plant=run_step(c1.t,res,plant)
     print c1.t,res
-def showit(a,pos,posmax,**kwargs):
+def showit(a,name,pos,posmax,**kwargs):
      subplot(posmax,1,pos)
      imshow(transpose(a),interpolation='nearest',**kwargs)
+     ylabel(name)
      colorbar()
-
-showit(res.root_biomass,2,7,cmap=cm.Greens)
-showit(res.water_uptake,3,7,cmap=cm.Blues)
-showit(res.wetness,4,7,cmap=cm.RdYlBu)
-showit(res.cN,5,7,cmap=cm.jet, vmax=1e-4)
-showit(res.Nflux_fp,6,7,cmap=cm.jet)
-showit(res.Nflux,7,7,cmap=cm.jet)
+print "Nconc ideal=",sum(res.Ndemand)/sum(res.water_uptake)
+subplot(711)
+#plot(res.shoot_biomass,hold=0)
+plot(res.Ndemand,label='Ndemand')
+plot(res.Nuptake,label='NUptake')
+legend(loc=0)
+showit(res.root_biomass,"Root biomass",2,7,cmap=cm.Greens)
+showit(res.water_uptake,"Water uptake",3,7,cmap=cm.Blues)
+showit(res.wetness,"Wetness",4,7,cmap=cm.RdYlBu)
+showit(res.cN,"[N]",5,7,cmap=cm.jet)
+showit(res.Nflux_fp,"Nflux to flower power",6,7,cmap=cm.jet)
+showit(res.Nflux,"Nflux total",7,7,cmap=cm.jet)
 show()
 
 

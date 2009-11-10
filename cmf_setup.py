@@ -29,8 +29,8 @@ class cmf1d(object):
         # Add a bedrock layer
         c.add_layer(7,cmf.BrooksCoreyRetentionCurve(bedrock_K,0.1,1,0.01))
         # Add a groundwater boundary (potential=-5.0 m)
-        self.groundwater=cmf.DricheletBoundary(self.project,-2)
-        self.groundwater.is_source=True
+        self.groundwater=cmf.DricheletBoundary(self.project,-5)
+        #self.groundwater.is_source=True
         self.groundwater.Name="Groundwater"
         # Connect bedrock layer with groundwater boundary, using Richards equation
         cmf.connect(cmf.Richards,c.layers[-1],self.groundwater)
@@ -92,24 +92,14 @@ class cmf1d(object):
    
     def soilprofile(self):
         return [l.boundary[1]*100 for l in self.cell.layers]
-    def Kr(cmf1d):
-        cell=cmf1d.cell
+    def Kr(self):
         # Get top layer
-        layer=cell.layers[0]
+        layer=self.cell.layers[0]
         # get field Capacity and wilting point
-        fc=layer.soil.Wetness_pF(1.8)
+        fc=layer.soil.Wetness_pF(2.5)
         wp=layer.soil.Wetness_pF(4.2)
-        # Get TEW
-        TEW = 1000 * (fc-0.5*wp) * layer.thickness
-        REW = 1000 * (fc-0.5*(fc+wp)) * layer.thickness
         
-        # Get storage deplation in mm
-        De = layer.get_capacity() * 1000 / cell.area * (1 - min(1.0,layer.wetness))
-    
-        if De<=REW:
-            return 1.0
-        else:
-            return (TEW-De)/(TEW-REW)
+        return cmf.piecewise_linear(layer.wetness,0.5*wp,0.5*(fc+wp))
     def get_pressurehead(self,d):
         depth = d / 100.
         return [l.matrix_potential*-100 for l in self.cell.layers][min(int(depth/0.1),len(self.cell.layers)-1)]

@@ -58,7 +58,7 @@ class Plant:
                  leaf_specific_weight = 50.,
                  root_growth=1.5,
                  max_height = 1.,
-                 stress_adaption=0.2,
+                 stress_adaption=1.,
                  soil=None,atmosphere=None):        
         """
         Returns plant instance. The plant instance holds the other plant structural classes root and 
@@ -137,6 +137,10 @@ class Plant:
         
         #sState ariables
         self.stress = 0.
+        self.water_stress = 0.
+        self.nutrition_stress = 0.
+        self.Rp = 0.
+
     def __del__(self):
         """
         Decrease class variable Plant.Count about one.
@@ -190,11 +194,14 @@ class Plant:
             biomass_distribution = [biomass/sum(self.root.branching) for biomass in self.root.branching] if sum(self.root.branching)>0 else pylab.zeros(len(self.root.branching)) 
             self.nitrogen([self.soil.get_nutrients(l.center) for l in self.root.zone],
                           self.water.Uptake, self.Rp,biomass_distribution)  
+            
         #The following processes occure only in the growing season (Emergence < developmentstge <= maturity)
         if self.developmentstage.IsGrowingseason:
             #Biomass accumulation
             #Calculates stress index which limits potential growth throug water and nutrient stress
-            self.stress=min(sum(self.water.Uptake) / self.et.Cropspecific, sum(self.nitrogen.Total)/ self.Rp,1.)*self.stress_adaption         
+            self.water_stress = max(0,1 - sum(self.water.Uptake) / self.et.Transpiration)
+            self.nutrition_stress =max(0, 1 - sum(self.nitrogen.Total)/ self.Rp if self.Rp>0 else 0.0)
+            self.stress = min(max(self.water_stress, self.nutrition_stress),1)
             #Calls biomass interface for the calculation of the actual biomass
             self.biomass(time_step,self.stress,self.biomass.atmosphere_values(self.atmosphere,time_act),self.shoot.leaf.LAI)
             #Root partitining
@@ -470,7 +477,7 @@ class Root:
         @type h: double
         @param h: Pressurehead at rootingdepth in [cm]
         @type stress: double
-        @param stress: Stress index from plant water/nitrogen stress in [-].
+        @param stress: Stress index from plant water/nitrogen stress in [-] (0 optimal, 1 worst conditions).
         """
         #FeelingGoodIndex
         self.fgi=fgi
