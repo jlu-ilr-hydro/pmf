@@ -30,38 +30,34 @@ class SWC:
     
     @see: [Allen et al, 1998]
     """
-    def __init__(self,sand=.9,clay=.1,initial_Zr=0.1,Ze=0.1):
+    def __init__(self,fc=.3,wp=.17,rew=8.,initial_Zr=0.1,Ze=0.1):
         """
         Returns a SWC instance from a soil  particle size distribution.
         
-        @type sand: double
-        @param sand: Sand fraction in the soilprofile in [-].
-        @type clay: double
-        @param clay: Clay fraction in the soilprofile in [-].
+        @param rew: Cumulative depth of evaporation (depletion) at the end of stage 1 (REW = readily evaporable water) [mm]
+        @type  rew: double
         @type initital_Zr: double
         @param initial_Zr: Initial rooting depth in [m].
         @type Ze: double
         @param param: Effective depth of the soil evaporation layer in [m].
+        @type fc: double 
+        @param fc: Water content at field capacity in [m3 m-3].
+        @type wp: double 
+        @param wp: Water content at wilting point in [m3 m-3].
+        
         
         @rtype: swc
         @return: SWC instance.
-        """
-        #Constant variables
-        #Soiltype and particle size distribution
-        self.sand=sand
-        self.clay=clay
-        self.silt = max(1-(clay+sand),0.)
-        self.soiltype = self.soiltype(self.sand, self.clay)
-        
+        """        
         #Water content at fieldcapacity and wiltingpoint
-        self.fc=self.calc_soilproperties(self.sand, self.clay)[0]
-        self.wp=self.calc_soilproperties(self.sand, self.clay)[1]
+        self.fc=fc
+        self.wp=wp
         
         #effective depth of the soil evaporation layer, of 0.10-0.15 m is recommended
         self.ze=Ze
         
         #Cumulative depth of evaporation (depletion) at the end of stage 1 (REW = readily evaporable water) in [mm].
-        self.rew = self.calc_REW(soiltype=self.soiltype)
+        self.rew = rew
         #total evaporable water
         self.tew = self.calc_TEW(self.fc, self.wp, self.ze)
         

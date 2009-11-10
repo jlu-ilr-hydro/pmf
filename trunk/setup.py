@@ -8,7 +8,7 @@ def run(t,res,plant):
         plant(t,'day',1.)
     #Calculates evaporation for bare soil conditions
     baresoil(c.Kr(),0.,c.get_Rn(t, 0.12, True),c.get_tmean(t),c.get_es(t),c.get_ea(t), c.get_windspeed(t),0.,RHmin=30.,h=1.)
-    #Calculate water flux
+    
     
     flux = [uptake*-1. for uptake in plant.water.Uptake] if plant  else zeros(c.cell.layer_count())
     flux[0] -= plant.et.Evaporation if plant else baresoil.Evaporation*0.1
@@ -79,6 +79,7 @@ if __name__=='__main__':
     c.cell.saturated_depth=5.
     #Create evapotranspiration instance or bare soil conditions
     baresoil = FlowerPower.ProcessLibrary.ET_FAO([0.,0.,0.,0.],[0.,0.,0.,0.],kcmin = 0.)
+    
     #set management
     sowingdate = set(datetime(i,3,1) for i in range(1980,2100))
     harvestdate = set(datetime(i,8,1) for i in range(1980,2100))
