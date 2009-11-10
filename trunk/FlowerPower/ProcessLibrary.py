@@ -1097,7 +1097,7 @@ class Biomass_LUE:
         @rtype: double
         @return: Actual growth in [g biomass day-1].
         """ 
-        return self.growthrate * self.stress
+        return self.growthrate * (1-self.stress)
     @property
     def Total(self):
         """
@@ -1122,9 +1122,9 @@ class Biomass_LUE:
         @param Rs: total solar radiation [MJ m-2 day-1].
         @type stress: double
         """
-        self.stress = 1-stress
+        self.stress = stress
         self.growthrate = self.PAR_a(Rs, self.intercept(LAI, self.k))* self.rue
-        self.total = self.total + self.growthrate * self.stress * step
+        self.total = self.total + self.growthrate * (1-self.stress) * step
     def PAR_a(self,Rs,interception):
         """ 
         Returns photosynthetically active absorbed radiation
@@ -1206,7 +1206,7 @@ class Nitrogen:
     
     @see: [Simunek & Hopmans 2009]
     """
-    def __init__(self,Km=27. * 0.014,NO3_min=0.,max_passive_uptake=0.,layercount=21):
+    def __init__(self,Km=27. * 0.014,NO3_min=0.,max_passive_uptake=1000.,layercount=21):
         """
         Returns a Biomass_LOG instance.
         
@@ -1271,9 +1271,10 @@ class Nitrogen:
         @param Rp: Potential nutrient demand of the plant in [g].
         @type root_fraction: list
         @param root_fraction: Root biomass fraction form whole biomass for each layer in the soil profile in [-].
-        
+        @todo: Check Passive uptake
         @return: -
         """
+        
         #Passive uptake
         self.Pa = [min(w*NO3_conc[i],self.max_passive_uptake) for i,w in enumerate(Sh)]
         #Residual demand
