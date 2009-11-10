@@ -35,6 +35,8 @@ def run(t,res,plant):
     res.stress.append(plant.stress)if plant else res.stress.append(0)
     res.alpha.append(plant.water.Alpha)if plant else res.alpha.append(zeros(c.cell.layer_count()))
     res.matrix_potential.append(c.matrix_potential)
+    res.activeNO3.append(plant.nitrogen.Active)if plant else res.activeNO3.append(zeros(c.cell.layer_count()))
+    res.passiveNO3.append(plant.nitrogen.Passive)if plant else res.passiveNO3.append(zeros(c.cell.layer_count()))
     return plant
 
 class Res(object):
@@ -58,6 +60,9 @@ class Res(object):
         self.DAS = []
         self.stress = []
         self.alpha = []
+        self.activeNO3=[]
+        self.passiveNO3=[]
+        
     def __repr__(self):
         return "Shoot=%gg, Root=%gg, ETc = %gmm, Wateruptake=%gmm, Stress=%g" % (self.shoot_biomass[-1],self.root_biomass[-1],self.ETc[-1],sum(self.water_uptake[-1]),self.stress[-1])
     
@@ -113,6 +118,6 @@ if __name__=='__main__':
     showit(res.branching,1,5,cmap = cm.Greens, )
     showit(res.root_growth,2,5,cmap = cm.Greens)
     showit(res.water_uptake,3,5,cmap = cm.Blues)
-    showit(res.matrix_potential,4,5,cmap=cm.RdYlBu)
-    showit(res.wetness,5,5,cmap=cm.RdYlBu)
+    showit(res.activeNO3,4,5,cmap=cm.RdYlBu)
+    showit(res.passiveNO3,5,5,cmap=cm.RdYlBu)
     show()
