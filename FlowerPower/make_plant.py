@@ -44,22 +44,21 @@ Make a plant and connect it to the soil and atmosphere interface in three steps:
      
     Example: make_plant(FlowerPower.Plant,et=et, ..., root_growth=3.,tbase=5.)
 """
-
 import FlowerPower
-
-def createPlant(soil,atmosphere):
-    et = FlowerPower.ET_FAO(kcb_values = [0.15,1.1,0.15],seasons = [160.0, 499.0, 897.0, 1006.0])
-    print 'Evapotranspiration: FAO - Penman-Monteith'
-    biomass = FlowerPower.Biomass_LUE(RUE = 3.,k=.4)
-    print 'Biomass: Light-use-efficiency concept' 
-    development = FlowerPower.Development(stage = [['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',1200.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]])
-    layer = FlowerPower.SoilLayer(soilprofile = soil.soilprofile())
-    nitrogen = FlowerPower.Nitrogen(max_passive_uptake=100, layercount=len(soil.soilprofile()))
-    water = FlowerPower.Water_Feddes(layercount = len(soil.soilprofile()))
-    print 'Waterstress: Feddes'
-    wheat_instance = makePlant(FlowerPower.Plant,et=et,biomass=biomass,development=development,layer=layer,nitrogen=nitrogen,water=water,stress_adaption=1.0)
-    return connect(wheat_instance,soil,atmosphere)
-
+import copy as copy
+def clone(plant):
+    """
+    Returns new insance of plant and the related classes
+    with the actual values.
+    
+    Constructs a new compound object and then, recursively, 
+    inserts copies into it of the objects found in the original.
+    
+    @rtype: FlowerPower.Plant
+    @return: New plant instance with same values.
+    @see: [http://docs.python.org/library/copy.html, 11.11.2009]
+    """
+    return copy.deepcopy(plant)
 def setProcess(p,**args):
     return p(**args)
 
@@ -68,23 +67,11 @@ def makePlant(plant,**args):
 
 def connect(plant,soil,atmosphere,**args):
     if isinstance(plant,FlowerPower.Plant):
-        plant.atmosphere=atmosphere
-        plant.soil=soil
+        plant.set_soil(soil)
+        plant.set_atmosphere(atmosphere)
         return plant
     else:
-        return makePlant(plant,soil=soil,atmosphere=atmosphere,**args)
-
-def makePlant_defaultSettings(plant,**args):
-    et = FlowerPower.ET_FAO(kcb_values = [0.15,1.1,0.15],seasons = [160.0, 499.0, 897.0, 1006.0])
-    print 'Evapotranspiration: FAO - Penman-Monteith'
-    biomass = FlowerPower.Biomass_LUE(RUE = 3.,k=.4)
-    print 'Biomass: Light-use-efficiency concept' 
-    development = FlowerPower.Development(stage = [['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',1200.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]])
-    layer = FlowerPower.SoilLayer(soilprofile=[100.])
-    nitrogen = FlowerPower.Nitrogen(layercount = 1)
-    water = FlowerPower.Water_Feddes(layercount = 1)
-    print 'Waterstress: Feddes'
-    return plant(et=et,biomass=biomass,development=development,layer=layer,nitrogen=nitrogen,water=water,**args)
+        return 'Error: No plant instance'
 
 class CropCoefficiants:
     def __init__(self,shoot=[.0,.5,.5,.9,.95,1.,1.,1.],
@@ -99,7 +86,7 @@ class CropCoefficiants:
                  root_growth=1.5,
                  max_height = 1.,
                  stage = [['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',1200.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]],
-                 RUE=3.,
+                 RUE=2.5,
                  k=4.,
                  seasons =[160.0, 499.0, 897.0, 1006.0],
                  kcb =[0.15,1.1,0.15] ):
@@ -118,8 +105,33 @@ class CropCoefficiants:
         self.seasons = seasons
         self.k=k
         self.kcb=kcb
+        self.RUE=RUE
 
+wheat=CropCoefficiants()
 
+def createPlant_CMF(**args):
+    et = FlowerPower.ET_FAO(kcb_values = wheat.kcb,seasons = wheat.seasons)
+    print 'Evapotranspiration: FAO - Penman-Monteith'
+    biomass = FlowerPower.Biomass_LUE(wheat.RUE,wheat.k)
+    print 'Biomass: Light-use-efficiency concept' 
+    development = FlowerPower.Development(stage = wheat.stage)
+    nitrogen = FlowerPower.Nitrogen()
+    water = FlowerPower.Water_Feddes()
+    print 'Waterstress: Feddes'
+    layer = FlowerPower.SoilLayer()
+    return makePlant(FlowerPower.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)
+
+def createPlant_SWC(**args):
+    et = FlowerPower.ET_FAO(kcb_values = wheat.kcb,seasons = wheat.seasons)
+    print 'Evapotranspiration: FAO - Penman-Monteith'
+    biomass = FlowerPower.Biomass_LUE(wheat.RUE,wheat.k)
+    print 'Biomass: Light-use-efficiency concept' 
+    development = FlowerPower.Development(stage = wheat.stage)
+    nitrogen = FlowerPower.Nitrogen()
+    water = FlowerPower.Water_FAO()
+    print 'Waterstress: FAO'
+    layer = FlowerPower.SoilLayer()
+    return makePlant(FlowerPower.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)
 
 
 

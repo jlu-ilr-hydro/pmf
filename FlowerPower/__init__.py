@@ -1,4 +1,4 @@
 from ProcessLibrary import *
 from PlantComponents import *
 from SoilWaterContainer import *
-from make_plant import createPlant,makePlant,makePlant_defaultSettings
+from make_plant import createPlant_CMF,makePlant,createPlant_SWC,connect,clone
