@@ -127,7 +127,8 @@ def createPlant_SWC(**args):
     biomass = FlowerPower.Biomass_LUE(wheat.RUE,wheat.k)
     print 'Biomass: Light-use-efficiency concept' 
     development = FlowerPower.Development(stage = wheat.stage)
-    nitrogen = FlowerPower.Nitrogen()
+    nitrogen = None
+    print 'No nitrogen uptake'
     water = FlowerPower.Water_FAO()
     print 'Waterstress: FAO'
     layer = FlowerPower.SoilLayer()

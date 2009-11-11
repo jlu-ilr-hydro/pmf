@@ -12,7 +12,6 @@ def run(t,res,plant):
     flux[0] -= plant.et.Evaporation if plant else baresoil.Evaporation
     c.flux=flux
     c.run(cmf.day)    
-    print ['%4.2f' % cmf_fp.get_pressurehead(l) for l in arange(0,100,5)]
     res.water_uptake.append(plant.water.Uptake) if plant else res.water_uptake.append(zeros(c.cell.layer_count()))
     #res.water_uptake.append(flux)
     res.branching.append(plant.root.branching) if plant else res.branching.append(zeros(c.cell.layer_count()))
@@ -112,15 +111,10 @@ if __name__=='__main__':
     figtext(.01, .95, ('ETo %4.2f, ETc %4.2f, Transpiration %4.2f, Evaporation %4.2f') % (sum(res.ETo),sum(res.ETc),sum(res.transpiration),sum(res.evaporation)))
     figtext(.01, .93, ('Plant biomass %4.2f, Root biomass %4.2f, Shoot biomass %4.2f, LAI %4.2f, Water uptake: %4.2f') % (filter(lambda res: res>0,res.biomass)[-1], filter(lambda res: res>0,res.root_biomass)[-1], filter(lambda res: res>0,res.shoot_biomass)[-1], filter(lambda res: res>0,res.lai)[-1],sum(res.water_uptake)))
     figtext(.01, .91, ('Emergence %4.2f,Leaf development %4.2f,  Tillering %4.2f, Stem elongation %4.2f, Anthesis %4.2f, Seed fill %4.2f, Dough stage %4.2f, Maturity %4.2f') % (DAS[0],DAS[1],DAS[2],DAS[3],DAS[4],DAS[5],DAS[6],DAS[7]))
-    showit(res.branching,1,6,cmap = cm.Greens, )
-    showit(res.root_growth,2,6,cmap = cm.Greens)
-    showit(res.water_uptake,3,6,cmap = cm.Blues)
-    showit(res.activeNO3,4,6,cmap=cm.Reds)
-    showit(res.passiveNO3,5,6,cmap=cm.Reds)
-    showit(res.wetness,6,6,cmap=cm.RdYlBu)
+   
     showit(res.branching,1,5,cmap = cm.Greens)
     showit(res.root_growth,2,5,cmap = cm.Greens)
     showit(res.water_uptake,3,5,cmap = cm.Blues)
     showit(res.alpha,4,5,cmap=cm.Reds)
-    showit(res.matrix_potential,5,5,cmap=cm.RdYlBu)
+    showit(res.wetness,5,5,cmap=cm.RdYlBu)
     show()

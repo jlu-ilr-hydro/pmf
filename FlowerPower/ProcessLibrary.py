@@ -722,30 +722,23 @@ class Water_FAO:
         @return: Water uptake under stressed conditions for each layer in the soil profile in [mm].
         """
         return self.uptake
-    def __call__(self,ETo,Ke,Kcb,TAW,Dr,soillayer):
+    def __call__(self,s_p,soilvalues,plantvalues):
         """
         Calculates actual water uptake and contributes the uptake over the layer in the soil profile.
         
-        @type ETo: double
-        @param ETo: Reference Evapotranspiration in [mm].
-        @type Kcb: double
-        @param Kcb: Basal crop coefficient (Kcb) in [-].
-        @type Ke: double
-        @type Ke: Evaporation coefficiant in [-].
         @type TAW: double
         @param TAW: Total available soil water in the root zone in [mm].
         @type Dr: double
         @param Dr: Root zone depletion in [mm].
-        @type soillayer: list
-        @param soillayer: List with soillayer in the rootingzone over which the transpiration is contributed.
-        @return: -
+        @type s_p: list
+        @param s_p: List with the potential water uptake for each soillayer in rootingzone in [mm].
         """
         # Calculates Readidly avaible water RAW
-        RAW = TAW * self.adjust_p(self.p, ETo)
+        
+        RAW = soilvalues[0] * self.p
         #Calcualtes stres coefficiant
-        self.ks = self.calc_Ks(TAW, Dr, RAW, self.p)
+        self.uptake = sum(s_p) * [self.calc_Ks(soilvalues[0], soilvalues[1], RAW, self.p)]
         #Calculates actual water uptake and contributes the uptake over the layer in the soil profile
-        self.uptake = [ETo * (self.ks * Kcb + Ke)/len(soillayer) for l in soillayer]
     def calc_Ks(self,TAW,Dr,RAW,p):
         """ 
         Calculates transpiration reduction factor
@@ -789,6 +782,11 @@ class Water_FAO:
         @return: Adjusted extractable soil water in [-].
         """
         return p_table + 0.04*(5-ETc)
+    def soilvalues(self,soil):
+        return soil.TAW,soil.Dr
+    def plantvalues(self,plant):
+        pass
+
 class Water_Feddes:
     """
     Water uptake model based on soil matrixpotential and a crop specific uptake function.
@@ -868,6 +866,7 @@ class Water_Feddes:
         @param h_threshold: List with soil pressurehead. These conditions limiting wate uptake in. [cm water column].
         @return: -
         """
+        pressurehead = [p * -100 for p in pressurehead]
         #Compute the actual water extraction sh under non optimal conditions 
         self.Sh =[s * self.sink_term(pressurehead[i], h_threshold)for i,s in enumerate(s_p)]
         #Compute stress therm alpha
@@ -934,7 +933,7 @@ class Water_Feddes:
             else: return (h_plant[-1]-h_soil)/(h_plant[-1]-h_plant[-2])
         except ValueError, err:
             print err
-    def soil_values(self,soil,depth):
+    def soil_values(self,soil):
         """
         Returns a method to interfere with the soil interface over the plant instance.
         
@@ -945,7 +944,9 @@ class Water_Feddes:
         @rtype: method
         @return: Function for getting required soil values.
         """
-        return soil.get_pressurehead(depth)
+        return soil.matrix_potential
+    def plantvalues(self,plant):
+        return plant.h_threshold
 class Biomass_LOG:
     """
     Calculates plant growth based on a logistical growth function.
@@ -1284,5 +1285,5 @@ class Nitrogen:
         #Michelis-menten values for each layer
         michaelis_menten = [(NO3-self.NO3min)/(self.Km+NO3-self.NO3min) for NO3 in NO3_conc]
         #Active uptake
-        self.Aa = [Ap * michaelis_menten[i] * fraction for fraction in root_fraction]
+        self.Aa = [Ap * michaelis_menten[i] * fraction for i,fraction in enumerate(root_fraction)]
 

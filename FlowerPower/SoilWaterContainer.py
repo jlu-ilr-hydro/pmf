@@ -72,7 +72,7 @@ class SWC:
         self.kr=0.
        
         #total available water in the root zone
-        self.taw = 0.
+        self.TAW = 0.
         
         #fraction of soil surface wetted by irrigation or precipitation; fw = 1. for pcp
         self.fw = 1. 
@@ -85,7 +85,7 @@ class SWC:
         @return: Root zone depletion at the end of day in [mm]. 
         """
         return self.dr
-    @property
+    
     def Kr(self):
         """
         Returns evaporation reduction coefficient.
@@ -95,14 +95,16 @@ class SWC:
         """
         return self.kr
     @property
-    def taw(self):
+    def TAW(self):
         """
         Returns total available soil water in the root zone.
         
         @rtype: double
         @return: Total available soil water in the root zone in [mm].
         """
-        return self.taw
+        return self.TAW
+    def get_nutrients(self,depth):
+        return 100000
     def __call__(self,ETc,evaporation,rainfall,Zr,runoff=0.,irrigation=0.,capillarrise=0.):
         """
         Calculates Root zone depletion Dr, total available soil water TAW, 
@@ -132,13 +134,15 @@ class SWC:
         #Root zone depletion
         self.dr = self.calc_WaterBalance(self.dr, rainfall, runoff, irrigation, capillarrise, ETc)
         #Total available soil watet
-        self.taw = self.calc_TAW(self.fc, self.wp, Zr)
+        self.TAW = self.calc_TAW(self.fc, self.wp, Zr)
         
         #Cumulative depth of evaporation
         self.de = max(self.de-rainfall,0)
         self.de =  self.calc_EvaporationLayer(self.de, rainfall, runoff, irrigation, self.fw, evaporation)
         #Evaporation reduction coefficient
         self.kr = self.calc_Kr(self.de, self.tew, self.rew)
+    def soilprofile(self):
+        return [200]
     def calc_EvaporationLayer(self,de,P,RO,I,fw,E,Tew=0.):
         """
         Returns the cumulative depth of evaporation.

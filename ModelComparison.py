@@ -13,26 +13,28 @@ def run(t,res,plant):
     if plant: 
         plant(t,'day',1.)
     #Calculates evaporation for bare soil conditions
-    swc_baresoil(swc.Kr,0.,meteo.get_Rn(t, 0.12, True),meteo.get_tmean(t),meteo.get_es(t),meteo.get_ea(t), meteo.get_windspeed(t),0.,RHmin=30.,h=1.)    
+    swc_baresoil(swc.Kr(),0.,meteo.get_Rn(t, 0.12, True),meteo.get_tmean(t),meteo.get_es(t),meteo.get_ea(t), meteo.get_windspeed(t),0.,RHmin=30.,h=1.)    
     #SWC
     ETc = plant.et.Cropspecific if plant else 0. 
     evaporation = plant.et.Evaporation if plant else swc_baresoil.Evaporation
     rainfall = meteo.cell.rain(t)
-    Zr = palnt.root.depth if plant else 0.
+    Zr = plant.root.depth if plant else 0.
     swc(ETc,evaporation,rainfall,Zr,runoff=0.,irrigation=0.,capillarrise=0.)
     meteo.run(cmf.day)
+    res.LAI.append(plant.shoot.leaf.LAI if plant else 0.)
+    res.root.append(plant.root.Wtot if plant else 0.)
+    res.shoot.append(plant.shoot.Wtot if plant else 0.)
+    res.wateruptake.append(sum(plant.water.Uptake) if plant else 0.)
     return plant
-
 class Res:
     def __init__(self):
-        self.biomass=[]
         self.LAI=[]
         self.root=[]
         self.shoot=[]
-        self.water=[]
-        self.stress=[]
+        self.wateruptake=[]
     def __repr__(self):
-        return "Shoot=%gg, Root=%gg, ETc = %gmm, Wateruptake=%gmm, Stress=%s" % (self.shoot_biomass[-1],self.root_biomass[-1],self.ETc[-1],sum(self.water_uptake[-1]),self.stress[-1])
+        return "Shoot=%gg, Root=%gg, LAI = %gm2m-2, Wateruptake=%gmm" % (self.shoot[-1],self.root[-1],self.LAI[-1],sum(self.wateruptake[-1]))
+
 if __name__=='__main__':
     from pylab import *
     from datetime import *
@@ -56,7 +58,7 @@ if __name__=='__main__':
     res=Res()
     plant=None
     while meteo.t<end:
-        palnt=run(meteo.t,res,plant)
-        print meteo.t
+        plant=run(meteo.t,res,plant)
+        print meteo.t,res
         
     
