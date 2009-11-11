@@ -819,7 +819,7 @@ class Water_Feddes:
     
     @see: [Feddes et al, 1978, Feddes & Raats 2004]
     """
-    def __init__(self,maxcomp=2.,layercount=21):
+    def __init__(self,maxcomp=2.,layercount=41):
         """
         Returns a Water_Feddes instance.
         
@@ -831,13 +831,14 @@ class Water_Feddes:
         @rtype: water_feddes
         @return: Water_Feddes instance
         """
+        self.layercount=layercount
         #Constant variables
         self.max_compensation_capacity=maxcomp
         #State variables
-        self.Sh=[0. for l in range(layercount)]
-        self.alpha=[0. for l in range(layercount)]
-        self.compensation=[0. for l in range(layercount)]
-        self.Shcomp=[0. for l in range(layercount)]
+        self.Sh=[0. for l in range(self.layercount)]
+        self.alpha=[0. for l in range(self.layercount)]
+        self.compensation=[0. for l in range(self.layercount)]
+        self.Shcomp=[0. for l in range(self.layercount)]
     @property
     def Uptake(self):
         """
@@ -1206,7 +1207,7 @@ class Nitrogen:
     
     @see: [Simunek & Hopmans 2009]
     """
-    def __init__(self,Km=27. * 0.014,NO3_min=0.,max_passive_uptake=1000.,layercount=21):
+    def __init__(self,Km=27. * 0.014,NO3_min=0.,max_passive_uptake=1000.,layercount=41):
         """
         Returns a Biomass_LOG instance.
         
@@ -1225,13 +1226,14 @@ class Nitrogen:
         
         @todo: Define units for all parameters. 
         """
+        self.layercount=layercount
         #Constant variables
         self.Km=Km
         self.NO3min=NO3_min
         self.max_passive_uptake=max_passive_uptake
         #State variables
-        self.Pa=[0. for l in range(layercount)]
-        self.Aa=[0. for l in range(layercount)]
+        self.Pa=[0. for l in range(self.layercount)]
+        self.Aa=[0. for l in range(self.layercount)]
     @property
     def Active(self):
         """
@@ -1258,7 +1260,7 @@ class Nitrogen:
         @rtype: double
         @return: Total nitrogen uptake.
         """
-        return [a + self.Pa[i] for i,a in enumerate(self.Aa)]
+        return [pa + self.Aa[i] for i,pa in enumerate(self.Pa)]
     def __call__(self,NO3_conc,Sh,Rp,root_fraction):
         """
         Calculates active and passive nitrogen uptake
@@ -1281,6 +1283,6 @@ class Nitrogen:
         Ap = max(Rp-sum(self.Pa),0.)
         #Michelis-menten values for each layer
         michaelis_menten = [(NO3-self.NO3min)/(self.Km+NO3-self.NO3min) for NO3 in NO3_conc]
-        #Active uptake        
+        #Active uptake
         self.Aa = [Ap * michaelis_menten[i] * fraction for fraction in root_fraction]
 

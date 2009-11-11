@@ -1,6 +1,6 @@
 def run(t,res,plant):
     if t.day==1 and t.month==3:
-        plant = FlowerPower.createPlant(cmf_fp, cmf_fp)
+        plant = FlowerPower.connect(FlowerPower.createPlant_CMF(),cmf_fp,cmf_fp)
     if t.day==1 and t.month==8:
         plant =  None
     #Let grow
@@ -10,10 +10,9 @@ def run(t,res,plant):
     baresoil(c.Kr(),0.,c.get_Rn(t, 0.12, True),c.get_tmean(t),c.get_es(t),c.get_ea(t), c.get_windspeed(t),0.,RHmin=30.,h=1.)    
     flux = [uptake*-1. for uptake in plant.water.Uptake] if plant  else zeros(c.cell.layer_count())
     flux[0] -= plant.et.Evaporation if plant else baresoil.Evaporation
-    if t > datetime(1980,3,25) and t < datetime(1980,8,1): flux[1] -= c.wetness[0] * 0
     c.flux=flux
-    c.run(cmf.day)
-    
+    c.run(cmf.day)    
+    print ['%4.2f' % cmf_fp.get_pressurehead(l) for l in arange(0,100,5)]
     res.water_uptake.append(plant.water.Uptake) if plant else res.water_uptake.append(zeros(c.cell.layer_count()))
     #res.water_uptake.append(flux)
     res.branching.append(plant.root.branching) if plant else res.branching.append(zeros(c.cell.layer_count()))
@@ -29,8 +28,8 @@ def run(t,res,plant):
     res.wetness.append(c.wetness) 
     res.rain.append(c.cell.rain(t))
     res.DAS.append(t-datetime(1980,3,1)) if plant else res.DAS.append(0)
-    res.temperature.append(c.get_tmean(t))
-    res.radiation.append(c.get_Rs(t))
+    res.temperature.append(cmf_fp.get_tmean(t))
+    res.radiation.append(cmf_fp.get_Rs(t))
     res.stress.append((plant.water_stress, plant.nutrition_stress) if plant else (0,0))
     res.alpha.append(plant.water.Alpha) if plant else res.alpha.append(zeros(c.cell.layer_count()))
     res.matrix_potential.append(c.matrix_potential)
@@ -96,7 +95,7 @@ if __name__=='__main__':
     c.t = start
     while c.t<end:
         plant=run(c.t,res,plant)
-        print c.t,res, 'MP=%g, Kr=%g' % (c.matrix_potential[0], c.Kr())
+        print c.t,res
     def showit(a,pos,posmax,**kwargs):
         subplot(posmax,1,pos)
         imshow(transpose(a),aspect='auto',interpolation='nearest',**kwargs)
@@ -113,9 +112,15 @@ if __name__=='__main__':
     figtext(.01, .95, ('ETo %4.2f, ETc %4.2f, Transpiration %4.2f, Evaporation %4.2f') % (sum(res.ETo),sum(res.ETc),sum(res.transpiration),sum(res.evaporation)))
     figtext(.01, .93, ('Plant biomass %4.2f, Root biomass %4.2f, Shoot biomass %4.2f, LAI %4.2f, Water uptake: %4.2f') % (filter(lambda res: res>0,res.biomass)[-1], filter(lambda res: res>0,res.root_biomass)[-1], filter(lambda res: res>0,res.shoot_biomass)[-1], filter(lambda res: res>0,res.lai)[-1],sum(res.water_uptake)))
     figtext(.01, .91, ('Emergence %4.2f,Leaf development %4.2f,  Tillering %4.2f, Stem elongation %4.2f, Anthesis %4.2f, Seed fill %4.2f, Dough stage %4.2f, Maturity %4.2f') % (DAS[0],DAS[1],DAS[2],DAS[3],DAS[4],DAS[5],DAS[6],DAS[7]))
+    showit(res.branching,1,6,cmap = cm.Greens, )
+    showit(res.root_growth,2,6,cmap = cm.Greens)
+    showit(res.water_uptake,3,6,cmap = cm.Blues)
+    showit(res.activeNO3,4,6,cmap=cm.Reds)
+    showit(res.passiveNO3,5,6,cmap=cm.Reds)
+    showit(res.wetness,6,6,cmap=cm.RdYlBu)
     showit(res.branching,1,5,cmap = cm.Greens)
     showit(res.root_growth,2,5,cmap = cm.Greens)
     showit(res.water_uptake,3,5,cmap = cm.Blues)
     showit(res.alpha,4,5,cmap=cm.Reds)
-    showit(res.wetness,5,5,cmap=cm.RdYlBu)
+    showit(res.matrix_potential,5,5,cmap=cm.RdYlBu)
     show()

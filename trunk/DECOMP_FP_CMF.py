@@ -54,7 +54,7 @@ c1.t = start
 
 def run_step(t,res,plant):
     if t.day==1 and t.month==3:
-        plant=FlowerPower.createPlant(cmf_fp,cmf_fp)
+        plant=connect(FlowerPower.createPlant_CMF(),cmf_fp,cmf_fp)
     if t.day==1 and t.month==8:
         DECOMPcell.depose_litter(plant.shoot.leaf.Wtot + plant.shoot.stem.Wtot,0.0)
         DECOMPcell.set_root_litter(plant.root.branching)

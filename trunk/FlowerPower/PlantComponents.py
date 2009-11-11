@@ -46,7 +46,7 @@ class Plant:
     #Class variable which counts plant instances
     Count=0.
     
-    def __init__(self,et,water,biomass,development,layer,nitrogen,
+    def __init__(self,et,water,biomass,development,nitrogen,layer,
                  shoot_percent =[.0,.5,.5,.9,.95,1.,1.,1.],
                  root_percent = [.0,.5,.5,.1,.05,.0,.0,.0],
                  leaf_percent = [.0,.5,.5,.5,0.,.0,.0,.0],
@@ -59,6 +59,7 @@ class Plant:
                  root_growth=1.5,
                  max_height = 1.,
                  stress_adaption=1.,
+                 carbonfraction=.4,
                  soil=None,atmosphere=None):        
         """
         Returns plant instance. The plant instance holds the other plant structural classes root and 
@@ -116,6 +117,7 @@ class Plant:
         self.tbase=tbase
         self.pressure_threshold=pressure_threshold
         self.stress_adaption=stress_adaption
+        self.carbonfraction=carbonfraction
       
         #Handing over environmental interfaces
         self.soil=soil
@@ -128,8 +130,9 @@ class Plant:
         self.developmentstage=development
         self.et=et
         self.nitrogen=nitrogen
-        
+       
         #Implemetation of root and shoot class
+        
         self.root=Root(self,root_percent,root_growth,layer)
         self.shoot=Shoot(self,leaf_specific_weight,self.developmentstage[4][1],shoot_percent,leaf_percent,stem_percent,storage_percent,
                          max_height,elongation_end=self.developmentstage[3][1])
@@ -141,6 +144,106 @@ class Plant:
         self.nutrition_stress = 0.
         self.Rp = 0.
 
+    @property
+    def ShootNitrogen(self):
+        """
+        Returns acutal nitrogen content of the above ground biomass.
+        
+        @rtype: double
+        @return: Above ground biomass nitrogen cotnent in [g].
+        """ 
+        return self.shoot.Wtot * self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
+    @property
+    def RootNitrogen(self):
+        """
+        Returns acutal nitrogen content of the under ground biomass.
+        
+        @rtype: double
+        @return: Inder ground biomass nitrogen cotnent in [g].
+        """ 
+        return self.root.Wtot * self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
+    @property
+    def LeafNitrogen(self):
+        """
+        Returns acutal nitrogen content of the leafs.
+        
+        @rtype: double
+        @return: Leaf nitrogen cotnent in [g].
+        """ 
+        return self.shoot.leal.Wtot * self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
+    @property
+    def StemNitrogen(self):
+        """
+        Returns acutal nitrogen content of the stem.
+        
+        @rtype: double
+        @return: Stem nitrogen cotnent in [g].
+        """ 
+        return self.shoot.stem.Wtot * self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
+    @property
+    def StorageNitrogen(self):
+        """
+        Returns acutal nitrogen content of the storage organs.
+        
+        @rtype: double
+        @return: Storage organs nitrogen cotnent in [g].
+        """ 
+        return self.shoot.storage_organs.Wtot * self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
+    @property
+    def ShootCarbon(self):
+        """
+        Returns acutal carbon content of the above ground biomass.
+        
+        @rtype: double
+        @return: Above ground biomass carbon cotnent in [g].
+        """ 
+        return self.shoot.Wtot * self.carbonfraction
+    @property
+    def RootCarbon(self):
+        """
+        Returns acutal carbon content of the under ground biomass.
+        
+        @rtype: double
+        @return: Under ground biomass carbon cotnent in [g].
+        """ 
+        return self.root.Wtot * self.carbonfraction
+    @property
+    def LeafCarbon(self):
+        """
+        Returns acutal carbon content of the leafs.
+        
+        @rtype: double
+        @return: Leaf carbon cotnent in [g].
+        """ 
+        return self.shoot.leal.Wtot * self.carbonfraction
+    @property
+    def StemCarbon(self):
+        """
+        Returns acutal carbon content of the stem.
+        
+        @rtype: double
+        @return: Stem carbon cotnent in [g].
+        """ 
+        return self.shoot.stem.Wtot * self.carbonfraction
+    @property
+    def StorageCarbon(self):
+        """
+        Returns acutal carbon content of the storage organs.
+        
+        @rtype: double
+        @return: Storage organs carbon cotnent in [g].
+        """ 
+        return self.shoot.storage_organs.Wtot * self.carbonfraction
+   
+    def set_soil(self,soil):
+        self.soil=soil
+        self.root.zone.get_rootingzone(self.soil.soilprofile())
+        self.root.branching = [0. for l in self.root.zone]
+        self.root.actual_distribution= [0. for l in self.root.zone]
+        self.water.layercount = len(self.root.zone)
+        self.nitrogen.layercount = len(self.root.zone)
+    def set_atmosphere(self,atmosphere):
+        self.atmosphere = atmosphere
     def __del__(self):
         """
         Decrease class variable Plant.Count about one.
@@ -192,6 +295,7 @@ class Plant:
             #Calls nitrogen interface for nitrogen uptake
 
             biomass_distribution = [biomass/sum(self.root.branching) for biomass in self.root.branching] if sum(self.root.branching)>0 else pylab.zeros(len(self.root.branching)) 
+            
             self.nitrogen([self.soil.get_nutrients(l.center) for l in self.root.zone],
                           self.water.Uptake, self.Rp,biomass_distribution)  
             
@@ -199,8 +303,10 @@ class Plant:
         if self.developmentstage.IsGrowingseason:
             #Biomass accumulation
             #Calculates stress index which limits potential growth throug water and nutrient stress
-            self.water_stress = max(0,1 - sum(self.water.Uptake) / self.et.Transpiration)
-            self.nutrition_stress =max(0, 1 - sum(self.nitrogen.Total)/ self.Rp if self.Rp>0 else 0.0)
+            
+            #self.stress=min(sum(self.water.Uptake) / self.et.Cropspecific*self.stress_adaption, sum(self.nitrogen.Total)/ self.Rp*self.stress_adaption,1.)     
+            self.water_stress = max(0,1 - sum(self.water.Uptake) / self.et.Transpiration*self.stress_adaption)
+            self.nutrition_stress =max(0, 1 - sum(self.nitrogen.Total)/ self.Rp * self.stress_adaption if self.Rp>0 else 0.0)
             self.stress = min(max(self.water_stress, self.nutrition_stress),1)
             #Calls biomass interface for the calculation of the actual biomass
             self.biomass(time_step,self.stress,self.biomass.atmosphere_values(self.atmosphere,time_act),self.shoot.leaf.LAI)
@@ -507,9 +613,6 @@ class Root:
         @return: List with the total biomass in each layer in the rootingzone in [g].
         """
         return [b+(biomass*fgi[i]) for i,b in enumerate(distr)]
-   
-    
-    
 class Shoot:
     """
     Allocates aboveground biomass to leaf, stem and sotrageorgans.
