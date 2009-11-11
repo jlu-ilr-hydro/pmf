@@ -241,7 +241,8 @@ class Plant:
         self.root.branching = [0. for l in self.root.zone]
         self.root.actual_distribution= [0. for l in self.root.zone]
         self.water.layercount = len(self.root.zone)
-        self.nitrogen.layercount = len(self.root.zone)
+        if self.nitrogen:
+            self.nitrogen.layercount = len(self.root.zone)
     def set_atmosphere(self,atmosphere):
         self.atmosphere = atmosphere
     def __del__(self):
@@ -288,7 +289,7 @@ class Plant:
             transpiration_distribution = [self.et.Transpiration/self.root.depth * l.penetration for l in self.root.zone]
             #Calls water interface for the calculation of the water uptake
             self.water(transpiration_distribution
-                         ,[self.soil.get_pressurehead(l.center) for l in self.root.zone],self.pressure_threshold)
+                         ,self.water.soilvalues(self.soil),self.water.plantvalues(self))
         #Nutrient uptake from soil
             #Rp = nitrogen demand, product from the potential nitrogen content in percent and athe actual biomass of plant 
             self.Rp=self.NO3dem(self.biomass.PotentialGrowth, self.NO3cont(self.plantN, self.developmentstage.Thermaltime))
@@ -296,8 +297,9 @@ class Plant:
 
             biomass_distribution = [biomass/sum(self.root.branching) for biomass in self.root.branching] if sum(self.root.branching)>0 else pylab.zeros(len(self.root.branching)) 
             
-            self.nitrogen([self.soil.get_nutrients(l.center) for l in self.root.zone],
-                          self.water.Uptake, self.Rp,biomass_distribution)  
+            if self.nitrogen:
+                self.nitrogen([self.soil.get_nutrients(l.center) for l in self.root.zone],
+                              self.water.Uptake, self.Rp,biomass_distribution)  
             
         #The following processes occure only in the growing season (Emergence < developmentstge <= maturity)
         if self.developmentstage.IsGrowingseason:
@@ -306,18 +308,28 @@ class Plant:
             
             #self.stress=min(sum(self.water.Uptake) / self.et.Cropspecific*self.stress_adaption, sum(self.nitrogen.Total)/ self.Rp*self.stress_adaption,1.)     
             self.water_stress = max(0,1 - sum(self.water.Uptake) / self.et.Transpiration*self.stress_adaption)
-            self.nutrition_stress =max(0, 1 - sum(self.nitrogen.Total)/ self.Rp * self.stress_adaption if self.Rp>0 else 0.0)
+            if self.nitrogen:
+                self.nutrition_stress =max(0, 1 - sum(self.nitrogen.Total)/ self.Rp * self.stress_adaption if self.Rp>0 else 0.0)
+            else:
+                self.nutrition_stress = 0
             self.stress = min(max(self.water_stress, self.nutrition_stress),1)
             #Calls biomass interface for the calculation of the actual biomass
             self.biomass(time_step,self.stress,self.biomass.atmosphere_values(self.atmosphere,time_act),self.shoot.leaf.LAI)
             #Root partitining
             if self.developmentstage.Thermaltime <= self.developmentstage[4][1]:
-                self.root(time_step,self.get_fgi(sum(self.water.Uptake), self.et.Reference, sum(self.nitrogen.Total), self.Rp, 
-                                                 [self.nitrogen.Total[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)],
-                                                 [self.water.Alpha[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]),
-                                                 (self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
-                                                 self.soil.get_pressurehead(self.root.depth),self.stress,
-                                                 physical_constraints=[self.sink_term(self.soil.get_pressurehead(self.root.depth), self.pressure_threshold)])
+                if self.nitrogen:
+                    NO3_distribution= [self.nitrogen.Total[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]
+                else:
+                    NO3_distribution = pylab.zeros(len(self.soil.soilprofile()))
+                try:
+                    water_distribution = [self.water.Alpha[i] if l.penetration>0. else 0. for i,l in enumerate(self.root.zone)]
+                    physical_constraints = [self.sink_term(self.soil.get_pressurehead(self.root.depth),self.pressure_threshold)]
+                except AttributeError:
+                    water_distribution = pylab.zeros(len(self.soil.soilprofile()))
+                    physical_constraints = pylab.zeros(len(self.soil.soilprofile()))
+                fgi = self.get_fgi(sum(self.water.Uptake), self.et.Reference, sum(NO3_distribution), self.Rp,NO3_distribution, water_distribution)
+                root_biomass = self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth
+                self.root(time_step,fgi,root_biomass,self.stress,physical_constraints)
             #Shoot partitioning
             self.shoot(time_step,(self.shoot.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        (self.shoot.leaf.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
@@ -568,7 +580,7 @@ class Root:
         
         #FeelingGoodIndex
         self.fgi=[]
-    def __call__(self,step,fgi,biomass,h,stress,physical_constraints):
+    def __call__(self,step,fgi,biomass,stress,physical_constraints):
         """
         Root call calculates the actual rootingdepth and the allocates
         the biomass between the layers in the rootingzone and
@@ -580,8 +592,6 @@ class Root:
         @param step: Time step of the run period.
         @type fgi: list
         @param fgi: FeelingGoodIndex for root biomass distritbution for each layer in rootingzone in [-].
-        @type h: double
-        @param h: Pressurehead at rootingdepth in [cm]
         @type stress: double
         @param stress: Stress index from plant water/nitrogen stress in [-] (0 optimal, 1 worst conditions).
         """
