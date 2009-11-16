@@ -308,21 +308,21 @@ class ET_FAO:
         self.fw=1.
         self.fc=0.
     @property
-    def Transpiration(self):
+    def transpiration(self):
         """
         Returns transpiration
         
         @rtype: double
-        @return: Transpiration in [mm].
+        @return: transpiration in [mm].
         """
         return self.eto * self.kcb
     @property
-    def Evaporation(self):
+    def evaporation(self):
         """
-        Returns Evaporation
+        Returns evaporation
         
         @rtype: double
-        @return: Evaporation in [mm].
+        @return: evaporation in [mm].
         """
         return self.eto * self.ke
     @property
@@ -477,7 +477,7 @@ class ET_FAO:
         @type Kcb: double
         @param Kcb: Basal crop coefficient (Kcb) in [-].
         @type Ke: double
-        @type Ke: Evaporation coefficiant in [-].
+        @type Ke: evaporation coefficiant in [-].
         @rtype: double
         @return: Crop specific evapotranspiration in [mm].
         """
@@ -531,7 +531,7 @@ class ET_FAO:
         Calculates evaporation coefficiant.
         
         @type Kr: double
-        @param Kr: Evaporation reduction coefficient dependent on the cumulative depth of water depleted (evaporated) from the topsoil.
+        @param Kr: evaporation reduction coefficient dependent on the cumulative depth of water depleted (evaporated) from the topsoil.
         @type Kcmax: double
         @param Kcmax: Maximum value of Kc following rain or irrigation in [-].
         @type Kcb: double
@@ -539,7 +539,7 @@ class ET_FAO:
         @type few: double
         @param few: Fraction of the soil that is both exposed and wetted, i.e., the fraction of soil surface from which most evaporation occurs.
         @rtype: double
-        @return: Evaporation coefficiant in [mm].
+        @return: evaporation coefficiant in [mm].
         """
         return min(Kr*(Kcmax - Kcb), few*Kcmax,)
     def calc_Kcmax(self,Kcb,h,windspeed,RHmin):
@@ -711,8 +711,11 @@ class Water_FAO:
         #Constant variables
         self.p = average_available_soilwater
         #State variables
-        self.ks=0.
+        self.ks=[]
         self.uptake = 0.
+    @property
+    def Ks(self):
+        return sum(self.ks)
     @property
     def Uptake(self):
         """
@@ -738,6 +741,7 @@ class Water_FAO:
         RAW = soilvalues[0] * self.p
         #Calcualtes stres coefficiant
         self.uptake = sum(s_p) * [self.calc_Ks(soilvalues[0], soilvalues[1], RAW, self.p)]
+        self.ks =  [self.calc_Ks(soilvalues[0], soilvalues[1], RAW, self.p)]
         #Calculates actual water uptake and contributes the uptake over the layer in the soil profile
     def calc_Ks(self,TAW,Dr,RAW,p):
         """ 
@@ -761,7 +765,7 @@ class Water_FAO:
         @type p: double
         @param p: Fraction of TAW that a crop can extract from the root zone without suffering water stress in [-].
         @rtype: double
-        @return: Transpiration reduction factor dependent on available soil water in [-].
+        @return: transpiration reduction factor dependent on available soil water in [-].
         
         When the root zone depletion is smaller than RAW, Ks = 1
         """
@@ -786,7 +790,6 @@ class Water_FAO:
         return soil.TAW,soil.Dr
     def plantvalues(self,plant):
         pass
-
 class Water_Feddes:
     """
     Water uptake model based on soil matrixpotential and a crop specific uptake function.
@@ -817,7 +820,7 @@ class Water_Feddes:
     
     @see: [Feddes et al, 1978, Feddes & Raats 2004]
     """
-    def __init__(self,maxcomp=2.,layercount=41):
+    def __init__(self,waterbalance=None,maxcomp=2.,layercount=41):
         """
         Returns a Water_Feddes instance.
         
@@ -829,6 +832,7 @@ class Water_Feddes:
         @rtype: water_feddes
         @return: Water_Feddes instance
         """
+        self.waterbalance=waterbalance
         self.layercount=layercount
         #Constant variables
         self.max_compensation_capacity=maxcomp
@@ -854,29 +858,18 @@ class Water_Feddes:
         @return: List with alpha  values for each layer in the rootingzone in [-].
         """
         return self.alpha
-    def __call__(self,s_p,pressurehead,h_threshold):
+    def __call__(self,rootzone,h_plant):
         """
         Calulates water uptake under stressed conditions and compensation.
         
-        @type s_p: list
-        @param s_p: List with the potential water uptake for each soillayer in rootingzone in [mm].
-        @type pressurehead: list
-        @param pressurehead: List with the soil pressurehead for each soillayer in rootingzone in [cm].
-        @type h_threshold: list
-        @param h_threshold: List with soil pressurehead. These conditions limiting wate uptake in. [cm water column].
+       
+        @type rootzone: list
+        @param rootzone: List with centre depth of each layer in  [cm].
+        @type h_plant: list
+        @param h_plant: List with soil pressurehead. These conditions limiting wate uptake in. [cm water column].
         @return: -
         """
-        pressurehead = [p * -100 for p in pressurehead]
-        #Compute the actual water extraction sh under non optimal conditions 
-        self.Sh =[s * self.sink_term(pressurehead[i], h_threshold)for i,s in enumerate(s_p)]
-        #Compute stress therm alpha
-        self.alpha = [self.sink_term(m,h_threshold)for m in pressurehead]
-       
-        #Compute compensation
-        self.compensation = self.compensate(self.Sh,s_p,pressurehead, self.alpha, h_threshold[2],
-                                               self.max_compensation_capacity)
-        #Compute new copmensated uptake
-        self.Shcomp=[s_h + self.compensation[i] for i,s_h in enumerate(self.Sh)]
+        return [self.sink_term(self.waterbalance.get_pressurehead(z), h_plant)for z in rootzone]
     def compensate(self,Sh,Sp,pressurehead,alpha,maxopth,maxcomp):
         """
         Calculates compensation factors for each layer in the rootingzone.
@@ -933,20 +926,6 @@ class Water_Feddes:
             else: return (h_plant[-1]-h_soil)/(h_plant[-1]-h_plant[-2])
         except ValueError, err:
             print err
-    def soil_values(self,soil):
-        """
-        Returns a method to interfere with the soil interface over the plant instance.
-        
-        @type soil: soil
-        @param soil: Soil object from the plant interface soil.
-        @type depth: double
-        @param depth: Actual depth for the request in [cm].
-        @rtype: method
-        @return: Function for getting required soil values.
-        """
-        return soil.matrix_potential
-    def plantvalues(self,plant):
-        return plant.h_threshold
 class Biomass_LOG:
     """
     Calculates plant growth based on a logistical growth function.

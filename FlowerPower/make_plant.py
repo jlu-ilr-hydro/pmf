@@ -85,7 +85,7 @@ class CropCoefficiants:
                  leaf_specific_weight = 50.,
                  root_growth=1.5,
                  max_height = 1.,
-                 stage = [['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',1200.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]],
+                 stage = [['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',901.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]],
                  RUE=2.5,
                  k=4.,
                  seasons =[160.0, 499.0, 897.0, 1006.0],

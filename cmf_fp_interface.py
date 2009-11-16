@@ -20,8 +20,11 @@ class cmf_fp_interface:
         self.bulk_density=1.5
     def get_pressurehead(self,depth):
         """ Depth in cm; Returns the capillary suction for a given depth in [cm]."""
-        #return -100 * self.get_layer(depth).matrix_potential
-        return self.matrix_potential
+        return -100 * self.get_layer(depth).matrix_potential
+    @property
+    def matrix_potential(self):
+        """Returns the capillary suction in m for each layer (including the bedrock layer)"""
+        return [l.matrix_potential for l in self.cmf_cell.layers]
     def get_nutrients(self,depth):
         """ Depth in cm; Returns the nitrogen concentration in the soil solution in [mol l-1]"""
         l=self.get_layer(depth)

@@ -287,15 +287,15 @@ def run(start,end,step):
         baresoil(c.Kr(),0.,c.get_Rn(time, 0.12, True),c.get_tmean(time),c.get_es(time),c.get_ea(time),
                   c.get_windspeed(time), 0.12,0.12,100.,RHmin=30.,h=1.)
 
-        #Evaporation from top soil layer
-        c.flux[0] += crop.et.Evaporation if FlowerPower.Plant.Count >0 else baresoil.Evaporation
+        #evaporation from top soil layer
+        c.flux[0] += crop.et.evaporation if FlowerPower.Plant.Count >0 else baresoil.evaporation
         
         #Calculation of water balance with cmf
         c.run(cmf.day)
         
         #Calculation of water balance with FAO model
         ETc = crop.et.Cropspecific if FlowerPower.Plant.Count >0 else 0.
-        evaporation = crop.et.Evaporation if FlowerPower.Plant.Count >0 else baresoil.Evaporation
+        evaporation = crop.et.evaporation if FlowerPower.Plant.Count >0 else baresoil.evaporation
         rainfall = c.cell.rain(time)
         Zr = crop.root.depth if FlowerPower.Plant.Count > 0 else 0.
         swc(ETc,evaporation,rainfall,Zr,runoff=0.,irrigation=0.,capillarrise=0.)
