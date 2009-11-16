@@ -23,7 +23,7 @@ print "Interface to FlowerPower"
 DECOMPcell=DECOMPcmf(c1.cell)
 print "DECOMP layers ok"
 # G�lle schmeissen
-DECOMPcell.DECOMPlayers[0] = DECOMP.SOM(0.1*1e6,1e6)
+DECOMPcell.DECOMPlayers[0] = DECOMP.SOM(0.1*1e2,1e2)
 c1.cell.saturated_depth=2.0
 #set management
 sowingdate = set(datetime(i,3,1) for i in range(1980,2100))
@@ -54,7 +54,7 @@ c1.t = start
 
 def run_step(t,res,plant):
     if t.day==1 and t.month==3:
-        plant=connect(FlowerPower.createPlant_CMF(),cmf_fp,cmf_fp)
+        plant=FlowerPower.connect(FlowerPower.createPlant_CMF(),cmf_fp,cmf_fp)
     if t.day==1 and t.month==8:
         DECOMPcell.depose_litter(plant.shoot.leaf.Wtot + plant.shoot.stem.Wtot,0.0)
         DECOMPcell.set_root_litter(plant.root.branching)
