@@ -9,14 +9,14 @@ def run(t,res,plant):
     #Calculates evaporation for bare soil conditions
     baresoil(c.Kr(),0.,c.get_Rn(t, 0.12, True),c.get_tmean(t),c.get_es(t),c.get_ea(t), c.get_windspeed(t),0.,RHmin=30.,h=1.)    
     flux = [uptake*-1. for uptake in plant.water.Uptake] if plant  else zeros(c.cell.layer_count())
-    flux[0] -= plant.et.Evaporation if plant else baresoil.Evaporation
+    flux[0] -= plant.et.evaporation if plant else baresoil.evaporation
     c.flux=flux
     c.run(cmf.day)    
-    res.water_uptake.append(plant.water.Uptake) if plant else res.water_uptake.append(zeros(c.cell.layer_count()))
+    res.water_uptake.append(plant.Wateruptake) if plant else res.water_uptake.append(zeros(c.cell.layer_count()))
     #res.water_uptake.append(flux)
     res.branching.append(plant.root.branching) if plant else res.branching.append(zeros(c.cell.layer_count()))
-    res.transpiration.append(plant.et.Transpiration) if plant else res.transpiration.append(0)
-    res.evaporation.append(plant.et.Evaporation) if plant else  res.evaporation.append(0)
+    res.transpiration.append(plant.et.transpiration) if plant else res.transpiration.append(0)
+    res.evaporation.append(plant.et.evaporation) if plant else  res.evaporation.append(0)
     res.biomass.append(plant.biomass.Total) if plant else res.biomass.append(0)
     res.root_biomass.append(plant.root.Wtot) if plant else res.root_biomass.append(0)
     res.shoot_biomass.append(plant.shoot.Wtot) if plant else res.shoot_biomass.append(0)
@@ -63,12 +63,15 @@ class Res(object):
         return "Shoot=%gg, Root=%gg, ETc = %gmm, Wateruptake=%gmm, Stress=%s" % (self.shoot_biomass[-1],self.root_biomass[-1],self.ETc[-1],sum(self.water_uptake[-1]),self.stress[-1])
     
 if __name__=='__main__':
+    
     from pylab import *
     from datetime import *
     import FlowerPower
     import cmf
     from cmf_setup import cmf1d
     from cmf_fp_interface import cmf_fp_interface
+    import psyco
+    psyco.full()
     
     #Create cmf cell    
     c=cmf1d(sand=20,silt=60,clay=20,c_org=2.0,bedrock_K=0.01,layercount=20,layerthickness=0.1)
@@ -91,10 +94,12 @@ if __name__=='__main__':
     res = Res()
     plant = None
     print "Run ... "    
+    start_time = datetime.now()
     c.t = start
     while c.t<end:
         plant=run(c.t,res,plant)
         print c.t,res
+    print 'Duration:',datetime.now()-start_time
     def showit(a,pos,posmax,**kwargs):
         subplot(posmax,1,pos)
         imshow(transpose(a),aspect='auto',interpolation='nearest',**kwargs)
@@ -108,7 +113,7 @@ if __name__=='__main__':
     #DAS for each stage
     DAS = [DAS.days * s for s in relStages]
     figtext(.01, .97, ('Rain %4.2f, Radiation %4.2f, Temperature: %4.2f') % (sum(res.rain),sum(res.radiation),sum(res.temperature)))
-    figtext(.01, .95, ('ETo %4.2f, ETc %4.2f, Transpiration %4.2f, Evaporation %4.2f') % (sum(res.ETo),sum(res.ETc),sum(res.transpiration),sum(res.evaporation)))
+    figtext(.01, .95, ('ETo %4.2f, ETc %4.2f, transpiration %4.2f, evaporation %4.2f') % (sum(res.ETo),sum(res.ETc),sum(res.transpiration),sum(res.evaporation)))
     figtext(.01, .93, ('Plant biomass %4.2f, Root biomass %4.2f, Shoot biomass %4.2f, LAI %4.2f, Water uptake: %4.2f') % (filter(lambda res: res>0,res.biomass)[-1], filter(lambda res: res>0,res.root_biomass)[-1], filter(lambda res: res>0,res.shoot_biomass)[-1], filter(lambda res: res>0,res.lai)[-1],sum(res.water_uptake)))
     figtext(.01, .91, ('Emergence %4.2f,Leaf development %4.2f,  Tillering %4.2f, Stem elongation %4.2f, Anthesis %4.2f, Seed fill %4.2f, Dough stage %4.2f, Maturity %4.2f') % (DAS[0],DAS[1],DAS[2],DAS[3],DAS[4],DAS[5],DAS[6],DAS[7]))
    
