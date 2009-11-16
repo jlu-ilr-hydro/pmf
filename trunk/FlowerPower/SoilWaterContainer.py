@@ -119,7 +119,7 @@ class SWC:
         @type rainfall: double
         @param rainfall:  Rainfall in [-].
         @type Zr: double
-        @param Zr:  Rooting depth in [-].
+        @param Zr:  Rooting depth in [m].
         @type fc:double 
         @param fc: File cover in [-].
         @type runoff: double
