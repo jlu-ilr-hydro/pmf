@@ -33,16 +33,16 @@ class Cell(object):
         self.DECOMP=DECOMPcmf(self.cmf)
         # plant and baresoil
         self.N = cmf_project.solutes[0]
-        self.plant_interface = cmf_fp_interface(self.cmf) #, self.N)
+        self.plant_interface = cmf_fp_interface(self.cmf, self.N)
         self.plant=None
         self.baresoil=FlowerPower.ProcessLibrary.ET_FAO([0.,0.,0.,0.],[0.,0.,0.,0.],kcmin = 0.)
     def sow(self):
         """Creates a FlowerPower standard crop at this location
         """
-        N=self.cmf.project().solutes[0]    
+        N = self.cmf.project().solutes[0]    
         self.plant = FlowerPower.connect(FlowerPower.createPlant_CMF(),
-                                         cmf_fp_interface(self.cmf, N),
-                                         cmf_fp_interface(self.cmf, N))
+                                         self.plant_interface,
+                                         self.plant_interface)
     def harvest(self):
         """
         @todo: Put residual biomass to first layer
@@ -85,7 +85,7 @@ class Cell(object):
                 # Uptake in FlowerPower as g/m2 and in cmf as g
                 l.Solute(N).source -= self.plant.nitrogen.Active[i] * self.cmf.area
         #Get the water flux from soil to plant
-        flux     = [-uptake for uptake in self.plant.water.Uptake] if self.plant else [0] * self.cmf.layer_count()
+        flux     = [-uptake for uptake in self.plant.water.Uptake] if self.plant else [0.0] * self.cmf.layer_count()
         flux[0] -= self.plant.et.evaporation if self.plant else self.baresoil.evaporation
         # Set flux at the cmf boundary conditions
         for i,bc in enumerate(self.__bc):

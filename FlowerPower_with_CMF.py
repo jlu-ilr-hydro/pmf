@@ -1,6 +1,7 @@
 def run(t,res,plant):
     if t.day==1 and t.month==3:
         plant = FlowerPower.connect(FlowerPower.createPlant_CMF(),cmf_fp,cmf_fp)
+        #plant.nitrogen.Km = 0.0
     if t.day==1 and t.month==8:
         plant =  None
     #Let grow
@@ -8,7 +9,7 @@ def run(t,res,plant):
         plant(t,'day',1.)
     #Calculates evaporation for bare soil conditions
     baresoil(c.Kr(),0.,c.get_Rn(t, 0.12, True),c.get_tmean(t),c.get_es(t),c.get_ea(t), c.get_windspeed(t),0.,RHmin=30.,h=1.)    
-    flux = [uptake*-1. for uptake in plant.water.Uptake] if plant  else zeros(c.cell.layer_count())
+    flux = [uptake*-1. for uptake in plant.Wateruptake] if plant  else zeros(c.cell.layer_count())
     flux[0] -= plant.et.evaporation if plant else baresoil.evaporation
     c.flux=flux
     c.run(cmf.day)    
@@ -79,6 +80,7 @@ if __name__=='__main__':
     c.load_meteo(rain_factor=1)
     print "meteo loaded"
     cmf_fp = cmf_fp_interface(c.cell)
+    cmf_fp.default_Nconc = .001
     print "Interface to FlowerPower"
     c.cell.saturated_depth=5.
     #Create evapotranspiration instance or bare soil conditions

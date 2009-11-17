@@ -82,6 +82,6 @@ class cmf_fp_interface:
         # get field Capacity and wilting point
         fc=layer.soil.Wetness_pF(1.8)
         wp=layer.soil.Wetness_pF(4.2)
-        
-        return cmf.piecewise_linear(layer.wetness,0.5*wp,0.5*(fc+wp))
+        kr = cmf.piecewise_linear(layer.wetness,0.5*wp,0.5*(fc+wp))
+        return kr
  
