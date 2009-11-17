@@ -151,7 +151,9 @@ class Plant:
         
     @property
     def Wateruptake(self):
-        s_p = [self.et.transpiration/self.root.depth * l.penetration for l in self.root.zone]
+        biomass_distribution = [biomass/sum(self.root.branching) for biomass in self.root.branching] if sum(self.root.branching)>0 else pylab.zeros(len(self.root.branching)) 
+
+        s_p = [self.et.transpiration* b for b in biomass_distribution]
         rootzone = [l.center for l in self.root.zone]
         alpha = self.water(rootzone,self.pressure_threshold)
         return [s * alpha[i] for i,s in enumerate(s_p)]
@@ -320,15 +322,16 @@ class Plant:
                                 
                 physical_constraints = self.water([self.root.depth],self.pressure_threshold)[0]
                 
-                if self.water_stress >= self.nutrition_stress:
-                    fgi = [alpha[i] if l.penetration >0 else 0. for i,l in enumerate(self.root.zone)]
-                elif self.water_stress < self.nutrition_stress:
-                    NO3dis_sum=sum(self.nitrogen.Total)
-                    fgi = [n/NO3dis_sum for n in self.nitrogen.Total]
-                else:
-                    fgi = [1. if l.penetration>0. else 0. for l in self.root.zone]
-                    
-
+                Sh = sum(s_h)
+                Tp = self.et.transpiration
+                Ra = sum(self.nitrogen.Total)
+                Rp=self.Rp
+                NO3dis = [self.soil.get_nutrients(l.center) if l.penetration>0 else 0. for l in self.root.zone]
+                
+                H2Odis = alpha
+                fgi = self.get_fgi(Sh, Tp, Ra, Rp, NO3dis, H2Odis)
+                  
+                   
                 root_biomass = self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth
                 self.root(time_step,fgi,root_biomass,self.stress,physical_constraints)
             #Shoot partitioning
@@ -337,6 +340,51 @@ class Plant:
                        (self.shoot.stem.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        (self.shoot.storage_organs.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        self.developmentstage.Thermaltime)
+    def get_fgi(self,Sh,Tp,Ra,Rp,NO3dis,H2Odis):
+        """
+        Returns the FellingGoodIndex (fgi) for given ditribtuion of water
+        and nitrogen in the rootingzone. The fgi is a list with allocation
+        coefficants for the root bioamss for each layer in the rootingzone. 
+        The coefficants ranges between zero and one. the sum of all 
+        coefficants for one timestept must be one (100%). 
+        
+        The water conditions can be represented through watercontent in [m3 m-3],
+        wateruptake [mm] or a stress index depending on the pressure head [-]. The 
+        nitrogen conditions are represented with the nitrogen concentration.
+        
+        First the most limiting resource is determined (water or nitrogen). In the
+        second step the percentage of the resource for each layer from the whole
+        rootingzone is calculated.
+        
+        @type Sh: list
+        @param Sh: Actual water uptake from soil in [mm].
+        @type Tp: double
+        @param Tp: Potential transpiration in [mm].
+        @type Ra: list
+        @param Ra: List with actual nitrogenuptake from soil in [mg].
+        @type Rp: double
+        @param Rp: Potential nitrogen demand of the plant in [g].
+        @type NO3dis: list
+        @param NO3dis: Nitrogen conditions in each layer of the rootingzone.
+        @type H2Odis: list
+        @param H2Odis: Water conditions in each layer of the rootingzone.
+        @rtype: list
+        @return: List with distribution coefficiants for the root biomass.
+        """
+        #Compute stress index for nitrogen and water
+        w=1-Sh/Tp
+        n=1-(Ra/Rp) if Rp>0. else 0.
+        #Return list for the factor wit hthe higher stress index
+        H2Odis_sum=sum(H2Odis)
+        if H2Odis_sum<=0: 
+            H2Odis_sum=1 
+        NO3dis_sum=sum(NO3dis)
+        if NO3dis_sum<=0: 
+            NO3dis_sum=1 
+        if  w >= n:
+            return [h2o/H2Odis_sum for h2o in H2Odis]
+        else:
+            return [n/sum(NO3dis) for n in NO3dis]
     def respire(self,g,Wact,m,Wtot):
         """
         Returns empirical respiration for a given total biomass
@@ -534,8 +582,6 @@ class Root:
         
         self.actual_distribution = [0. for l in self.zone]
         
-        #FeelingGoodIndex
-        self.fgi=[]
     def __call__(self,step,fgi,biomass,stress,physical_constraints):
         """
         Root call calculates the actual rootingdepth and the allocates
@@ -552,7 +598,7 @@ class Root:
         @param stress: Stress index from plant water/nitrogen stress in [-] (0 optimal, 1 worst conditions).
         """
         #FeelingGoodIndex
-        self.fgi=fgi
+        
         #Calculate actual rooting depth, restricted by plant stress and soil resistance 
         self.depth=self.depth+self.elong*physical_constraints*(1-stress)*step
         #Calculate toal biomass
@@ -560,7 +606,9 @@ class Root:
         self.Wtot=self.Wtot+biomass*step
         #Allocate actual growth between the layers in the rooting zone
         self.branching=self.allocate(self.branching, biomass, fgi)
-        self.actual_distribution = [index*biomass for index in self.fgi]
+        self.actual_distribution = fgi#[index*biomass for index in fgi]
+        
+        
     def allocate(self,distr,biomass,fgi):
         """
         Returns the biomass distribution over the rootingzone, depending
