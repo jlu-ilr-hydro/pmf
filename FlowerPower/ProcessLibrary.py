@@ -1265,4 +1265,4 @@ class Nitrogen:
         michaelis_menten = [(NO3-self.NO3min)/(self.Km+NO3-self.NO3min) for NO3 in NO3_conc]
         #Active uptake
         self.Aa = [Ap * michaelis_menten[i] * fraction for i,fraction in enumerate(root_fraction)]
-
+     

@@ -1,14 +1,15 @@
 def run(t,res,plant):
     if t.day==1 and t.month==3:
         plant = FlowerPower.connect(FlowerPower.createPlant_CMF(),cmf_fp,cmf_fp)
-       
-       #plant.nitrogen.Km=27*14e-6
-        plant.nitrogen.Km = 0.1
+        plant.nitrogen.max_passive_uptake=1
+        plant.nitrogen.Km=.1#27*14e-6
+
     if t.day==1 and t.month==8:
         plant =  None
     #Let grow
     if plant: 
         plant(t,'day',1.)
+        
     #Calculates evaporation for bare soil conditions
     baresoil(c.Kr(),0.,c.get_Rn(t, 0.12, True),c.get_tmean(t),c.get_es(t),c.get_ea(t), c.get_windspeed(t),0.,RHmin=30.,h=1.)    
     flux = [uptake*-1. for uptake in plant.Wateruptake] if plant  else zeros(c.cell.layer_count())
@@ -40,7 +41,7 @@ def run(t,res,plant):
     res.leaf.append(plant.shoot.leaf.Wtot) if plant else res.leaf.append(0)
     res.stem.append(plant.shoot.stem.Wtot) if plant else res.stem.append(0)
     res.storage.append(plant.shoot.storage_organs.Wtot) if plant else res.storage.append(0)
-   
+    res.Rp.append(plant.Rp if plant else 0.)
     return plant
 
 class Res(object):
@@ -69,9 +70,10 @@ class Res(object):
         self.leaf=[]
         self.stem=[]
         self.storage=[]
+        self.Rp=[]
+        
     def __repr__(self):
         return "Shoot=%gg, Root=%gg, ETc = %gmm, Wateruptake=%gmm, Stress=%s" % (self.shoot_biomass[-1],self.root_biomass[-1],self.ETc[-1],sum(self.water_uptake[-1]),self.stress[-1])
-    
 if __name__=='__main__':
     
     from pylab import *
@@ -89,7 +91,7 @@ if __name__=='__main__':
     c.load_meteo(rain_factor=1)
     print "meteo loaded"
     cmf_fp = cmf_fp_interface(c.cell)
-    #cmf_fp.default_Nconc = 1
+    cmf_fp.default_Nconc = .1
     
     
     print "Interface to FlowerPower"
@@ -130,7 +132,7 @@ if __name__=='__main__':
     figtext(.01, .93, ('Plant biomass %4.2f, Root biomass %4.2f, Shoot biomass %4.2f, LAI %4.2f, Water uptake: %4.2f') % (filter(lambda res: res>0,res.biomass)[-1], filter(lambda res: res>0,res.root_biomass)[-1], filter(lambda res: res>0,res.shoot_biomass)[-1], filter(lambda res: res>0,res.lai)[-1],sum(res.water_uptake)))
     figtext(.01, .91, ('Emergence %4.2f,Leaf development %4.2f,  Tillering %4.2f, Stem elongation %4.2f, Anthesis %4.2f, Seed fill %4.2f, Dough stage %4.2f, Maturity %4.2f') % (DAS[0],DAS[1],DAS[2],DAS[3],DAS[4],DAS[5],DAS[6],DAS[7]))
     
-    """
+    
     showit(res.branching,1,7,cmap = cm.Greens)
     showit(res.root_growth,2,7,cmap = cm.Greens)
     showit(res.water_uptake,3,7,cmap = cm.Blues)
@@ -138,6 +140,13 @@ if __name__=='__main__':
     showit(res.activeNO3,5,7,cmap=cm.Reds)
     showit(res.wetness,6,7,cmap=cm.RdYlBu)
     subplot(717)
+    plot(res.Rp,label="Demand")
+    plot([sum(day) for day in res.passiveNO3],label="Passive")
+    plot([sum(day) for day in res.activeNO3],label="Active")
+    plot([sum(day)+sum(res.activeNO3[i]) for i,day in enumerate(res.passiveNO3)],label="Total")
+    legend(loc=0)
+    show()
+   
     """
     plot(res.root_biomass,label="Root")
     plot(res.shoot_biomass,label="Shoot")
@@ -147,3 +156,4 @@ if __name__=='__main__':
     legend(loc=0)
     grid()
     show()
+    """
