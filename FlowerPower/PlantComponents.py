@@ -286,6 +286,10 @@ class Plant:
         #compute actual rooting zone with actual rooting depth
         #Rootingzone consists of all layers, which are penetrated from the plant root
         self.root.zone(self.root.depth)
+        biomass_distribution = [biomass/sum(self.root.branching) for biomass in self.root.branching] if sum(self.root.branching)>0 else pylab.zeros(len(self.root.branching)) 
+        if sum(biomass_distribution)==0: biomass_distribution[0]+=1
+        
+        
         #Development
         self.developmentstage(time_step,self.atmosphere.get_tmin(time_act), self.atmosphere.get_tmax(time_act), self.tbase)
         #Evapotranspiration
@@ -296,13 +300,12 @@ class Plant:
         #Water uptake occurs only if germinination is finished (developmentstage > Emergence)
         if self.developmentstage.IsGerminated:
             #Water uptake
-            s_p = [self.et.transpiration/self.root.depth * l.penetration for l in self.root.zone]
+            s_p = [self.et.transpiration*biomass for biomass in biomass_distribution]
             rootzone = [l.center for l in self.root.zone]
             alpha = self.water(rootzone,self.pressure_threshold)
             s_h = [s * alpha[i] for i,s in enumerate(s_p)]
             
             self.Rp=self.NO3dem(self.biomass.PotentialGrowth, self.NO3cont(self.plantN, self.developmentstage.Thermaltime))
-            biomass_distribution = [biomass/sum(self.root.branching) for biomass in self.root.branching] if sum(self.root.branching)>0 else pylab.zeros(len(self.root.branching)) 
             self.nitrogen([self.soil.get_nutrients(l.center) for l in self.root.zone],
                               s_h, self.Rp,biomass_distribution)  
         if self.developmentstage.IsGrowingseason:

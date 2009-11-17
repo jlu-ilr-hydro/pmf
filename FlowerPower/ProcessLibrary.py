@@ -1187,12 +1187,12 @@ class Nitrogen:
     
     @see: [Simunek & Hopmans 2009]
     """
-    def __init__(self,Km=27. * 14e-6,NO3_min=0.,max_passive_uptake=1e300,layercount=41):
+    def __init__(self,Km=0.1,NO3_min=0.,max_passive_uptake=1e300,layercount=41):
         """
         Returns a Biomass_LOG instance.
         
         @type Km: double
-        @param Km: Half saturation concentration in umol/l 
+        @param Km: Half saturation concentration in umol/l  27. * 14e-6
         @type NO3_min: double
         @param NO3_min: Residual N concentration
         @type layercount: double
