@@ -74,33 +74,14 @@ def connect(plant,soil,atmosphere,**args):
         return 'Error: No plant instance'
 
 class CropCoefficiants:
-    def __init__(self,shoot=[.0,.5,.5,.9,.95,1.,1.,1.],
-                 root = [.0,.5,.5,.1,.05,.0,.0,.0],
-                 leaf = [.0,.5,.5,.5,0.,.0,.0,.0],
-                 stem = [.0,.5,.5,.5,.3,.0,.0,.0],
-                 storage = [.0,.0,.0,.0,.7,1.,1.,1.],
+    def __init__(self,
                  tbase = 0.,
-                 pressure_threshold = [0.,1.,500.,16000.],
-                 plantN= [[160.,0.43],[1200.,0.16]],
-                 leaf_specific_weight = 50.,
-                 root_growth=1.5,
-                 max_height = 1.,
                  stage = [['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',901.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]],
-                 RUE=2.5,
-                 k=4.,
+                 RUE=3.,
+                 k=.4,
                  seasons =[160.0, 499.0, 897.0, 1006.0],
                  kcb =[0.15,1.1,0.15] ):
-        self.shoot = shoot
-        self.root = root
-        self.leaf = leaf
-        self.stem = stem
-        self.storage = storage
         self.tbase = tbase
-        self.pressure_threshold = pressure_threshold
-        self.plantN = plantN
-        self.leaf_specific_weight = leaf_specific_weight
-        self.root_growth= root_growth
-        self.max_height =max_height
         self.stage=stage
         self.seasons = seasons
         self.k=k

@@ -51,15 +51,16 @@ class Plant:
     Count=0.
     
     def __init__(self,et,water,biomass,development,nitrogen,layer,
-                 shoot_percent =[.0,.5,.5,.9,.95,1.,1.,1.],
-                 root_percent = [.0,.5,.5,.1,.05,.0,.0,.0],
-                 leaf_percent = [.0,.5,.5,.5,0.,.0,.0,.0],
-                 stem_percent = [.0,.5,.5,.5,.3,.0,.0,.0],
-                 storage_percent = [.0,.0,.0,.0,.7,1.,1.,1.],
+                 shoot_percent =   [.0,.5,.5,.9,.95,1.,1.,1.],
+                 root_percent =    [.0,.5,.5,.1,.05,.0,.0,.0],
+                 
+                 leaf_percent =    [.0,.5,.5,.5,.0,.0,.0,.0],
+                 stem_percent =    [.0,.5,.5,.5,.5,.0,.0,.0],
+                 storage_percent = [.0,.0,.0,.0,.5,1.,1.,1.],
                  tbase = 0.,
                  pressure_threshold = [0.,1.,500.,16000.],
                  plantN = [[160.,0.43],[1200.,0.16]],
-                 leaf_specific_weight = 50.,
+                 leaf_specific_weight = 40.,
                  root_growth=1.5,
                  max_height = 1.,
                  stress_adaption=1.,
@@ -624,13 +625,19 @@ class Shoot:
         #Shoot is part from plant
         self.plant=plant
         
-        #Shoot owns leaf, tem and storage_organs
-        self.leaf=Leaf(self,leaf_percent,lai_conversion,thermaltime_anthesis)
-        self.stem=Stem(self,stem_percent,max_height,elongation_end)
-        self.storage_organs=Storage_Organs(self,storage_percent)
+        
+        
         
         #Constant values
         self.percent=shoot_percent
+        
+        leaf = [leaf_percent[i]*percent for i,percent in enumerate(self.percent)]
+        stem = [stem_percent[i]*percent for i,percent in enumerate(self.percent)]
+        storage = [storage_percent[i]*percent for i,percent in enumerate(self.percent)]
+        #Shoot owns leaf, tem and storage_organs
+        self.leaf=Leaf(self,leaf,lai_conversion,thermaltime_anthesis)
+        self.stem=Stem(self,stem,max_height,elongation_end)
+        self.storage_organs=Storage_Organs(self,storage)
         
         #State variables updated in every timestep
         #total biomass
