@@ -1187,7 +1187,7 @@ class Nitrogen:
     
     @see: [Simunek & Hopmans 2009]
     """
-    def __init__(self,Km=27. * 14e-6,NO3_min=0.,max_passive_uptake=1000.,layercount=41):
+    def __init__(self,Km=27. * 14e-6,NO3_min=0.,max_passive_uptake=1e300,layercount=41):
         """
         Returns a Biomass_LOG instance.
         
@@ -1258,7 +1258,7 @@ class Nitrogen:
         """
         
         #Passive uptake
-        self.Pa = [min(w*NO3_conc[i],self.max_passive_uptake) for i,w in enumerate(Sh)]
+        self.Pa = [w*min(NO3_conc[i],self.max_passive_uptake) for i,w in enumerate(Sh)]
         #Residual demand
         Ap = max(Rp-sum(self.Pa),0.)
         #Michelis-menten values for each layer

@@ -157,7 +157,7 @@ class Plant:
     @property
     def ShootNitrogen(self):
         """
-        Returns acutal nitrogen content of the above ground biomass.
+        Returns actual nitrogen content of the above ground biomass.
         
         @rtype: double
         @return: Above ground biomass nitrogen cotnent in [g].
