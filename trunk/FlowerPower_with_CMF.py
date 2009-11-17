@@ -80,7 +80,7 @@ if __name__=='__main__':
     c.load_meteo(rain_factor=1)
     print "meteo loaded"
     cmf_fp = cmf_fp_interface(c.cell)
-    cmf_fp.default_Nconc = .001
+    #cmf_fp.default_Nconc = .001
     print "Interface to FlowerPower"
     c.cell.saturated_depth=5.
     #Create evapotranspiration instance or bare soil conditions
@@ -119,9 +119,10 @@ if __name__=='__main__':
     figtext(.01, .93, ('Plant biomass %4.2f, Root biomass %4.2f, Shoot biomass %4.2f, LAI %4.2f, Water uptake: %4.2f') % (filter(lambda res: res>0,res.biomass)[-1], filter(lambda res: res>0,res.root_biomass)[-1], filter(lambda res: res>0,res.shoot_biomass)[-1], filter(lambda res: res>0,res.lai)[-1],sum(res.water_uptake)))
     figtext(.01, .91, ('Emergence %4.2f,Leaf development %4.2f,  Tillering %4.2f, Stem elongation %4.2f, Anthesis %4.2f, Seed fill %4.2f, Dough stage %4.2f, Maturity %4.2f') % (DAS[0],DAS[1],DAS[2],DAS[3],DAS[4],DAS[5],DAS[6],DAS[7]))
    
-    showit(res.branching,1,5,cmap = cm.Greens)
-    showit(res.root_growth,2,5,cmap = cm.Greens)
-    showit(res.water_uptake,3,5,cmap = cm.Blues)
-    showit(res.alpha,4,5,cmap=cm.Reds)
-    showit(res.wetness,5,5,cmap=cm.RdYlBu)
+    showit(res.branching,1,6,cmap = cm.Greens)
+    showit(res.root_growth,2,6,cmap = cm.Greens)
+    showit(res.water_uptake,3,6,cmap = cm.Blues)
+    showit(res.passiveNO3,4,6,cmap=cm.Reds)
+    showit(res.activeNO3,5,6,cmap=cm.Reds)
+    showit(res.wetness,6,6,cmap=cm.RdYlBu)
     show()
