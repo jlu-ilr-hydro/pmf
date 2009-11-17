@@ -1,4 +1,3 @@
-import __main__
 import cmf
 from cmf.soil import layer as ka4_soil
 import numpy as np
@@ -8,8 +7,7 @@ class cmf1d(object):
         self.project=cmf.project(tracertext)
         self.cell=self.project.NewCell(0,0,0,1000)
         c=self.cell
-        KA4_soil=ka4_soil(0.1,clay,silt,sand,Corg=c_org)
-        
+        KA4_soil=ka4_soil(0.1,clay,silt,sand,Corg=c_org)        
         r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap)
         print r_curve
         # Add 50 layers with 10cm thickness, and 50 Neumann boundary conditions

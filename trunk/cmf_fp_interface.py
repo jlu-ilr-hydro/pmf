@@ -84,34 +84,4 @@ class cmf_fp_interface:
         wp=layer.soil.Wetness_pF(4.2)
         
         return cmf.piecewise_linear(layer.wetness,0.5*wp,0.5*(fc+wp))
-        # Get TEW
-#        TEW = 1000 * (fc-0.5*wp) * layer.thickness
-#        REW = 1000 * (fc-0.5*(fc+wp)) * layer.thickness
-#        
-#        # Get storage deplation in mm
-#        De = layer.get_capacity() * 1000 / cell.area * (1 - min(1.0,layer.wetness))
-#    
-#        if De<=REW:
-#            return 1.0
-#        elif De>=TEW:
-#            return 0.0
-#        else:
-#            return (TEW-De)/(TEW-REW)
-    
-def Kr(w,soil):
-    # get field Capacity and wilting point
-    fc=soil.Wetness_pF(1.8) 
-    wp=soil.Wetness_pF(4.2) 
-    # Get TEW
-    TEW = 1000 * (fc-0.5*wp) * 0.1
-    REW = 1000 * (fc-0.5*(fc+wp)) * 0.1
-    
-    # Get storage deplation in mm
-    De = 0.05 * 1000 * (1 - min(1.0,w))
-
-    if De<=REW:
-        return 1.0
-    elif De>=TEW:
-        return 0.0
-    else:
-        return (TEW-De)/(TEW-REW)
+ 

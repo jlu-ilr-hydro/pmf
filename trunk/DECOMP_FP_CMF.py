@@ -4,14 +4,17 @@ Created on 02.11.2009
 
 @author: philkraf
 '''
-
+import psyco
+psyco.full()
 import cmf
 import DECOMP
 from DECOMP.cmf_DECOMP import DECOMPcmf
 from cmf_fp_interface import cmf_fp_interface
 from datetime import datetime
+from time import clock
 import FlowerPower
-from pylab import *
+import pylab
+import numpy as np
 from cmf_setup import cmf1d
 c1=cmf1d(sand=20,silt=60,clay=20,c_org=2.0,bedrock_K=0.01,layercount=20,layerthickness=0.1,tracertext='N DOC')
 print "cmf is setup"
@@ -22,8 +25,14 @@ cmf_fp = cmf_fp_interface(c1.cell, N)
 print "Interface to FlowerPower"
 DECOMPcell=DECOMPcmf(c1.cell)
 print "DECOMP layers ok"
-# G�lle schmeissen
-DECOMPcell.DECOMPlayers[0] = DECOMP.SOM(0.1*1e2,1e2)
+def fertilize(kgN_ha):
+    """Adds to the SOM of the first layer easily decomposable SOM components 
+    with a C/N ratio of 10
+    @type kgN_ha: Amount of fertilizer in kg N per ha. 
+    """
+    gN = kgN_ha * 1e3 * c1.cell.area * 1e-4
+    DECOMPcell.DECOMPlayers[0] += DECOMP.SOM(gN,10 * gN)
+fertilize(50)
 c1.cell.saturated_depth=2.0
 #set management
 sowingdate = set(datetime(i,3,1) for i in range(1980,2100))
@@ -48,7 +57,7 @@ class Res(object):
         self.Ndemand=[]
         self.Nuptake=[]
     def __repr__(self):
-        return "biomass=%gg, root biomass=%gg, avg[N]=%g" % (self.shoot_biomass[-1],sum(self.root_biomass[-1]),mean(self.cN[-1]))
+        return "biomass=%gg, root biomass=%gg, avg[N]=%g" % (self.shoot_biomass[-1],sum(self.root_biomass[-1]),np.mean(self.cN[-1]))
 
 c1.t = start
 
@@ -63,7 +72,7 @@ def run_step(t,res,plant):
         plant(t,'day',1.)
     #Water flux from soil to plant
     flux = [-uptake for uptake in plant.water.Uptake] if plant else [0]* c1.cell.layer_count()
-    #flux[0] -= plant.et.Evaporation if FlowerPower.Plant.Count >0 else baresoil.Evaporation
+    flux[0] -= plant.et.evaporation if plant else baresoil.evaporation
     c1.flux=flux
     T=c1.get_tmean(t)
     DECOMPcell.run(T,1.)
@@ -84,26 +93,31 @@ def run_step(t,res,plant):
     return plant
 res=Res()
 print "Run..."
+start_t=clock()
+i=0
 while c1.t<end:
     plant=run_step(c1.t,res,plant)
-    print c1.t,res
+    i+=1
+    if i % 14==0:
+        print c1.t,res
+print cmf.sec* (clock() - start_t)
 def showit(a,name,pos,posmax,**kwargs):
-     subplot(posmax,1,pos)
-     imshow(transpose(a),interpolation='nearest',**kwargs)
-     ylabel(name)
-     colorbar()
+    pylab.subplot(posmax,1,pos)
+    pylab.imshow(np.transpose(a),interpolation='nearest',**kwargs)
+    pylab.ylabel(name)
+    pylab.colorbar()
 print "Nconc ideal=",sum(res.Ndemand)/sum(res.water_uptake)
-subplot(711)
+pylab.subplot(711)
 #plot(res.shoot_biomass,hold=0)
-plot(res.Ndemand,label='Ndemand')
-plot(res.Nuptake,label='NUptake')
-legend(loc=0)
-showit(res.root_biomass,"Root biomass",2,7,cmap=cm.Greens)
-showit(res.water_uptake,"Water uptake",3,7,cmap=cm.Blues)
-showit(res.wetness,"Wetness",4,7,cmap=cm.RdYlBu)
+pylab.plot(res.Ndemand,label='Ndemand')
+pylab.plot(res.Nuptake,label='NUptake')
+pylab.legend(loc=0)
+showit(res.root_biomass,"Root biomass",2,7,cmap=pylab.cm.Greens)
+showit(res.water_uptake,"Water uptake",3,7,cmap=pylab.cm.Blues)
+showit(res.wetness,"Wetness",4,7,cmap=pylab.cm.RdYlBu)
 showit(res.cN,"[N]",5,7,cmap=cm.jet)
-showit(res.Nflux_fp,"Nflux to flower power",6,7,cmap=cm.jet)
-showit(res.Nflux,"Nflux total",7,7,cmap=cm.jet)
+showit(res.Nflux_fp,"Nflux to flower power",6,7,cmap=pylab.cm.jet)
+showit(res.Nflux,"Nflux total",7,7,cmap=pylab.cm.jet)
 show()
 
 
