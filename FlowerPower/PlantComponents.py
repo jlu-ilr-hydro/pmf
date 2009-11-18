@@ -183,7 +183,7 @@ class Plant:
         @rtype: double
         @return: Leaf nitrogen cotnent in [g].
         """ 
-        return self.shoot.leal.Wtot * self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
+        return self.shoot.leaf.Wtot * self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
     @property
     def StemNitrogen(self):
         """
@@ -228,7 +228,7 @@ class Plant:
         @rtype: double
         @return: Leaf carbon cotnent in [g].
         """ 
-        return self.shoot.leal.Wtot * self.carbonfraction
+        return self.shoot.leaf.Wtot * self.carbonfraction
     @property
     def StemCarbon(self):
         """
