@@ -725,7 +725,7 @@ class Water_FAO:
         @rtype: list
         @return: Stress values for each layer in rootzone in [-].
         """
-        RAW = soilvalues[0] * self.p
+        RAW = self.waterbalance.TAW * self.p
         return [self.calc_Ks(self.waterbalance.TAW, self.waterbalance.Dr, RAW, self.p) for z in rootzone]
     def calc_Ks(self,TAW,Dr,RAW,p):
         """ 
