@@ -29,7 +29,7 @@ class cmf_fp_interface:
         """ Depth in cm; Returns the nitrogen concentration in the soil solution in [g l-1]"""
         l=self.get_layer(depth)
         if isinstance(self.N,cmf.solute):
-            return l.conc(self.N) * 1e-3
+            return max(l.conc(self.N) * 1e-3,0.0)
         else:
             return self.default_Nconc
     def soilprofile(self):

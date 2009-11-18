@@ -59,7 +59,7 @@ class Plant:
                  storage_percent = [.0,.0,.0,.0,.5,1.,1.,1.],
                  tbase = 0.,
                  pressure_threshold = [0.,1.,500.,16000.],
-                 plantN = [[160.,0.43],[1200.,0.16]],
+                 plantN = [[160.,0.043],[1200.,0.016]],
                  leaf_specific_weight = 40.,
                  root_growth=1.5,
                  max_height = 1.,
@@ -307,8 +307,8 @@ class Plant:
             rootzone = [l.center for l in self.root.zone]
             alpha = self.water(rootzone,self.pressure_threshold)
             s_h = [s * alpha[i] for i,s in enumerate(s_p)]
-            
-            self.Rp=self.NO3dem(self.biomass.PotentialGrowth, self.NO3cont(self.plantN, self.developmentstage.Thermaltime))
+            NO3content=self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
+            self.Rp=self.NO3dem(self.biomass.PotentialGrowth, NO3content)
             self.nitrogen([self.soil.get_nutrients(l.center) for l in self.root.zone],
                               s_h, self.Rp,biomass_distribution)  
         if self.developmentstage.IsGrowingseason:
@@ -330,7 +330,8 @@ class Plant:
                 
                 H2Odis = alpha
                 fgi = self.get_fgi(Sh, Tp, Ra, Rp, NO3dis, H2Odis)
-                  
+                if min(fgi)<0:
+                    raise RuntimeWarning("fgi is negative")  
                    
                 root_biomass = self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth
                 self.root(time_step,fgi,root_biomass,self.stress,physical_constraints)
@@ -384,7 +385,7 @@ class Plant:
         if  w >= n:
             return [h2o/H2Odis_sum for h2o in H2Odis]
         else:
-            return [n/sum(NO3dis) for n in NO3dis]
+            return [n/NO3dis_sum for n in NO3dis]
     def respire(self,g,Wact,m,Wtot):
         """
         Returns empirical respiration for a given total biomass
