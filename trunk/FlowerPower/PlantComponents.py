@@ -155,7 +155,7 @@ class Plant:
 
         s_p = [self.et.transpiration* b for b in biomass_distribution]
         rootzone = [l.center for l in self.root.zone]
-        alpha = self.water(rootzone,self.pressure_threshold)
+        alpha = self.water(rootzone)
         return [s * alpha[i] for i,s in enumerate(s_p)]
     @property
     def ShootNitrogen(self):
@@ -255,6 +255,7 @@ class Plant:
         self.root.actual_distribution= [0. for l in self.root.zone]
         self.water.layercount = len(self.root.zone)
         self.water.waterbalance=soil
+        self.water.plant=self
         if self.nitrogen:
             self.nitrogen.layercount = len(self.root.zone)
     def set_atmosphere(self,atmosphere):
@@ -291,28 +292,31 @@ class Plant:
         self.root.zone(self.root.depth)
         biomass_distribution = [biomass/sum(self.root.branching) for biomass in self.root.branching] if sum(self.root.branching)>0 else pylab.zeros(len(self.root.branching)) 
         if sum(biomass_distribution)==0: biomass_distribution[0]+=1
-        
-        
         #Development
         self.developmentstage(time_step,self.atmosphere.get_tmin(time_act), self.atmosphere.get_tmax(time_act), self.tbase)
         #Evapotranspiration
-        self.et(self.soil.Kr(),self.developmentstage.Thermaltime,self.atmosphere.get_Rn(time_act,0.12,True),self.atmosphere.get_tmean(time_act)
-                                   ,self.atmosphere.get_es(time_act),self.atmosphere.get_ea(time_act)
-                                   ,self.atmosphere.get_windspeed(time_act)
-                                   ,LAI=self.shoot.leaf.LAI)
-        #Water uptake occurs only if germinination is finished (developmentstage > Emergence)
+        Kr = self.soil.Kr()
+        thermaltime = self.developmentstage.Thermaltime
+        Rn = self.atmosphere.get_Rn(time_act,0.12,True)
+        T = self.atmosphere.get_tmean(time_act)
+        e_s = self.atmosphere.get_es(time_act)
+        e_a = self.atmosphere.get_ea(time_act)
+        windspeed = self.atmosphere.get_windspeed(time_act)
+        LAI = LAI=self.shoot.leaf.LAI
+        Tpot = self.et(Kr,thermaltime,Rn,T,e_s,e_a,windspeed,LAI)
         if self.developmentstage.IsGerminated:
             #Water uptake
-            s_p = [self.et.transpiration*biomass for biomass in biomass_distribution]
+            s_p = [Tpot*biomass for biomass in biomass_distribution]
             rootzone = [l.center for l in self.root.zone]
-            alpha = self.water(rootzone,self.pressure_threshold)
+            alpha = self.water(rootzone)
             s_h = [s * alpha[i] for i,s in enumerate(s_p)]
+            #Nutrient uptake
             NO3content=self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
             self.Rp=self.NO3dem(self.biomass.PotentialGrowth, NO3content)
             self.nitrogen([self.soil.get_nutrients(l.center) for l in self.root.zone],
                               s_h, self.Rp,biomass_distribution)  
         if self.developmentstage.IsGrowingseason:
-            self.water_stress = max(0,1 - sum(s_h) / self.et.transpiration*self.stress_adaption)
+            self.water_stress = max(0,1 - sum(s_h) / Tpot*self.stress_adaption)
             self.nutrition_stress = max(0, 1 - sum(self.nitrogen.Total)/ self.Rp * self.stress_adaption if self.Rp>0 else 0.0)
             self.stress = min(max(self.water_stress, self.nutrition_stress),1)
             #Calls biomass interface for the calculation of the actual biomass
@@ -320,19 +324,15 @@ class Plant:
             #Root partitining
             if self.developmentstage.Thermaltime <= self.developmentstage[4][1]:
                                 
-                physical_constraints = self.water([self.root.depth],self.pressure_threshold)[0]
+                physical_constraints = self.water([self.root.depth])[0]
                 
                 Sh = sum(s_h)
-                Tp = self.et.transpiration
                 Ra = sum(self.nitrogen.Total)
                 Rp=self.Rp
                 NO3dis = [self.soil.get_nutrients(l.center) if l.penetration>0 else 0. for l in self.root.zone]
+                H2Odis = [alpha[i]  if l.penetration>0 else 0. for i,l in enumerate(self.root.zone)]
+                fgi = self.get_fgi(Sh, Tpot, Ra, Rp, NO3dis, H2Odis)
                 
-                H2Odis = alpha
-                fgi = self.get_fgi(Sh, Tp, Ra, Rp, NO3dis, H2Odis)
-                if min(fgi)<0:
-                    raise RuntimeWarning("fgi is negative")  
-                   
                 root_biomass = self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth
                 self.root(time_step,fgi,root_biomass,self.stress,physical_constraints)
             #Shoot partitioning
