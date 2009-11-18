@@ -26,10 +26,10 @@ class cmf_fp_interface:
         """Returns the capillary suction in m for each layer (including the bedrock layer)"""
         return [l.matrix_potential for l in self.cmf_cell.layers]
     def get_nutrients(self,depth):
-        """ Depth in cm; Returns the nitrogen concentration in the soil solution in [mol l-1]"""
+        """ Depth in cm; Returns the nitrogen concentration in the soil solution in [g l-1]"""
         l=self.get_layer(depth)
         if isinstance(self.N,cmf.solute):
-            return l.conc(self.N)
+            return l.conc(self.N) * 1e-3
         else:
             return self.default_Nconc
     def soilprofile(self):
@@ -48,7 +48,7 @@ class cmf_fp_interface:
         if depth<0:
             return self.cmf_cell.layers[0]
         for l in self.cmf_cell.layers:
-            if (l.upper_boundary<depth*0.01 and l.lower_boundary<depth*0.01):
+            if (l.upper_boundary<=depth*0.01 and l.lower_boundary>depth*0.01):
                 return l
         return self.cmf_cell.layers[-1]
     def get_tmean(self,time):
