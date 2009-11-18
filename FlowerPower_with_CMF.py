@@ -34,6 +34,7 @@ def run(t,res,plant):
     res.temperature.append(cmf_fp.get_tmean(t))
     res.radiation.append(cmf_fp.get_Rs(t))
     res.stress.append((plant.water_stress, plant.nutrition_stress) if plant else (0,0))
+
     res.matrix_potential.append(c.matrix_potential)
     res.activeNO3.append(plant.nitrogen.Active)if plant else res.activeNO3.append(zeros(c.cell.layer_count()))
     res.passiveNO3.append(plant.nitrogen.Passive)if plant else res.passiveNO3.append(zeros(c.cell.layer_count()))
