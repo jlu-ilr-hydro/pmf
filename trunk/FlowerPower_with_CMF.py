@@ -1,8 +1,8 @@
 def run(t,res,plant):
     if t.day==1 and t.month==3:
         plant = FlowerPower.connect(FlowerPower.createPlant_CMF(),cmf_fp,cmf_fp)
-        plant.nitrogen.max_passive_uptake=1
-        plant.nitrogen.Km=.1#27*14e-6
+        plant.nitrogen.Km = 27 * 62e-6
+        plant.nitrogen.NO3min = 0.1e-3
 
     if t.day==1 and t.month==8:
         plant =  None
@@ -34,7 +34,6 @@ def run(t,res,plant):
     res.temperature.append(cmf_fp.get_tmean(t))
     res.radiation.append(cmf_fp.get_Rs(t))
     res.stress.append((plant.water_stress, plant.nutrition_stress) if plant else (0,0))
-    res.alpha.append(plant.water.Alpha) if plant else res.alpha.append(zeros(c.cell.layer_count()))
     res.matrix_potential.append(c.matrix_potential)
     res.activeNO3.append(plant.nitrogen.Active)if plant else res.activeNO3.append(zeros(c.cell.layer_count()))
     res.passiveNO3.append(plant.nitrogen.Passive)if plant else res.passiveNO3.append(zeros(c.cell.layer_count()))
@@ -64,7 +63,6 @@ class Res(object):
         self.radiation = []
         self.DAS = []
         self.stress = []
-        self.alpha = []
         self.activeNO3=[]
         self.passiveNO3=[]
         self.leaf=[]
@@ -91,7 +89,7 @@ if __name__=='__main__':
     c.load_meteo(rain_factor=1)
     print "meteo loaded"
     cmf_fp = cmf_fp_interface(c.cell)
-    cmf_fp.default_Nconc = .1
+    #cmf_fp.default_Nconc = .1
     
     
     print "Interface to FlowerPower"
