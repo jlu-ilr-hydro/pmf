@@ -1258,11 +1258,12 @@ class Nitrogen:
         """
         
         #Passive uptake
-        self.Pa = [w*min(NO3_conc[i],self.max_passive_uptake) for i,w in enumerate(Sh)]
+        self.Pa = [max(0,w*min(NO3_conc[i],self.max_passive_uptake)) for i,w in enumerate(Sh)]
         #Residual demand
         Ap = max(Rp-sum(self.Pa),0.)
         #Michelis-menten values for each layer
-        michaelis_menten = [(NO3-self.NO3min)/(self.Km+NO3-self.NO3min) for NO3 in NO3_conc]
+        michaelis_menten = [(NO3-self.NO3min)/(self.Km+NO3-self.NO3min) if NO3>self.NO3min else 0.0 for NO3 in NO3_conc]
         #Active uptake
         self.Aa = [Ap * michaelis_menten[i] * fraction for i,fraction in enumerate(root_fraction)]
-     
+        if min(self.Pa)<0 or min(self.Aa)<0:
+            a=2
