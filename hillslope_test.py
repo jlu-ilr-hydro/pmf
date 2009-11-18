@@ -12,6 +12,7 @@ from cmf_fp_interface import cmf_fp_interface
 from datetime import datetime
 from matplotlib import pyplot
 from math import sqrt
+import numpy as np
 class Cell(object):
     """ A (creating) wrapper class for a cmf cell, a DECOMP/cmf cell, and a plant instance
     Creates a cell in a given cmf.project with a DECOMP layer for each layer
@@ -101,14 +102,14 @@ class Cell(object):
             c=self.plant_interface
             self.baresoil(c.Kr(),0.,c.get_Rn(t, 0.12, True),c.get_tmean(t),c.get_es(t),c.get_ea(t), c.get_windspeed(t),0.,RHmin=30.,h=1.)
         #Get the water flux from soil to plant
-        flux     = [-uptake for uptake in self.plant.water.Uptake] if self.plant else [0.0] * self.cmf.layer_count()
+        flux     = [-uptake for uptake in self.plant.Wateruptake] if self.plant else [0.0] * self.cmf.layer_count()
         flux[0] -= self.plant.et.evaporation if self.plant else self.baresoil.evaporation
         # Set flux at the cmf boundary conditions
         for i,bc in enumerate(self.__bc):
             bc.flux=cmf.timeseries(flux[i] * self.cmf.area / 1000.0) # Convert from mm to m3
     
 class Slope(object):
-    def __init__(self,count=20,length=10,slope=0.05,slope_exponent=1,meteo_station_name=None):
+    def __init__(self,count=20,length=10,slope=0.05,slope_exponent=1,meteo_station_name=None,soildepth=3.0):
         """ Creates <count=20> cells in <project> in a row with a slope of <slope=5%>, <length=10m> length per cell and <length**2> area"""
         self.project=cmf.project('N DOC')
         self.N,self.DOC = self.project.solutes
@@ -121,7 +122,7 @@ class Slope(object):
             x = i * length
             z = (x/x_max)**slope_exponent * x_max * slope 
             c = Cell(cmf_project=p, x=x, y=0, z=z, area=length**2, 
-                     soildepth=3.0, layer_thickness=0.1, 
+                     soildepth=soildepth, layer_thickness=0.1, 
                      sand=80, silt=5, clay=15, c_org=2)
             c.cmf.install_connection(cmf.Richards)
             c.cmf.surfacewater_as_storage()
@@ -179,6 +180,9 @@ class Slope(object):
         cmf.set_precipitation(self.project.cells,rain)
         # Use the meteorological station for each cell of the project
         cmf.set_meteo_station(self.project.cells,meteo)
+        Nconc=cmf.timeseries(2.34)
+        for c in self.project:
+            c.rain.concentration[self.N] = Nconc
 
 class slope_fig(object):
     def __init__(self,slope,solute=None):
@@ -187,20 +191,21 @@ class slope_fig(object):
         self.hp = cmf.draw.hill_plot(cells=slope.project, t=slope.integrator.t, solute=solute)
         if solute:
             self.hp.evalfunction = lambda l: l.conc(N) / 100
-            self.hp.cmap = pyplot.cm.RdYlGn_r
+            self.hp.cmap = pyplot.cm.Oranges
         else:
             self.hp.cmap = pyplot.cm.RdYlBu
-            self.hp.evalfunction = lambda l: (l.wetness - l.soil.Wetness_pF(4.2))/(1-l.soil.Wetness_pF(4.2))  
+            self.hp.evalfunction = lambda l: (l.wetness - l.soil.Wetness_pF(3.))/(1-l.soil.Wetness_pF(3.))  
         self.plant_bars = pyplot.bar(left  = [c.x - sqrt(c.area)*.25 for c in slope.project],
                                width = [sqrt(c.cmf.area)*.5  for c in slope.cells],
                                height = [c.biomass / 1500 for c in slope.cells] ,
                                bottom = [c.z for c in slope.project], fc='g')
-    def __call__(self):
+    def __call__(self,text=''):
         for i,c in enumerate(self.slope.cells):
             self.plant_bars[i].set_height(c.biomass / 1500 )
             if c.plant:
-                self.plant_bars[i].set_fc(pyplot.cm.RdYlGn_r(c.plant.stress))
-        self.hp(t=self.slope.integrator.t)
+                stress = c.plant.nutrition_stress if self.solute else c.plant.water_stress
+                self.plant_bars[i].set_color(pyplot.cm.RdYlGn_r(stress))
+        self.hp(t=self.slope.integrator.t,text=text)
             
                 
             
@@ -208,35 +213,48 @@ class slope_fig(object):
 
 
 slope = Slope(count=20,slope_exponent=2, meteo_station_name='giessen') 
-slope.t = cmf.Time(1,3,1980)
-N,DOC=slope.project.solutes
-for c in slope.cells:
-    c.fertilize(20)
-    c.sow()
-runner=slope.run(datetime(1980,8,1),cmf.day)
-for i,t in enumerate(runner):
-    if i in [20, 90]:
-        for c in slope.cells:
-            c.fertilize(1000)
-    print t,"max(biomass) =", max(c.biomass for c in slope),
-    plant=slope[-1].plant
-    print "Nsol = %gg/m2" % (sum(l.Solute(N).state for l in list(slope[-1].cmf.layers)[:10]) / slope[-1].cmf.area),
-    print "Ndem= %gg/(m2 day)" % plant.Rp,
-    print "Nupt (tot,pass,act)= (%g,%g,%g)g/(m2 day)" % (sum(plant.nitrogen.Total),sum(plant.nitrogen.Passive),sum(slope[-1].plant.nitrogen.Active))
+slope.t = cmf.Time(28,2,1980)
 
-pyplot.subplot(121)
+for c in slope:
+    for i in range(3):
+        c.DECOMP.DECOMPlayers[0] = DECOMP.SOM(0.05 * 3000,0,0,0,3000) * c.cmf.area
+    
+
+N,DOC=slope.project.solutes
+pyplot.subplot(211)
 wet_plot=slope_fig(slope)
 wet_plot.hp.scale=10
 pyplot.xlim(-5,195)
-pyplot.subplot(122)
+pyplot.subplot(212)
 N_plot=slope_fig(slope,N)
 N_plot.hp.scale=10
 pyplot.xlim(-5,195)
-    
+title=''    
+runner=slope.run(datetime(1980,8,1),cmf.day)
+for i,t in enumerate(runner):
+    if t.month == 3 and t.day == 1:
+        for c in slope.cells:
+            c.fertilize(20)
+            c.sow()
+            title='sowing'
+
+    if (t.month == 3 and t.day == 20) or (t.month == 5 and t.day == 30):
+        for c in slope.cells:
+            c.fertilize(240)
+            title='80 kgN/ha'
+    if slope.t.month == 8 and slope.t.day == 2:
+        for c in slope.cells:
+            c.harvest()
+            title='harvest'
+    print slope.integrator.t,"max(biomass) =%gg/m2" % max(c.biomass for c in slope),
+    plant=slope[-1].plant
+    if plant:
+        print "Nsol = %gg/m2" % (sum(l.Solute(N).state for l in list(slope[-1].cmf.layers)[:10]) / slope[-1].cmf.area),
+        print "Ndem= %gg/(m2 day)" % plant.Rp,
+        print "Nupt (tot,pass,act)= (%g,%g,%g)g/(m2 day)" % (sum(plant.nitrogen.Total),sum(plant.nitrogen.Passive),sum(slope[-1].plant.nitrogen.Active))
+    else: print
 wet_plot()
-N_plot()
+N_plot(title)
+title=''
+    #savefig('fp_images/hill%05i.png' % i,dpi=100)
 pyplot.show()
-def run():
-    runner.next()
-    wet_plot()
-    N_plot()
