@@ -8,7 +8,7 @@ import psyco
 psyco.full()
 import cmf
 import DECOMP
-from DECOMP.cmf_DECOMP import DECOMPcmf
+from cmf_DECOMP import DECOMPcmf
 from cmf_fp_interface import cmf_fp_interface
 from datetime import datetime
 from time import clock
@@ -108,8 +108,7 @@ while c1.t<end:
     i+=1
     if i % 1==0:
         print c1.t,res
-        if plant:
-            print "Stress: ", plant.water_stress, plant.nutrient_stess
+        
 print cmf.sec* (clock() - start_t)
 def showit(a,name,pos,posmax,**kwargs):
     pylab.subplot(posmax,1,pos)
