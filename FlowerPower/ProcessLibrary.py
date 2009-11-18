@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import pylab as pylab
 class Development:
     """
@@ -402,6 +401,7 @@ class ET_FAO:
         
         #Calculates evaporation coefficiant
         self.ke = self.calc_Ke(Kr, kcmax, self.kcb, few)
+        return self.eto * self.kcb
     def calc_ETo(self,Rn,T,e_s,e_a,windspeed=2.,LAI=24*0.12,stomatal_resistanc=100,alt=0,printSteps=0,vegH=0.12,daily=True):
         """
         Calculates the reference Evapotranspiration.
@@ -699,7 +699,7 @@ class Water_FAO:
     
     @see: [Allen et al, 1998]
     """
-    def __init__(self,average_available_soilwater=0.5):
+    def __init__(self,waterbalance=None,plant=None,average_available_soilwater=0.5):
         """
         Returns a Water_FAO instance.
         
@@ -708,41 +708,25 @@ class Water_FAO:
         @rtype: water_fao
         @return: WAter_FAO instance
         """
+        self.waterbalance=waterbalance
+        self.plant=plant
+        
         #Constant variables
         self.p = average_available_soilwater
         #State variables
         self.ks=[]
         self.uptake = 0.
-    @property
-    def Ks(self):
-        return sum(self.ks)
-    @property
-    def Uptake(self):
-        """
-        Returns water uptake understressed conditions.
-        
-        @rtype: list
-        @return: Water uptake under stressed conditions for each layer in the soil profile in [mm].
-        """
-        return self.uptake
-    def __call__(self,s_p,soilvalues,plantvalues):
+    def __call__(self,rootzone):
         """
         Calculates actual water uptake and contributes the uptake over the layer in the soil profile.
         
-        @type TAW: double
-        @param TAW: Total available soil water in the root zone in [mm].
-        @type Dr: double
-        @param Dr: Root zone depletion in [mm].
-        @type s_p: list
-        @param s_p: List with the potential water uptake for each soillayer in rootingzone in [mm].
+        @type rootzone: list
+        @param rootzone: List with centre depth of each layer in  [cm].
+        @rtype: list
+        @return: Stress values for each layer in rootzone in [-].
         """
-        # Calculates Readidly avaible water RAW
-        
         RAW = soilvalues[0] * self.p
-        #Calcualtes stres coefficiant
-        self.uptake = sum(s_p) * [self.calc_Ks(soilvalues[0], soilvalues[1], RAW, self.p)]
-        self.ks =  [self.calc_Ks(soilvalues[0], soilvalues[1], RAW, self.p)]
-        #Calculates actual water uptake and contributes the uptake over the layer in the soil profile
+        return [self.calc_Ks(self.waterbalance.TAW, self.waterbalance.Dr, RAW, self.p) for z in rootzone]
     def calc_Ks(self,TAW,Dr,RAW,p):
         """ 
         Calculates transpiration reduction factor
@@ -786,10 +770,6 @@ class Water_FAO:
         @return: Adjusted extractable soil water in [-].
         """
         return p_table + 0.04*(5-ETc)
-    def soilvalues(self,soil):
-        return soil.TAW,soil.Dr
-    def plantvalues(self,plant):
-        pass
 class Water_Feddes:
     """
     Water uptake model based on soil matrixpotential and a crop specific uptake function.
@@ -820,7 +800,7 @@ class Water_Feddes:
     
     @see: [Feddes et al, 1978, Feddes & Raats 2004]
     """
-    def __init__(self,waterbalance=None,maxcomp=2.,layercount=41):
+    def __init__(self,waterbalance=None,plant=None,maxcomp=2.,layercount=41):
         """
         Returns a Water_Feddes instance.
         
@@ -833,6 +813,7 @@ class Water_Feddes:
         @return: Water_Feddes instance
         """
         self.waterbalance=waterbalance
+        self.plant=plant
         self.layercount=layercount
         #Constant variables
         self.max_compensation_capacity=maxcomp
@@ -841,35 +822,17 @@ class Water_Feddes:
         self.alpha=[0. for l in range(self.layercount)]
         self.compensation=[0. for l in range(self.layercount)]
         self.Shcomp=[0. for l in range(self.layercount)]
-    @property
-    def Uptake(self):
-        """
-        Returns actual water extraction under non optimal conditions Sh
-        
-        @rtype: list
-        @return: List with under non optimal conditions values for each layer in the rootingzone in [mm].
-        """
-        return self.Sh
-    @property
-    def Alpha(self):
-        """
-        Returns water stress coefficiant alpha.
-        @rtype: list
-        @return: List with alpha  values for each layer in the rootingzone in [-].
-        """
-        return self.alpha
-    def __call__(self,rootzone,h_plant):
+    def __call__(self,rootzone):
         """
         Calulates water uptake under stressed conditions and compensation.
         
        
         @type rootzone: list
         @param rootzone: List with centre depth of each layer in  [cm].
-        @type h_plant: list
-        @param h_plant: List with soil pressurehead. These conditions limiting wate uptake in. [cm water column].
-        @return: -
+        @rtype: list
+        @return: Stress values for each layer in rootzone in [-].
         """
-        return [self.sink_term(self.waterbalance.get_pressurehead(z), h_plant)for z in rootzone]
+        return [self.sink_term(self.waterbalance.get_pressurehead(z), self.plant.pressure_threshold)for z in rootzone]
     def compensate(self,Sh,Sp,pressurehead,alpha,maxopth,maxcomp):
         """
         Calculates compensation factors for each layer in the rootingzone.
