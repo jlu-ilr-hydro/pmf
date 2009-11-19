@@ -24,11 +24,11 @@ class Cell(object):
         self.__bc=[]
         KA4_soil=KA4soil(0.05,clay=clay,silt=silt,sand=sand,Corg=c_org)
         r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
-        print self.cmf, r_curve
         for i in range(layer_count):
             d=(i+1) * layer_thickness 
             self.cmf.add_layer(d,r_curve)
             nbc=cmf.NeumannBoundary.create(self.cmf.layers[-1])
+            nbc.get_connection(self.cmf.layers[-1]).tracer_filter=0.0
             self.__bc.append(nbc)
         # Make DECOMP cell
         self.DECOMP=DECOMPcmf(self.cmf)
@@ -46,6 +46,7 @@ class Cell(object):
                                          self.plant_interface)
         self.plant.nitrogen.Km = 27 * 62e-6
         self.plant.nitrogen.NO3min = 0.1e-3 # g/l
+        self.plant.nitrogen.max_passive_uptake = 0.0 # g/l
     def harvest(self):
         """
         @todo: Put residual biomass to first layer
@@ -63,23 +64,36 @@ class Cell(object):
             root.N = root_M * 0.01
         self.plant=None
         # return biomass
-    def fertilize(self,kgN_ha):
+    def fertilize(self,kgN_ha,is_manure=1):
         """Adds to the SOM of the first layer easily decomposable SOM components 
         with a C/N ratio of 10
         @type kgN_ha: Amount of fertilizer in kg N per ha. 
         """
         #    kgN/ha * g/kg  *      m2       * ha/m2
         gN = kgN_ha * 1000. * self.cmf.area * 1e-4
-        # Create a fertilizer with a C/N ratio 10, made of easily decomposable components
-        fertilizer = DECOMP.SOM(gN, 10 * gN)
-        # Add fertilizer to first layer
-        self.DECOMP.DECOMPlayers[0] += fertilizer
+        if is_manure:
+            # Create a fertilizer with a C/N ratio 10, made of easily decomposable components
+            fertilizer = DECOMP.SOM(gN, 10 * gN)
+            # Add fertilizer to first layer
+            self.DECOMP.DECOMPlayers[0] += fertilizer
+        else:
+            # Put N directly into the soil solution
+            self.cmf.layers[0].Solute(self.N).state += gN
     @property
-    def biomass(self):
+    def shoot_carbon(self):
         if self.plant:
-            return self.plant.shoot.Wtot
+            return self.plant.ShootCarbon
         else:
             return 0.0
+    @property
+    def biomass(self):
+        return self.plant.biomass.Total if self.plant else 0.0
+    @property
+    def root_mass(self):
+        if self.plant:
+            return self.plant.root.branching
+        else:
+            return [0.0] * self.cmf.layer_count()
     def run(self,t,dt=1.0):
         """Runs the DECOMPcell and the FlowerPower instance. Does not check for sowing or harvest activities
         and does not run cmf
@@ -97,7 +111,7 @@ class Cell(object):
             self.plant(t,'day',dt)
             for i,l in enumerate(self.cmf.layers):
                 # Uptake in FlowerPower as g/m2 and in cmf as g
-                l.Solute(N).source -= self.plant.nitrogen.Active[i] * self.cmf.area
+                l.Solute(N).source -= self.plant.nitrogen.Total[i] * self.cmf.area
         else:
             c=self.plant_interface
             self.baresoil(c.Kr(),0.,c.get_Rn(t, 0.12, True),c.get_tmean(t),c.get_es(t),c.get_ea(t), c.get_windspeed(t),0.,RHmin=30.,h=1.)
@@ -123,7 +137,7 @@ class Slope(object):
             z = (x/x_max)**slope_exponent * x_max * slope 
             c = Cell(cmf_project=p, x=x, y=0, z=z, area=length**2, 
                      soildepth=soildepth, layer_thickness=0.1, 
-                     sand=80, silt=5, clay=15, c_org=2)
+                     sand=100, silt=0, clay=0, c_org=2)
             c.cmf.install_connection(cmf.Richards)
             c.cmf.surfacewater_as_storage()
             c.cmf.install_connection(cmf.SimpleTindexSnowMelt)
@@ -138,14 +152,15 @@ class Slope(object):
         cmf.connect_cells_with_flux(p, cmf.Richards_lateral)
         cmf.connect_cells_with_flux(p, cmf.Manning_Kinematic)
         #Create an outlet at the bottom of the slope
-        self.outlet=cmf.DricheletBoundary(p,-1,cmf.point(-0.5 * length,0,-.5))
+        self.outlet=cmf.DricheletBoundary(p,-.25,cmf.point(-0.5 * length,0,-.5))
         self.outlet.Name='Outlet'
+        self.outlet.is_source=True
         p[0].connect_soil_with_node(self.outlet,cmf.Richards_lateral,length,0.5 * length)
         # Connect surface water of cell 0 with outlet
         cmf.connect(cmf.Manning_Kinematic,p[0].surfacewater,self.outlet,cmf.Channel('R',10.0,10.0))     
         winteg=cmf.CVodeIntegrator(1e-6)
         winteg.preconditioner='R'
-        sinteg=cmf.BDF2(1e-6)
+        sinteg=cmf.ImplicitEuler(1e-6)
         self.integrator=cmf.SoluteWaterIntegrator(winteg,sinteg,p)
         if meteo_station_name:
             self.load_meteo(meteo_station_name, 1.0)
@@ -197,14 +212,25 @@ class slope_fig(object):
             self.hp.evalfunction = lambda l: (l.wetness - l.soil.Wetness_pF(3.))/(1-l.soil.Wetness_pF(3.))  
         self.plant_bars = pyplot.bar(left  = [c.x - sqrt(c.area)*.25 for c in slope.project],
                                width = [sqrt(c.cmf.area)*.5  for c in slope.cells],
-                               height = [c.biomass / 1500 for c in slope.cells] ,
+                               height = [c.biomass / 1000 for c in slope.cells] ,
                                bottom = [c.z for c in slope.project], fc='g')
+        self.root_bars=[]
+        for c in slope:
+            self.root_bars.append(pyplot.bar(left = [c.cmf.x - b/20 for b in c.root_mass],
+                                  width = [b/10 for b in c.root_mass],
+                                  bottom = [c.cmf.z - l.lower_boundary for l in c.cmf.layers],
+                                  height = [l.thickness for l in c.cmf.layers],
+                                  fc='k',alpha=0.5))
     def __call__(self,text=''):
         for i,c in enumerate(self.slope.cells):
-            self.plant_bars[i].set_height(c.biomass / 1500 )
+            self.plant_bars[i].set_height(c.biomass / 1000 )
             if c.plant:
                 stress = c.plant.nutrition_stress if self.solute else c.plant.water_stress
                 self.plant_bars[i].set_color(pyplot.cm.RdYlGn_r(stress))
+            root_mass=c.root_mass
+            for j in range(c.cmf.layer_count()):
+                self.root_bars[i][j].set_width(root_mass[j]/10)
+                self.root_bars[i][j].set_x(c.cmf.x - root_mass[j]/20)
         self.hp(t=self.slope.integrator.t,text=text)
             
                 
@@ -213,48 +239,68 @@ class slope_fig(object):
 
 
 slope = Slope(count=20,slope_exponent=2, meteo_station_name='giessen') 
-slope.t = cmf.Time(28,2,1980)
+slope.t = cmf.Time(1,1,1980)
 
 for c in slope:
     for i in range(3):
-        c.DECOMP.DECOMPlayers[0] = DECOMP.SOM(0.05 * 3000,0,0,0,3000) * c.cmf.area
-    
-
+        c.DECOMP.DECOMPlayers[i] = DECOMP.SOM(0.05 * 3000,0,0,50,2950) * c.cmf.area
+print cmf.VERSION
 N,DOC=slope.project.solutes
 pyplot.subplot(211)
 wet_plot=slope_fig(slope)
-wet_plot.hp.scale=10
-pyplot.xlim(-5,195)
+wet_plot.hp.scale=25
+pyplot.xlim(slope[0].cmf.x - 5,slope[-1].cmf.x + 5)
 pyplot.subplot(212)
 N_plot=slope_fig(slope,N)
-N_plot.hp.scale=10
-pyplot.xlim(-5,195)
+N_plot.hp.scale=25
+pyplot.xlim(slope[0].cmf.x - 5,slope[-1].cmf.x + 5)
 title=''    
-runner=slope.run(datetime(1980,8,1),cmf.day)
+runner=slope.run(datetime(1986,1,1),cmf.day)
+cumNupt=0
+cumNout=0 
+cumNdem=0
+Nupt=[]
+Ndem=[]
+Nsol=[]
 for i,t in enumerate(runner):
     if t.month == 3 and t.day == 1:
         for c in slope.cells:
-            c.fertilize(20)
+            c.fertilize(20,True)
             c.sow()
             title='sowing'
 
-    if (t.month == 3 and t.day == 20) or (t.month == 5 and t.day == 30):
+    if (t.month == 3 and t.day == 10) or (t.month == 5 and t.day == 10):
         for c in slope.cells:
-            c.fertilize(240)
+            c.fertilize(80,False)
             title='80 kgN/ha'
-    if slope.t.month == 8 and slope.t.day == 2:
+    if t.month == 8 and t.day == 2:
         for c in slope.cells:
             c.harvest()
             title='harvest'
-    print slope.integrator.t,"max(biomass) =%gg/m2" % max(c.biomass for c in slope),
+    print slope.integrator.t,"biomass =%7.5gkg/ha" % (slope[-1].biomass * 10),
+    print "Nsol = %7.5gkg/ha" % (sum(l.Solute(N).state for l in list(slope[-1].cmf.layers)[:10])/slope[-1].cmf.area*10),
     plant=slope[-1].plant
+    Nsol.append(sum(l.Solute(N).state for l in list(slope[-1].cmf.layers)[:10])/slope[-1].cmf.area*10)
     if plant:
-        print "Nsol = %gg/m2" % (sum(l.Solute(N).state for l in list(slope[-1].cmf.layers)[:10]) / slope[-1].cmf.area),
-        print "Ndem= %gg/(m2 day)" % plant.Rp,
-        print "Nupt (tot,pass,act)= (%g,%g,%g)g/(m2 day)" % (sum(plant.nitrogen.Total),sum(plant.nitrogen.Passive),sum(slope[-1].plant.nitrogen.Active))
-    else: print
-wet_plot()
-N_plot(title)
-title=''
-    #savefig('fp_images/hill%05i.png' % i,dpi=100)
+        cumNdem += plant.Rp * 10
+        cumNupt += sum(plant.nitrogen.Total) * 10
+        cumNout += slope.outlet.water_balance(t) * slope.outlet.conc(t,N) / (slope[-1].cmf.area) * 10 
+        print "cumNupt = %7.5gkg/ha, cumNout = %7.5gkg/ha" % (cumNupt, cumNout)
+    else:
+        cumNupt=0
+        cumNout=0 
+        cumNdem=0
+        print
+    wet_plot()
+    N_plot(title)
+    title=''
+    pyplot.savefig('fp_images/hill%05i.png' % i,dpi=75)
+        
+    Nupt.append(cumNupt)
+    Ndem.append(cumNdem)
+
+pyplot.plot(Nupt,label='Uptake')
+pyplot.plot(Ndem,label='Demand')
+pyplot.plot(Nsol,label='Storage')
+pyplot.legend()
 pyplot.show()

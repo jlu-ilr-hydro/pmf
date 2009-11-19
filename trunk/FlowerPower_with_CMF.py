@@ -1,6 +1,8 @@
 def run(t,res,plant):
     if t.day==1 and t.month==3:
         plant = FlowerPower.connect(FlowerPower.createPlant_CMF(),cmf_fp,cmf_fp)
+        #plant.nitrogen.max_passive_uptake=1
+        #plant.nitrogen.Km=27*14e-6
         plant.nitrogen.Km = 27 * 62e-6
         plant.nitrogen.NO3min = 0.1e-3
 
@@ -90,6 +92,7 @@ if __name__=='__main__':
     c.load_meteo(rain_factor=1)
     print "meteo loaded"
     cmf_fp = cmf_fp_interface(c.cell)
+    cmf_fp.default_Nconc = .3
     #cmf_fp.default_Nconc = .1
     
     
