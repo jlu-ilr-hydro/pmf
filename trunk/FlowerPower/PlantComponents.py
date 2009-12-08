@@ -148,15 +148,9 @@ class Plant:
         self.water_stress = 0.
         self.nutrition_stress = 0.
         self.Rp = 0.
+        self.Wateruptake = []
         
-    @property
-    def Wateruptake(self):
-        biomass_distribution = [biomass/sum(self.root.branching) for biomass in self.root.branching] if sum(self.root.branching)>0 else pylab.zeros(len(self.root.branching)) 
-
-        s_p = [self.et.transpiration* b for b in biomass_distribution]
-        rootzone = [l.center for l in self.root.zone]
-        alpha = self.water(rootzone)
-        return [s * alpha[i] for i,s in enumerate(s_p)]
+    
     @property
     def ShootNitrogen(self):
         """
@@ -256,6 +250,7 @@ class Plant:
         self.water.layercount = len(self.root.zone)
         self.water.waterbalance=soil
         self.water.plant=self
+        self.Wateruptake = [0. for l in self.root.zone]
         if self.nitrogen:
             self.nitrogen.layercount = len(self.root.zone)
     def set_atmosphere(self,atmosphere):
@@ -310,6 +305,8 @@ class Plant:
             rootzone = [l.center for l in self.root.zone]
             alpha = self.water(rootzone)
             s_h = [s * alpha[i] for i,s in enumerate(s_p)]
+            self.Wateruptake = s_h
+            
             #Nutrient uptake
             NO3content=self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
             self.Rp=self.NO3dem(self.biomass.PotentialGrowth, NO3content)
