@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+
+"""
+
+"""
+
 def run(t,res,plant):
     if t.day==1 and t.month==3:
         plant = FlowerPower.connect(FlowerPower.createPlant_SWC(),soil,atmosphere)
@@ -9,15 +15,16 @@ def run(t,res,plant):
     #Let grow
     if plant: 
         plant(t,'day',1.)
-        
+     
+    
     #Calculates evaporation for bare soil conditions
    
-    ETc = plant.et.Cropspecific if plant else baresoil.transpiration
+    ETc_adj = sum(plant.Wateruptake)+plant.et.evaporation if plant else baresoil.evaporation
     evaporation = plant.et.evaporation if plant else baresoil.evaporation
     rainfall = atmosphere.cell.rain(t)
-    Zr = plant.root.depth if plant else 0.
-    soil(ETc,evaporation,rainfall,Zr)
-        
+    Zr = plant.root.depth/100. if plant else 0.
+    soil(ETc_adj,evaporation,rainfall,Zr)
+    
     res.water_uptake.append(plant.Wateruptake) if plant else res.water_uptake.append([0])
     res.transpiration.append(plant.et.transpiration) if plant else res.transpiration.append(0)
     res.evaporation.append(plant.et.evaporation) if plant else  res.evaporation.append(0)
@@ -36,8 +43,7 @@ def run(t,res,plant):
     res.stem.append(plant.shoot.stem.Wtot if plant else 0.)
     res.storage.append(plant.shoot.storage_organs.Wtot if plant else 0.)
     res.Dr.append(soil.Dr)
-    res.TAW.append(soil.TAW)
-    
+    res.TAW.append(plant.water.TAW if plant else 0.)
     atmosphere.run(cmf.day) 
     return plant
 
@@ -62,6 +68,9 @@ class Res(object):
         self.Dr=[]
         self.TAW=[]
         self.stress=[]
+        self.fc=[]
+        self.wp=[]
+        
         
     def __repr__(self):
         return "Shoot=%gg, Root=%gg, ETc = %gmm, Wateruptake=%gmm, Stress=%s" % (self.shoot_biomass[-1],self.root_biomass[-1],self.ETc[-1],sum(self.water_uptake[-1]),self.stress[-1])
@@ -85,8 +94,8 @@ if __name__=='__main__':
     sowingdate = set(datetime(i,3,1) for i in range(1980,2100))
     harvestdate = set(datetime(i,8,1) for i in range(1980,2100))
     #Simulation period
-    start = datetime(1980,1,1)
-    end = datetime(1980,12,31)
+    start = datetime(1980,3,1)
+    end = datetime(1980,8,1)
     #Simulation
     res = Res()
     plant = None
@@ -95,7 +104,7 @@ if __name__=='__main__':
     atmosphere.t = start
     while atmosphere.t<end:
         plant=run(atmosphere.t,res,plant)
-        print atmosphere.t,res
+       
     print 'Duration:',datetime.now()-start_time
     def showit(a,pos,posmax,**kwargs):
         subplot(posmax,1,pos)
@@ -112,10 +121,7 @@ if __name__=='__main__':
     figtext(.01, .97, ('Rain %4.2f, Radiation %4.2f, Temperature: %4.2f') % (sum(res.rain),sum(res.radiation),sum(res.temperature)))
     figtext(.01, .95, ('ETo %4.2f, ETc %4.2f, transpiration %4.2f, evaporation %4.2f') % (sum(res.ETo),sum(res.ETc),sum(res.transpiration),sum(res.evaporation)))
     figtext(.01, .93, ('Plant biomass %4.2f, Root biomass %4.2f, Shoot biomass %4.2f, LAI %4.2f, Water uptake: %4.2f') % (filter(lambda res: res>0,res.biomass)[-1], filter(lambda res: res>0,res.root_biomass)[-1], filter(lambda res: res>0,res.shoot_biomass)[-1], filter(lambda res: res>0,res.lai)[-1],sum(res.water_uptake)))
-    figtext(.01, .91, ('Emergence %4.2f,Leaf development %4.2f,  Tillering %4.2f, Stem elongation %4.2f, Anthesis %4.2f, Seed fill %4.2f, Dough stage %4.2f, Maturity %4.2f') % (DAS[0],DAS[1],DAS[2],DAS[3],DAS[4],DAS[5],DAS[6],DAS[7]))
-    
-
-   
+    figtext(.01, .91, ('Emergence %4.2f,Leaf development %4.2f,  Tillering %4.2f, Stem elongation %4.2f, Anthesis %4.2f, Seed fill %4.2f, Dough stage %4.2f, Maturity %4.2f') % (DAS[0],DAS[1],DAS[2],DAS[3],DAS[4],DAS[5],DAS[6],DAS[7]))   
     subplot(311)
     plot(res.root_biomass,label="Root")
     plot(res.shoot_biomass,label="Shoot")
@@ -127,10 +133,14 @@ if __name__=='__main__':
     subplot(312)
     plot(res.Dr,label="Depletion")
     plot(res.TAW,label="Total available soil water")
+    plot(res.water_uptake,label='Wateruptake')
     legend(loc=0)
     grid()
     subplot(313)
-    plot(res.stress,label="Water strees")
+    plot(res.ETc,label='ETc')
+    plot(res.ETo,label='ETo')
+    plot(res.evaporation,label='Evaporation')
+    plot(res.transpiration,label='Transpiration')
     legend(loc=0)
     show()
     

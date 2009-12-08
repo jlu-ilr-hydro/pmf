@@ -714,19 +714,26 @@ class Water_FAO:
         #Constant variables
         self.p = average_available_soilwater
         #State variables
-        self.ks=[]
-        self.uptake = 0.
+        self.TAW=0.
+        self.RAW=0.
+        self.Ks=0.
     def __call__(self,rootzone):
         """
         Calculates actual water uptake and contributes the uptake over the layer in the soil profile.
         
         @type rootzone: list
-        @param rootzone: List with centre depth of each layer in  [cm].
+        @param rootzone: List with centre depth of each layer in  [m].
         @rtype: list
         @return: Stress values for each layer in rootzone in [-].
         """
-        RAW = self.waterbalance.TAW * self.p
-        return [self.calc_Ks(self.waterbalance.TAW, self.waterbalance.Dr, RAW, self.p) for z in rootzone]
+        TAW = self.calc_TAW(self.waterbalance.fc, self.waterbalance.wp, self.plant.root.depth/100.)
+        RAW = TAW * self.p
+        Ks = [self.calc_Ks(TAW, self.waterbalance.Dr, RAW, self.p) for z in rootzone]
+        
+        self.TAW=TAW
+        self.RAW=RAW
+        self.Ks=Ks
+        return Ks
     def calc_Ks(self,TAW,Dr,RAW,p):
         """ 
         Calculates transpiration reduction factor
@@ -753,7 +760,9 @@ class Water_FAO:
         
         When the root zone depletion is smaller than RAW, Ks = 1
         """
-        return (TAW-Dr)/((1-p)*TAW) if Dr > RAW else 1.
+        
+        Ks = (TAW-Dr)/((1-p)*TAW) if Dr > RAW else 1.
+        return max(Ks,0.)
     def adjust_p(self,p_table,ETc):
         """ 
         Adjust extractable soil water without stress.
@@ -770,6 +779,26 @@ class Water_FAO:
         @return: Adjusted extractable soil water in [-].
         """
         return p_table + 0.04*(5-ETc)
+    def calc_TAW(self,FC,WP,Zr):
+        """ 
+        Returns total available water in the root zone.
+        
+        The total available water in the root zone is the difference 
+        between the water content at field capacity and wilting point.
+        TAW is the amount of water that a crop can extract from its root zone,
+        and its magnitude depends on the type of soil and the rooting depth
+        
+        @type FC: double 
+        @param FC: Water content at field capacity in [m3 m-3].
+        @type WP: double 
+        @param WP: Water content at wilting point in [m3 m-3].
+        @type Zr: double 
+        @param Zr: Rooting depth in [m] 
+        
+        @rtype: double
+        @return: Total available soil water in the root zone in [mm].
+        """
+        return 1000*(FC-WP)*Zr
 class Water_Feddes:
     """
     Water uptake model based on soil matrixpotential and a crop specific uptake function.

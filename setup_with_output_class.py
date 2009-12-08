@@ -418,7 +418,6 @@ class Output:
             res  = subplot(len(self.results[0]),1,i+1)
             res,  = plot_date(self.delta_time,[res[i] for res in self.results],label = self.labels[i])
             legend(loc=0)
-            
             list.append(res)
         return list
     @property

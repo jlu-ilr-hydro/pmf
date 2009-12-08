@@ -30,7 +30,7 @@ class SWC:
     
     @see: [Allen et al, 1998]
     """
-    def __init__(self,fc=.3,wp=.17,rew=8.,initial_Zr=0.1,Ze=0.1):
+    def __init__(self,fc=.22,wp=.09,rew=8.,initial_Zr=0.1,Ze=0.1):
         """
         Returns a SWC instance from a soil  particle size distribution.
         
@@ -71,9 +71,7 @@ class SWC:
         #Dimensionless evaporation reduction coefficient
         self.kr=0.
        
-        #total available water in the root zone
-        self.TAW = 0.
-        
+
         #fraction of soil surface wetted by irrigation or precipitation; fw = 1. for pcp
         self.fw = 1. 
     @property
@@ -94,15 +92,6 @@ class SWC:
         @return: Revaporation reduction coefficient in [-].
         """
         return self.kr
-    @property
-    def TAW(self):
-        """
-        Returns total available soil water in the root zone.
-        
-        @rtype: double
-        @return: Total available soil water in the root zone in [mm].
-        """
-        return self.TAW
     def get_nutrients(self,depth):
         return 100000
     def __call__(self,ETc,evaporation,rainfall,Zr,runoff=0.,irrigation=0.,capillarrise=0.):
@@ -132,10 +121,9 @@ class SWC:
         @return: -
         """
         #Root zone depletion
-        self.dr = self.calc_WaterBalance(self.dr, rainfall, runoff, irrigation, capillarrise, ETc)
-        #Total available soil watet
-        self.TAW = self.calc_TAW(self.fc, self.wp, Zr)
-        
+        dr = max(self.dr-rainfall,0)
+        dr = self.calc_WaterBalance(dr, rainfall, runoff, irrigation, capillarrise, ETc)
+        self.dr = max(dr,0.)
         #Cumulative depth of evaporation
         self.de = max(self.de-rainfall,0)
         self.de =  self.calc_EvaporationLayer(self.de, rainfall, runoff, irrigation, self.fw, evaporation)
@@ -177,51 +165,8 @@ class SWC:
         @rtype: double
         @return: Cumulative depth of evaporation (depletion) following complete wetting at the end of the day in [mm]
         """
-        #DPe:
         DPe = max(P + I/fw - de,0)
-        #De:
         return de-(P-RO)-(I/fw)+E+Tew+DPe
-    def calc_TAW(self,FC,WP,Zr):
-        """ 
-        Returns total available water in the root zone.
-        
-        The total available water in the root zone is the difference 
-        between the water content at field capacity and wilting point.
-        TAW is the amount of water that a crop can extract from its root zone,
-        and its magnitude depends on the type of soil and the rooting depth
-        
-        @type FC: double 
-        @param FC: Water content at field capacity in [m3 m-3].
-        @type WP: double 
-        @param WP: Water content at wilting point in [m3 m-3].
-        @type Zr: double 
-        @param Zr: Rooting depth in [m] 
-        
-        @rtype: double
-        @return: Total available soil water in the root zone in [mm].
-        """
-        return 1000*(FC-WP)*Zr
-    def calc_RAW(self,p,TAW):
-        """ 
-        Returns he readily available soil water in the root zone.
-        
-        The fraction of TAW that a crop can extract from the root zone 
-        without suffering water stress is the readily available soil water.
-        
-        The factor p differs from one crop to another. The factor p normally varies 
-        from 0.30 for shallow rooted plants at high rates of ETc (> 8 mm d-1) to 0.70
-        for deep rooted plants at low rates of ETc (< 3 mm d-1). A value of 0.50 for 
-        p is commonly used for many crops.  
-          
-        @type p: double
-        @param p: Average fraction of Total Available Soil Water (TAW) that can be depleted from the root zone before moisture stress (reduction in ET) occurs in [-].
-        @type TAW: double
-        @param TAW: Total available soil water in the root zone in [mm].
-        
-        @rtype: double
-        @return: Readily available soil water in [mm].
-        """
-        return p*TAW
     def calc_WaterBalance(self,Dr,P,RO,I,CR,ETc):
         """ 
         Returns root zone depletion at the end of day.
@@ -261,7 +206,8 @@ class SWC:
         @rtype: double
         @return: Root zone depletion at the end of day in [mm].
         """
-        return Dr - (P-RO) - I - CR + ETc + max(P - RO + I - ETc - Dr,0)
+        DP = max(P - RO + I - ETc - Dr,0)
+        return Dr - (P-RO) - I - CR + ETc + DP
     def calc_InitialDepletion(self,FC,q,Zr):
         """ 
         Returns initial depletion.
@@ -282,24 +228,6 @@ class SWC:
         @return: Initial depletion in [mm].
         """
         return 1000*(FC-q)*Zr
-    def calc_soilproperties(self,sand,clay):
-        """ 
-        Returns volumetric water content theta for fieldcapacity and wiltingpoint.
-        
-        @type sand: double
-        @param sand: Sand fraction in the soilprofile in [-].
-        @type clay: double
-        @param clay: Clay fraction in the soilprofile in [-].
-        
-        @rtype: list
-        @return: List with volumetric water content for FC and WP in [m3 m-3].
-            
-        Soil type                    Theta [m3/m3]
-                            FC            WP            FC - WP
-            sand            0.07 - 0.17 0.02 - 0.07 0.05 - 0.11 
-        @todo: water content ausrechen, momentan noch feste werte  
-        """
-        return [0.17,0.07]
     def calc_Kr(self,De,TEW,REW):
         """
         Returns evaporation reduction coefficient.
@@ -339,38 +267,5 @@ class SWC:
         @rtype: double
         @return: Total evaporable water in [mm].
         """
-        return 1000*(FC-0.5*WP)*Ze   
-    def calc_REW(self,soiltype='Sand'):
-        """ 
-        Return REW cumulative depth of evaporation.
-        
-        The cumulative depth of evaporation, De, at the end of stage 1 
-        drying is REW (Readily evaporable water, which is the maximum 
-        depth of water that can be evaporated from the topsoil layer 
-        without restriction during stage 1). The depth normally ranges
-        from 5 to 12 mm and is generally highest for medium and fine 
-        textured soils.
-            
-        @type soiltype: string
-        @param soiltype: USDA soil type.
-        
-        @rtype: double
-        @return: Return REW cumulative depth of evaporation in [mm].
-        """
-        return 7. #sand 2-7 mm
-    def soiltype(self,sand,clay):
-        """
-        Returns usda soiltype.
-        
-        @type sand: double
-        @param sand: Sand fraction in the soilprofile in [-].
-        @type clay: double
-        @param clay: Clay fraction in the soilprofile in [-].
-        
-        @rtype: string
-        @return: USDA soil type.
-        
-        @todo: Calculation of soil type from sand and clay fraction.
-        """
-        return 'Sand'
+        return 1000*(FC-0.5*WP)*Ze
     
