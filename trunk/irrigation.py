@@ -32,10 +32,11 @@ def run(t,res,plant):
     if plant: [p(t,'day',1.) for p in plant]
     
     #swc_fp_interaction
-    ETc_adj = sum(plant[0].Wateruptake)+plant[0].et.evaporation if plant else baresoil.evaporation
+    Wateruptake = sum(plant[0].Wateruptake) if plant else 0.
     evaporation = plant[0].et.evaporation if plant else baresoil.evaporation
     rainfall =c.cell.rain(t)
     Zr = plant[0].root.depth/100. if plant else 0.
+    ETc_adj = Wateruptake + evaporation
     swc_fp(ETc_adj,evaporation,rainfall,Zr)
         
     #cmf_fp_interaction
@@ -129,8 +130,8 @@ if __name__=='__main__':
     sowingdate = set(datetime(i,3,1) for i in range(1980,2100))
     harvestdate = set(datetime(i,8,1) for i in range(1980,2100))
     #Simulation period
-    start = datetime(1980,1,1)
-    end = datetime(1984,12,31)
+    start = datetime(1990,1,1)
+    end = datetime(1995,12,31)
     
     plant = None
     #Runtime loop
@@ -147,18 +148,18 @@ if __name__=='__main__':
         
     def graph_image(max,column,number,data,**kwargs):
         subplot(max,column,number)
-        imshow(transpose(data),aspect='auto',interpolation='nearest',extent=[0,350,200,0],**kwargs)
-        ylim(100,0)
+        imshow(transpose(data),aspect='auto',interpolation='nearest',**kwargs)
         grid()
     
-     
+   
     #Fieldcapacity-concept
     figtext(.2, .96,'Fieldcapacity based approach - FAO')
     figtext(.2, .94,('Shoot %4.2f, Root %4.2f, LAI %4.2f')%(filter(lambda res: res>0,res[0].W_shoot)[-1],filter(lambda res: res>0,res[0].W_root)[-1],filter(lambda res: res>0,res[0].LAI)[-1]))
     graph_plot(4,2,1,res[0].rootdepth,'Rootdepth')
     graph_plot(4,2,3,res[0].stress,label='Stress',color='r')
-    graph_plot(4,2,5,[sum(r)for r in res[0].Sh],label='Wateruptake')
-    #graph_plot(4,2,7,res[0].Dr,label='Dr')
+    ylim(0,1)
+    #graph_plot(4,2,5,[sum(r)for r in res[0].Sh],label='Wateruptake')
+    graph_plot(4,2,5,res[0].W_shoot,label='Shoot biomass')
     subplot(427)
     plot(res[0].Dr,label='Depletion')
     plot(res[0].TAW,label='TAW')
@@ -170,8 +171,10 @@ if __name__=='__main__':
     figtext(.6, .96,'Matrixpotential based appraoch - CMF')
     figtext(.6, .94,('Shoot %4.2f, Root %4.2f, LAI %4.2f')%(filter(lambda res: res>0,res[1].W_shoot)[-1],filter(lambda res: res>0,res[1].W_root)[-1],filter(lambda res: res>0,res[1].LAI)[-1]))
     graph_image(4,2,2,res[1].rootdepth,cmap=cm.Greens)
-    graph_plot(4,2,4,res[1].stress,label='Stress',color='r')         
-    graph_plot(4,2,6,[sum(w) for w in res[1].Sh],label='Wateruptake')  
+    graph_plot(4,2,4,res[1].stress,label='Stress',color='r') 
+    ylim(0,1)        
+    #graph_plot(4,2,6,[sum(w) for w in res[1].Sh],label='Wateruptake')
+    graph_plot(4,2,6,res[1].W_shoot,label='Shoot biomass')  
     graph_image(4,2,8,res[1].Dr,cmap=cm.RdYlBu)
     show()
     """
@@ -198,10 +201,10 @@ if __name__=='__main__':
     legend(loc=0)
     title('Plant-Soil-Interaction')
     ylabel('[mm]')
-    
+    """
     show()
      
-    """    
+    
         
         
         
