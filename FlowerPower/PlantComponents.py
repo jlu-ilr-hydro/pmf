@@ -331,7 +331,9 @@ class Plant:
                 fgi = self.get_fgi(Sh, Tpot, Ra, Rp, NO3dis, H2Odis)
                 
                 root_biomass = self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth
-                self.root(time_step,fgi,root_biomass,self.stress,physical_constraints)
+                vertical_root_growth_stress = self.stress*0.
+                physical_constraints = 1.#self.water([self.root.depth])[0]
+                self.root(time_step,fgi,root_biomass,vertical_root_growth_stress,physical_constraints)
             #Shoot partitioning
             self.shoot(time_step,(self.shoot.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        (self.shoot.leaf.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
