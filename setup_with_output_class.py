@@ -269,7 +269,7 @@ def run(start,end,step):
         time = num2date(t)
             
         #sowing
-        if t in sowingdate: crop=createCrop_LUEconcept(c,c,SummerWheat)
+        if t in sowingdate: crop = FlowerPower.connect(FlowerPower.createPlant_CMF(),c,c)
         #harvest
         if t in harvestdate: FlowerPower.Plant.Count-=1
 
@@ -277,30 +277,13 @@ def run(start,end,step):
         if FlowerPower.Plant.Count > 0: crop(time,'day',1.)
         
         #Water flux from soil to plant
-        c.flux = [uptake*-1. for uptake in crop.water.Uptake] if FlowerPower.Plant.Count >0 else [0]*50
+        c.flux = [uptake*-1. for uptake in crop.Wateruptake] if FlowerPower.Plant.Count >0 else [0]*50
         
-        #Calculates evaporation for bare soil conditions
-        '''
-        A hypothetical reference crop with an assumed crop height of
-        0.12 m, a fixed surface resistance of 70 s m-1 and an albedo of 0.23.
-        '''
-        baresoil(c.Kr(),0.,c.get_Rn(time, 0.12, True),c.get_tmean(time),c.get_es(time),c.get_ea(time),
-                  c.get_windspeed(time), 0.12,0.12,100.,RHmin=30.,h=1.)
-
-        #evaporation from top soil layer
-        c.flux[0] += crop.et.evaporation if FlowerPower.Plant.Count >0 else baresoil.evaporation
         
         #Calculation of water balance with cmf
         c.run(cmf.day)
         
-        #Calculation of water balance with FAO model
-        ETc = crop.et.Cropspecific if FlowerPower.Plant.Count >0 else 0.
-        evaporation = crop.et.evaporation if FlowerPower.Plant.Count >0 else baresoil.evaporation
-        rainfall = c.cell.rain(time)
-        Zr = crop.root.depth if FlowerPower.Plant.Count > 0 else 0.
-        swc(ETc,evaporation,rainfall,Zr,runoff=0.,irrigation=0.,capillarrise=0.)
         
-        '''
         #Save results for each element from output
         for i,out in enumerate(output):
             #Call plant only if plant exists
@@ -318,7 +301,7 @@ def run(start,end,step):
                 #Draw a dynamic plot, if True
                 if out.dynamic == True:
                     out.DynamicPlot
-        '''
+        
         
         
 class Output:
@@ -403,14 +386,14 @@ class Output:
             ylabel(self.labels[i])
         list.append(res)
         return list
-        """
+        
         for i in range(len(self.results[0])):
             res  = subplot(len(self.results[0]),1,i+1)
             res, = imshow(transpose([res[i] for res in self.results]),cmap=cm.RdYlBu,aspect='auto')
             colorbar()
             grid()
             ylabel(self.labels[i])
-        """
+        
     @property
     def Plot(self):
         list = []
@@ -440,18 +423,12 @@ if __name__=='__main__':
     c = cmf1d(sand=90,silt=0,clay=10,c_org=2.0,layercount=20,layerthickness=.1)
     c.cell.saturated_depth=5
     res=[]
-    #Create swc instance
-    swc = FlowerPower.SWC(sand=.9,clay=.1,initial_Zr=0.1,Ze=0.1)
     
-    #Create evapotranspiration instance or bare soil conditions
-    baresoil = FlowerPower.ProcessLibrary.ET_FAO([0.,0.,0.,0.],[0.,0.,0.,0.],kcmin = 0.)
     
     #Load meteological data
     load_meteo(c.project,stationname='Giessen')
     
-    #Crop parameter
-    SummerWheat = getCropSpecificParameter('SummerWheat')
-    
+
     #set management
     sowingdate = [date2num(d) for d in [datetime(1980,3,1),datetime(1981,3,1),datetime(1982,3,1),
                  datetime(1983,3,1),datetime(1984,3,1)]]
@@ -464,13 +441,14 @@ if __name__=='__main__':
     
     #timestep = daily
     step = timedelta(1)
-    '''
+    
     #Initialise output classes whith labels for each parameter
-    output = [Output(['water uptake'],start,end,step)]
+    output = [Output(['Wateruptake'],start,end,step,dynamic=True)]
     
     #Set FlowerPower call function for each parameter in output
-    flowerpower_params =[['crop.water.Uptake']]
-    '''
+    flowerpower_params =[['sum(crop.Wateruptake)']]
+    
     #run simulation
-    run(start,end,step)
+    #run(start,end,step)
+
     

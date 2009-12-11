@@ -62,7 +62,8 @@ def run(t,res,plant):
             res[i].Sh.append(p.Wateruptake)
             res[i].T.append(p.et.transpiration)
             res[i].E.append(p.et.evaporation)
-            res[i].stress.append(p.water_stress)            
+            res[i].stress.append(p.water_stress)
+            
     else:
         res[0].TAW.append(0.)
         res[0].RAW.append(0.)
@@ -77,11 +78,12 @@ def run(t,res,plant):
             r.E.append(0.)
             r.stress.append(0.)
             
+ 
     c.run(cmf.day)
     return plant
 
 
-class Res():
+class Results():
     def __init__(self):
         self.W_shoot=[]
         self.W_root=[]
@@ -95,10 +97,9 @@ class Res():
         self.RAW=[]
         self.Dr=[]
         self.rain=[]
+        
     def __repr__(self):
         return "Shoot = %gg, Root =% gg, LAI = %gm2/m2, Wateruptake =% gmm, T = %gmm, E = %gmm, Stress = %g" % (self.W_shoot[-1],self.W_root[-1],self.LAI[-1],sum(self.Sh[-1]),self.T[-1],self.E[-1],self.stress[-1])
-
-
 
 if __name__=='__main__':
     from pylab import *
@@ -108,10 +109,11 @@ if __name__=='__main__':
     from cmf_setup import cmf1d
     from cmf_fp_interface import cmf_fp_interface
     import psyco
+    import time
     psyco.full()
     
-    r1=Res()
-    r2=Res()
+    r1=Results()
+    r2=Results()
     res = [r1,r2]
     
     #Create Evaporation modul
@@ -130,81 +132,122 @@ if __name__=='__main__':
     sowingdate = set(datetime(i,3,1) for i in range(1980,2100))
     harvestdate = set(datetime(i,8,1) for i in range(1980,2100))
     #Simulation period
-    start = datetime(1990,1,1)
-    end = datetime(1995,12,31)
+    start = datetime(1980,3,1)
+    end = datetime(1984,8,31)
     
+    
+    
+    
+    """
+    def build_cinema(duration,ymax,**kwargs):
+        #hold(False)
+        ion()
+        line, = plot(zeros(duration),**kwargs)
+        ylim(0,ymax)
+        return line
+    def make_show(line, dat):
+        line.set_ydata(dat)
+        draw()
+        return line
+    
+    duration = end-start
+    shoot_data = [0.for i in range(duration.days)]
+    shoot_line=build_cinema(duration.days,1000)
+    i=0
+    """
     plant = None
-    #Runtime loop
     c.t = start
     while c.t<end:
         plant=run(c.t,res,plant)
-        print c.t
-
-    def graph_plot(max,column,number,data,label,**kwargs):
-        subplot(max,column,number)
-        plot(data,label=label,**kwargs)
-        legend(loc=0)
-        grid()
         
-    def graph_image(max,column,number,data,**kwargs):
-        subplot(max,column,number)
-        imshow(transpose(data),aspect='auto',interpolation='nearest',**kwargs)
-        grid()
-    
+        #shoot_data[i] += res[0].W_shoot[-1]
+        #shoot_line = make_show(shoot_line,shoot_data)
+        #i+=1
+        
+        print c.t
    
-    #Fieldcapacity-concept
-    figtext(.2, .96,'Fieldcapacity based approach - FAO')
-    figtext(.2, .94,('Shoot %4.2f, Root %4.2f, LAI %4.2f')%(filter(lambda res: res>0,res[0].W_shoot)[-1],filter(lambda res: res>0,res[0].W_root)[-1],filter(lambda res: res>0,res[0].LAI)[-1]))
-    graph_plot(4,2,1,res[0].rootdepth,'Rootdepth')
-    graph_plot(4,2,3,res[0].stress,label='Stress',color='r')
-    ylim(0,1)
-    #graph_plot(4,2,5,[sum(r)for r in res[0].Sh],label='Wateruptake')
-    graph_plot(4,2,5,res[0].W_shoot,label='Shoot biomass')
-    subplot(427)
-    plot(res[0].Dr,label='Depletion')
-    plot(res[0].TAW,label='TAW')
-    plot(res[0].RAW,label='RAW')
-    legend(loc=0)
-    grid()
+
+
+def graph_plot(a,b,c,data,**kwargs):
+    subplot(a,b,c)
+    plot(data,**kwargs)
     
-    #Matrixpotential-concept
-    figtext(.6, .96,'Matrixpotential based appraoch - CMF')
-    figtext(.6, .94,('Shoot %4.2f, Root %4.2f, LAI %4.2f')%(filter(lambda res: res>0,res[1].W_shoot)[-1],filter(lambda res: res>0,res[1].W_root)[-1],filter(lambda res: res>0,res[1].LAI)[-1]))
-    graph_image(4,2,2,res[1].rootdepth,cmap=cm.Greens)
-    graph_plot(4,2,4,res[1].stress,label='Stress',color='r') 
-    ylim(0,1)        
-    #graph_plot(4,2,6,[sum(w) for w in res[1].Sh],label='Wateruptake')
-    graph_plot(4,2,6,res[1].W_shoot,label='Shoot biomass')  
-    graph_image(4,2,8,res[1].Dr,cmap=cm.RdYlBu)
-    show()
-    """
-    timeline = drange(start,end,timedelta(1))
     
-    subplot(311)
-    plot_date(timeline,res[0].W_shoot,'b',label='FAO - biomass')
-    plot_date(timeline,res[1].W_shoot,'r',label='CMF - biomass')
-    legend(loc=0)
-    title('Crop growth')
-    ylabel('[g/m2]')
-    
-    subplot(312)
-    plot_date(timeline,res[0].stress,'b',label='FAO - Droughtstress')
-    plot_date(timeline,res[1].stress,'r',label='CMF - Droughtstress')
-    legend(loc=0)
-    title('Stress influence')
-    ylabel('[-]')
-    ylim(0,1)
-    
-    subplot(313)
-    plot_date(timeline,[sum(w) for w in res[0].Sh],'b',label='FAO - Wateruptake')
-    plot_date(timeline,[sum(w) for w in res[1].Sh],'r',label='CMF - Wateruptake')
-    legend(loc=0)
-    title('Plant-Soil-Interaction')
-    ylabel('[mm]')
-    """
-    show()
-     
-    
+def graph_image(a,b,c,data,**kwargs):
+    subplot(a,b,c)
+    imshow(transpose(data),aspect='auto',interpolation='nearest',**kwargs)
+"""
+figtext(.2, .96,'Fieldcapacity based approach - FAO')
+figtext(.2, .94,('Shoot %4.2f, Root %4.2f, LAI %4.2f')%(filter(lambda res: res>0,res[0].W_shoot)[-1],filter(lambda res: res>0,res[0].W_root)[-1],filter(lambda res: res>0,res[0].LAI)[-1]))
+graph_plot(3,2,1,res[0].W_shoot,label='Shoot biomass')
+graph_plot(3,2,3,res[0].rootdepth,label='Rootdepth')
+subplot(325)
+plot(res[0].Dr,label='Depletion')
+plot(res[0].TAW,label='TAW')
+plot(res[0].RAW,label='RAW')
+legend(loc=0)
+grid()
+figtext(.6, .96,'Matrixpotential based appraoch - CMF')
+figtext(.6, .94,('Shoot %4.2f, Root %4.2f, LAI %4.2f')%(filter(lambda res: res>0,res[1].W_shoot)[-1],filter(lambda res: res>0,res[1].W_root)[-1],filter(lambda res: res>0,res[1].LAI)[-1]))
+graph_plot(3,2,2,res[1].W_shoot,label='Shoot biomass') 
+graph_image(3,2,4,res[1].rootdepth,cmap=cm.Greens) 
+graph_image(3,2,6,res[1].Dr,cmap=cm.RdYlBu)
+show()
+"""
+
+"""
+#Fieldcapacity-concept
+figtext(.2, .96,'Fieldcapacity based approach - FAO')
+figtext(.2, .94,('Shoot %4.2f, Root %4.2f, LAI %4.2f')%(filter(lambda res: res>0,res[0].W_shoot)[-1],filter(lambda res: res>0,res[0].W_root)[-1],filter(lambda res: res>0,res[0].LAI)[-1]))
+graph_plot(4,2,1,res[0].rootdepth,'Rootdepth')
+graph_plot(4,2,3,res[0].stress,label='Stress',color='r')
+ylim(0,1)
+#graph_plot(4,2,5,[sum(r)for r in res[0].Sh],label='Wateruptake')
+graph_plot(4,2,5,res[0].W_shoot,label='Shoot biomass')
+subplot(427)
+plot(res[0].Dr,label='Depletion')
+plot(res[0].TAW,label='TAW')
+plot(res[0].RAW,label='RAW')
+legend(loc=0)
+grid()
+#Matrixpotential-concept
+figtext(.6, .96,'Matrixpotential based appraoch - CMF')
+figtext(.6, .94,('Shoot %4.2f, Root %4.2f, LAI %4.2f')%(filter(lambda res: res>0,res[1].W_shoot)[-1],filter(lambda res: res>0,res[1].W_root)[-1],filter(lambda res: res>0,res[1].LAI)[-1]))
+graph_image(4,2,2,res[1].rootdepth,cmap=cm.Greens)
+graph_plot(4,2,4,res[1].stress,label='Stress',color='r') 
+ylim(0,1)        
+#graph_plot(4,2,6,[sum(w) for w in res[1].Sh],label='Wateruptake')
+graph_plot(4,2,6,res[1].W_shoot,label='Shoot biomass')  
+graph_image(4,2,8,res[1].Dr,cmap=cm.RdYlBu)
+show()
+"""
+
+
+
+
+timeline = drange(start,end,timedelta(1))
+subplot(311)
+#plot_date(timeline,res[0].W_shoot,'b',label='FAO - biomass')
+plot_date(timeline,res[1].W_shoot,'r',label='CMF - biomass')
+legend(loc=0)
+title('Crop growth')
+ylabel('[g/m2]')
+subplot(312)
+#plot_date(timeline,res[0].stress,'b',label='FAO - Droughtstress')
+plot_date(timeline,res[1].stress,'r',label='CMF - Droughtstress')
+legend(loc=0)
+title('Stress influence')
+ylabel('[-]')
+ylim(0,1)
+subplot(313)
+#plot_date(timeline,[sum(w) for w in res[0].Sh],'b',label='FAO - Wateruptake')
+plot_date(timeline,[sum(w) for w in res[1].Sh],'r',label='CMF - Wateruptake')
+legend(loc=0)
+title('Plant-Soil-Interaction')
+ylabel('[mm]')
+
+show()  
+ 
         
         
         
