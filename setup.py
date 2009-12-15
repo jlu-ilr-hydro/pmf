@@ -22,7 +22,7 @@ def run(t,res,plant):
         plant_swc = FlowerPower.connect(FlowerPower.createPlant_SWC(),swc_fp,cmf_fp)
         plant_cmf = FlowerPower.connect(FlowerPower.createPlant_CMF(),cmf_fp,cmf_fp)
         plant = [plant_swc,plant_cmf]
-    if t.day==1 and t.month==8:
+    if t.day==1 and t.month==8:           
         plant = None  
         
     #Calculates evaporation for bare soil conditions
@@ -49,6 +49,7 @@ def run(t,res,plant):
     res[1].Dr.append(c.wetness)
     res[0].Dr.append(swc_fp.Dr)
     res[0].rain.append(c.cell.rain(t)) 
+    res[0].radiation.append(c.get_Rn(t, 0.12, True))
     #Results
     if plant:
         res[0].TAW.append(plant[0].water.TAW)
@@ -103,6 +104,8 @@ class Results():
         self.rain=[]
         self.W_potential=[]
         self.rootdepth_pot=[]
+        self.radiation=[]
+        
         
     def __repr__(self):
         return "Shoot = %gg, Root =% gg, LAI = %gm2/m2, Wateruptake =% gmm, T = %gmm, E = %gmm, Stress = %g" % (self.W_shoot[-1],self.W_root[-1],self.LAI[-1],sum(self.Sh[-1]),self.T[-1],self.E[-1],self.stress[-1])
@@ -229,23 +232,23 @@ show()
 """
 
 
-
+"""
 
 timeline = drange(start,end,timedelta(1))
 subplot(311)
-#plot_date(timeline,[r + res[0].W_root[i] for i,r in enumerate(res[0].W_shoot)],'g',label='Actual')
-#plot_date(timeline,res[0].W_potential,'k--',label='Potential')
-plot_date(timeline,[r + res[1].W_root[i] for i,r in enumerate(res[1].W_shoot)],'b',label='Actual')
-plot_date(timeline,res[1].W_potential,'k--',label='Potential')
+plot_date(timeline,[r + res[0].W_root[i] for i,r in enumerate(res[0].W_shoot)],'g',label='Actual')
+plot_date(timeline,res[0].W_potential,'k--',label='Potential')
+#plot_date(timeline,[r + res[1].W_root[i] for i,r in enumerate(res[1].W_shoot)],'b',label='Actual')
+#plot_date(timeline,res[1].W_potential,'k--',label='Potential')
 legend(loc=0)
 title('Biomass')
 ylabel('[g/m2]')
 
 subplot(312)
-#plot_date(timeline,[-r for r in res[0].rootdepth],'g',label='Actual')
-#plot_date(timeline,[-r for r in res[0].rootdepth_pot],'k--',label='Potential')
-plot_date(timeline,[-r for r in res[1].rootdepth],'b',label='Actual')
-plot_date(timeline,[-r for r in res[1].rootdepth_pot],'k--',label='Potential')
+plot_date(timeline,[-r for r in res[0].rootdepth],'g',label='Actual')
+plot_date(timeline,[-r for r in res[0].rootdepth_pot],'k--',label='Potential')
+#plot_date(timeline,[-r for r in res[1].rootdepth],'b',label='Actual')
+#plot_date(timeline,[-r for r in res[1].rootdepth_pot],'k--',label='Potential')
 legend(loc=0)
 title('Rooting depth')
 ylabel('[cm]')
@@ -278,7 +281,24 @@ plot_date(t,cumTpotCMF,'k--',label='Potential')
 legend(loc=0)
 title('Transpiration')
 ylabel('[mm]')
+"""
+rain=[0.]
+for i,r in enumerate(res[0].rain):
+    rain.append(rain[-1]+r)
 
+radiation=[0.]
+for i in res[0].radiation:
+    radiation.append(radiation[-1]+sum(i))
+    
+    
+timeline = drange(start,end,timedelta(1))
+t = drange(start,end+timedelta(1),timedelta(1))
+subplot(211)
+plot_date(t,radiation,'r',label='Radiation')
+legend(loc=0)
+subplot(212)
+plot_date(t,rain,'b',label='Rain')
+legend(loc=0)
 show()  
  
         

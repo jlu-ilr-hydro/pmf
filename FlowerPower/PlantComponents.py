@@ -65,6 +65,7 @@ class Plant:
                  max_height = 1.,
                  stress_adaption=1.,
                  carbonfraction=.4,
+                 max_depth=150.,
                  soil=None,atmosphere=None):        
         """
         Returns plant instance. The plant instance holds the other plant structural classes root and 
@@ -138,7 +139,7 @@ class Plant:
        
         #Implemetation of root and shoot class
         
-        self.root=Root(self,root_percent,root_growth,layer)
+        self.root=Root(self,root_percent,root_growth,max_depth,layer)
         self.shoot=Shoot(self,leaf_specific_weight,self.developmentstage[4][1],shoot_percent,leaf_percent,stem_percent,storage_percent,
                          max_height,elongation_end=self.developmentstage[3][1])
         
@@ -547,7 +548,7 @@ class Root:
     
     @todo: Root elongation mit alpha Wert verknuepfen
     """
-    def __init__(self,plant,percent,root_growth,layer):
+    def __init__(self,plant,percent,root_growth,max_depth,layer):
         """
         Returns a root instance and creates a rootingzone from the soilprofile.
         
@@ -568,7 +569,7 @@ class Root:
         #Constant variables
         self.elong=root_growth
         self.percent=percent
-        
+        self.max_depth=max_depth
         #State variables updated in every timestep
         #Rootingdepth
         self.depth=1.
@@ -603,6 +604,8 @@ class Root:
         #Calculate actual rooting depth, restricted by plant stress and soil resistance 
         self.potential_depth = self.potential_depth + self.elong
         self.depth=self.depth+self.elong*physical_constraints*(1-stress)*step
+        if self.depth>self.max_depth:
+            self.depth=self.max_depth
         #Calculate toal biomass
         self.growth = biomass*step
         self.Wtot=self.Wtot+biomass*step
