@@ -331,8 +331,8 @@ class Plant:
                 fgi = self.get_fgi(Sh, Tpot, Ra, Rp, NO3dis, H2Odis)
                 
                 root_biomass = self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth
-                vertical_root_growth_stress = self.stress*0.
-                physical_constraints = 1.#self.water([self.root.depth])[0]
+                vertical_root_growth_stress = self.stress
+                physical_constraints = self.water([self.root.depth])[0]
                 self.root(time_step,fgi,root_biomass,vertical_root_growth_stress,physical_constraints)
             #Shoot partitioning
             self.shoot(time_step,(self.shoot.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
@@ -578,6 +578,7 @@ class Root:
         #Rootingzone
         self.zone=layer
         #Biomass allocation over the rootingzone
+        self.potential_depth=0.
         self.branching=[0. for l in self.zone]
         
         self.actual_distribution = [0. for l in self.zone]
@@ -600,6 +601,7 @@ class Root:
         #FeelingGoodIndex
         
         #Calculate actual rooting depth, restricted by plant stress and soil resistance 
+        self.potential_depth = self.potential_depth + self.elong
         self.depth=self.depth+self.elong*physical_constraints*(1-stress)*step
         #Calculate toal biomass
         self.growth = biomass*step

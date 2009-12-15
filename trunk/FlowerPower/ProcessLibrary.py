@@ -1053,6 +1053,7 @@ class Biomass_LUE:
         #State variables
         self.total=0.
         self.growthrate=0.
+        self.pot_total=0.
     @property
     def PotentialGrowth(self):
         """
@@ -1098,6 +1099,7 @@ class Biomass_LUE:
         self.stress = stress
         self.growthrate = self.PAR_a(Rs, self.intercept(LAI, self.k))* self.rue
         self.total = self.total + self.growthrate * (1-self.stress) * step
+        self.pot_total = self.pot_total + self.growthrate
     def PAR_a(self,Rs,interception):
         """ 
         Returns photosynthetically active absorbed radiation

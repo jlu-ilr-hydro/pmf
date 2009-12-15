@@ -53,8 +53,8 @@ def run(t,res,plant):
     if plant:
         res[0].TAW.append(plant[0].water.TAW)
         res[0].RAW.append(plant[0].water.RAW)
-        res[0].rootdepth.append(-plant[0].root.depth)
-        res[1].rootdepth.append(plant[1].root.branching)
+        res[0].rootdepth.append(plant[0].root.depth)
+        res[1].rootdepth.append(plant[1].root.depth)#res[1].rootdepth.append(plant[1].root.branching)
         for i,p in enumerate(plant):
             res[i].W_shoot.append(p.shoot.Wtot)
             res[i].W_root.append(p.root.Wtot)
@@ -63,12 +63,14 @@ def run(t,res,plant):
             res[i].T.append(p.et.transpiration)
             res[i].E.append(p.et.evaporation)
             res[i].stress.append(p.water_stress)
+            res[i].W_potential.append(p.biomass.pot_total)
+            res[i].rootdepth_pot.append(p.root.potential_depth)
             
     else:
         res[0].TAW.append(0.)
         res[0].RAW.append(0.)
         res[0].rootdepth.append(0)
-        res[1].rootdepth.append(zeros(c.cell.layer_count()))
+        res[1].rootdepth.append(1)#res[1].rootdepth.append(zeros(c.cell.layer_count()))
         for r in res:
             r.W_shoot.append(0.)
             r.W_root.append(0.)
@@ -77,6 +79,8 @@ def run(t,res,plant):
             r.T.append(0.)
             r.E.append(0.)
             r.stress.append(0.)
+            r.W_potential.append(0.)
+            r.rootdepth_pot.append(0.)
             
  
     c.run(cmf.day)
@@ -97,6 +101,8 @@ class Results():
         self.RAW=[]
         self.Dr=[]
         self.rain=[]
+        self.W_potential=[]
+        self.rootdepth_pot=[]
         
     def __repr__(self):
         return "Shoot = %gg, Root =% gg, LAI = %gm2/m2, Wateruptake =% gmm, T = %gmm, E = %gmm, Stress = %g" % (self.W_shoot[-1],self.W_root[-1],self.LAI[-1],sum(self.Sh[-1]),self.T[-1],self.E[-1],self.stress[-1])
@@ -121,7 +127,7 @@ if __name__=='__main__':
     
     #Create cmf cell    
     c=cmf1d(sand=20,silt=60,clay=20,c_org=2.0,bedrock_K=0.01,layercount=20,layerthickness=0.1)
-    c.load_meteo(rain_factor=1.)
+    c.load_meteo(rain_factor=1)
     cmf_fp = cmf_fp_interface(c.cell)
     c.cell.saturated_depth=5.
     
@@ -227,23 +233,50 @@ show()
 
 timeline = drange(start,end,timedelta(1))
 subplot(311)
-#plot_date(timeline,res[0].W_shoot,'b',label='FAO - biomass')
-plot_date(timeline,res[1].W_shoot,'r',label='CMF - biomass')
+#plot_date(timeline,[r + res[0].W_root[i] for i,r in enumerate(res[0].W_shoot)],'g',label='Actual')
+#plot_date(timeline,res[0].W_potential,'k--',label='Potential')
+plot_date(timeline,[r + res[1].W_root[i] for i,r in enumerate(res[1].W_shoot)],'b',label='Actual')
+plot_date(timeline,res[1].W_potential,'k--',label='Potential')
 legend(loc=0)
-title('Crop growth')
+title('Biomass')
 ylabel('[g/m2]')
+
 subplot(312)
-#plot_date(timeline,res[0].stress,'b',label='FAO - Droughtstress')
-plot_date(timeline,res[1].stress,'r',label='CMF - Droughtstress')
+#plot_date(timeline,[-r for r in res[0].rootdepth],'g',label='Actual')
+#plot_date(timeline,[-r for r in res[0].rootdepth_pot],'k--',label='Potential')
+plot_date(timeline,[-r for r in res[1].rootdepth],'b',label='Actual')
+plot_date(timeline,[-r for r in res[1].rootdepth_pot],'k--',label='Potential')
 legend(loc=0)
-title('Stress influence')
-ylabel('[-]')
-ylim(0,1)
+title('Rooting depth')
+ylabel('[cm]')
+
+cumTpotFAO=[0.]
+for i,r in enumerate(res[0].T):
+    cumTpotFAO.append(cumTpotFAO[-1]+r)
+
+cumTactFAO=[0.]
+for i in res[0].Sh:
+    cumTactFAO.append(cumTactFAO[-1]+sum(i))
+    
+cumTpotCMF=[0.]
+for i,r in enumerate(res[1].T):
+    cumTpotCMF.append(cumTpotCMF[-1]+r)
+
+cumTactCMF=[0.]
+for i in res[1].Sh:
+    cumTactCMF.append(cumTactCMF[-1]+sum(i))
+
+t = drange(start,end+timedelta(1),timedelta(1))
 subplot(313)
-#plot_date(timeline,[sum(w) for w in res[0].Sh],'b',label='FAO - Wateruptake')
-plot_date(timeline,[sum(w) for w in res[1].Sh],'r',label='CMF - Wateruptake')
+plot_date(t,cumTactCMF,'b',label='Actual')
+plot_date(t,cumTpotCMF,'k--',label='Potential')
+
+#plot_date(timeline,[sum(w) for w in res[1].Sh],'b',label='Actual')
+#plot_date(timeline,res[1].T,'k--',label='Potential')
+#plot_date(timeline,[sum(w) for w in res[0].Sh],'g',label='Actual Transpiration')
+#plot_date(timeline,res[0].T,'k--',label='Potential')
 legend(loc=0)
-title('Plant-Soil-Interaction')
+title('Transpiration')
 ylabel('[mm]')
 
 show()  
