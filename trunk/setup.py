@@ -42,6 +42,13 @@ def run(t,res,plant):
     #cmf_fp_interaction
     flux = [uptake*-1. for uptake in plant[1].Wateruptake] if plant  else zeros(c.cell.layer_count())
     flux[0] -= plant[1].et.evaporation if plant else baresoil.evaporation
+    
+    #influences through lateral flow
+    if t.day>=1  and t.month==4 or t.month==5:
+        flux[0]-=1
+        flux[1]-=1
+        flux[2]-=1
+  
     c.flux=flux
     
    
@@ -55,7 +62,9 @@ def run(t,res,plant):
         res[0].TAW.append(plant[0].water.TAW)
         res[0].RAW.append(plant[0].water.RAW)
         res[0].rootdepth.append(plant[0].root.depth)
-        res[1].rootdepth.append(plant[1].root.depth)#res[1].rootdepth.append(plant[1].root.branching)
+        res[1].rootdepth.append(plant[1].root.branching)
+        res[1].root_growth.append(plant[1].root.actual_distribution)
+        
         for i,p in enumerate(plant):
             res[i].W_shoot.append(p.shoot.Wtot)
             res[i].W_root.append(p.root.Wtot)
@@ -66,23 +75,31 @@ def run(t,res,plant):
             res[i].stress.append(p.water_stress)
             res[i].W_potential.append(p.biomass.pot_total)
             res[i].rootdepth_pot.append(p.root.potential_depth)
-            
+            res[i].W_leaf.append(p.shoot.leaf.Wtot)
+            res[i].W_stem.append(p.shoot.stem.Wtot)
+            res[i].W_storage.append(p.shoot.storage_organs.Wtot)
+           
     else:
         res[0].TAW.append(0.)
         res[0].RAW.append(0.)
         res[0].rootdepth.append(0)
-        res[1].rootdepth.append(1)#res[1].rootdepth.append(zeros(c.cell.layer_count()))
+        res[1].rootdepth.append(zeros(c.cell.layer_count()))
+        res[1].root_growth.append(zeros(c.cell.layer_count()))
+        res[0].Sh.append(0.)
+        res[1].Sh.append(zeros(c.cell.layer_count()))
         for r in res:
             r.W_shoot.append(0.)
             r.W_root.append(0.)
             r.LAI.append(0.)
-            r.Sh.append(0.)
+            
             r.T.append(0.)
             r.E.append(0.)
             r.stress.append(0.)
             r.W_potential.append(0.)
             r.rootdepth_pot.append(0.)
-            
+            r.W_leaf.append(0.)
+            r.W_stem.append(0.)
+            r.W_storage.append(0.)
  
     c.run(cmf.day)
     return plant
@@ -92,6 +109,9 @@ class Results():
     def __init__(self):
         self.W_shoot=[]
         self.W_root=[]
+        self.W_leaf=[]
+        self.W_stem=[]
+        self.W_storage=[]
         self.rootdepth=[]
         self.LAI=[]
         self.Sh=[]
@@ -105,6 +125,7 @@ class Results():
         self.W_potential=[]
         self.rootdepth_pot=[]
         self.radiation=[]
+        self.root_growth=[]
         
         
     def __repr__(self):
@@ -129,8 +150,8 @@ if __name__=='__main__':
     baresoil = FlowerPower.ProcessLibrary.ET_FAO([0.,0.,0.,0.],[0.,0.,0.,0.],kcmin = 0.)
     
     #Create cmf cell    
-    c=cmf1d(sand=20,silt=60,clay=20,c_org=2.0,bedrock_K=0.01,layercount=20,layerthickness=0.1)
-    c.load_meteo(rain_factor=1)
+    c=cmf1d()
+    c.load_meteo(rain_factor=.75)
     cmf_fp = cmf_fp_interface(c.cell)
     c.cell.saturated_depth=5.
     
@@ -142,7 +163,7 @@ if __name__=='__main__':
     harvestdate = set(datetime(i,8,1) for i in range(1980,2100))
     #Simulation period
     start = datetime(1980,3,1)
-    end = datetime(1984,8,31)
+    end = datetime(1980,8,31)
     
     
     
@@ -185,6 +206,42 @@ def graph_plot(a,b,c,data,**kwargs):
 def graph_image(a,b,c,data,**kwargs):
     subplot(a,b,c)
     imshow(transpose(data),aspect='auto',interpolation='nearest',**kwargs)
+
+
+ax1=subplot(311)
+ax2=subplot(312)
+ax3=subplot(313)
+
+subplot(311)
+imshow(transpose([r[:20] for r in res[1].rootdepth]),cmap=cm.Greens,aspect='auto',interpolation='nearest',extent=[60,200,100,0])
+ylabel('Depth [cm]')
+xlabel('Day of year')
+colorbar()
+subplot(312)
+imshow(transpose([r[:20] for r in res[1].root_growth]),cmap=cm.Greens,aspect='auto',interpolation='nearest',extent=[60,200,100,0])
+ylabel('Depth [cm]')
+xlabel('Day of year')
+colorbar()
+subplot(313)
+imshow(transpose([r[:20] for r in res[1].Sh]),cmap=cm.Blues,aspect='auto',interpolation='nearest',extent=[60,200,100,0])
+ylabel('Depth [cm]')
+xlabel('Day of year')
+colorbar()
+
+"""
+timeline = drange(start,end,timedelta(1))
+graph_image(3,1,1,[r[:15] for r in res[1].Dr],cmap=cm.Greys,vmax=1,vmin=0)
+ylabel('Depth in [cm]') 
+subplot(312)
+plot_date(timeline,res[1].stress,label='Droughtstress')
+ylabel('Stress index')
+legend(loc=0)
+graph_image(3,1,3,[r[:15] for r in res[1].rootdepth],cmap=cm.Greys,vmax=10,vmin=0)
+ylabel('Depth in [cm]')
+
+"""
+
+
 """
 figtext(.2, .96,'Fieldcapacity based approach - FAO')
 figtext(.2, .94,('Shoot %4.2f, Root %4.2f, LAI %4.2f')%(filter(lambda res: res>0,res[0].W_shoot)[-1],filter(lambda res: res>0,res[0].W_root)[-1],filter(lambda res: res>0,res[0].LAI)[-1]))
@@ -282,6 +339,7 @@ legend(loc=0)
 title('Transpiration')
 ylabel('[mm]')
 """
+"""
 rain=[0.]
 for i,r in enumerate(res[0].rain):
     rain.append(rain[-1]+r)
@@ -299,6 +357,7 @@ legend(loc=0)
 subplot(212)
 plot_date(t,rain,'b',label='Rain')
 legend(loc=0)
+"""
 show()  
  
         
