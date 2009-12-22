@@ -583,6 +583,7 @@ class Root:
         self.branching=[0. for l in self.zone]
         
         self.actual_distribution = [0. for l in self.zone]
+        self.fgi = [0. for l in self.zone]
         
     def __call__(self,step,fgi,biomass,stress,physical_constraints):
         """
@@ -611,8 +612,8 @@ class Root:
         self.Wtot=self.Wtot+biomass*step
         #Allocate actual growth between the layers in the rooting zone
         self.branching=self.allocate(self.branching, biomass, fgi)
-        self.actual_distribution = fgi#[index*biomass for index in fgi]
-        
+        self.actual_distribution = [index*biomass for index in fgi]
+        self.fgi =  fgi
         
     def allocate(self,distr,biomass,fgi):
         """

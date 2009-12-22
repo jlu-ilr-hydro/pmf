@@ -673,7 +673,7 @@ class ET_FAO:
         @return: Effective fraction of soil surface covered by vegetation in [-].
         """ 
         return min(LAI / fullcover,1.)
-class Water_FAO:
+class Waterstress_FAO:
     """
     Simple water uptake model which computes water uptake under stressed condtionins.
     
@@ -694,14 +694,14 @@ class Water_FAO:
     
     Call signature
     ==============
-    Water_FAO calculates the wateruptake under stressed pr no stressed
+    Waterstress_FAO calculates the wateruptake under stressed pr no stressed
     conditions for a given soilprofile or rootingzone.
     
     @see: [Allen et al, 1998]
     """
     def __init__(self,waterbalance=None,plant=None,average_available_soilwater=0.5):
         """
-        Returns a Water_FAO instance.
+        Returns a Waterstress_FAO instance.
         
         @type average_available_soilwater: double
         @param average_available_soilwater:  fraction of TAW that a crop can extract from the root zone without suffering water stress in [-].
@@ -799,7 +799,7 @@ class Water_FAO:
         @return: Total available soil water in the root zone in [mm].
         """
         return 1000*(FC-WP)*Zr
-class Water_Feddes:
+class Waterstress_Feddes:
     """
     Water uptake model based on soil matrixpotential and a crop specific uptake function.
     
@@ -819,7 +819,7 @@ class Water_Feddes:
     
     Implementation
     ==============
-    Water_Feddes must be implementeed with the maxcom parameter,
+    Waterstress_Feddes must be implementeed with the maxcom parameter,
     which is defined from the user.
     
     Call signature
@@ -831,7 +831,7 @@ class Water_Feddes:
     """
     def __init__(self,waterbalance=None,plant=None,maxcomp=2.,layercount=41):
         """
-        Returns a Water_Feddes instance.
+        Returns a Waterstress_Feddes instance.
         
         @type maxcomp: double
         @param maxcomp: Maximal compensation capacity factor in [-].
@@ -839,7 +839,7 @@ class Water_Feddes:
         @param layercount: Count of the layer in the soil profile.
         
         @rtype: water_feddes
-        @return: Water_Feddes instance
+        @return: Waterstress_Feddes instance
         """
         self.waterbalance=waterbalance
         self.plant=plant
