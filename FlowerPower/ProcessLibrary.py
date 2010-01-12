@@ -1,4 +1,27 @@
 # -*- coding: utf-8 -*-
+"""
+ProcessLibrary.py holds classes for the calculation of the growth processes and
+a simple water balance model.
+
+@author: Sebastian Multsch
+
+@version: 1.0 (01.10.2009)
+
+@copyright: 
+ This program is free software; you can redistribute it and/or modify it under  
+ the terms of the GNU General Public License as published by the Free Software  
+ Foundation; either version 3 of the License, or (at your option) any later 
+ version. This program is distributed in the hope that it will be useful, 
+ but WITHOUT ANY  WARRANTY; without even the implied warranty of MERCHANTABILITY 
+ or  FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for 
+ more details. You should have received a copy of the GNU General 
+ Public License along  with this program;
+ if not, see <http://www.gnu.org/licenses/>.
+ 
+@summary: Process modules
+"""
+
+
 import pylab as pylab
 class Development:
     """
@@ -10,9 +33,9 @@ class Development:
     Implementation
     ==============
     A development instance must be hand over to plant for the 
-    implementation of plant. Development for itsel must be
+    implementation of plant. Development for itself must be
     implemented with the crop specific developmentstages and the
-    related total thermaltime for each dtage.
+    related total thermaltime for each stage.
     
     Call signature
     ==============
@@ -22,34 +45,33 @@ class Development:
         """
         Returns a development instance.
         
-        Development is defined throug the stage parameter. 
+        Development is defined through the stage parameter. 
         this parameter holds a list with the name of each
         stage and the related total thermaltime. The total
         values are the thresholds for changing the stage.
         The total thermaltime values of the stages are 
         constant values. Variation of the amount of time,
         which is required to reach the next stage, is only
-        possibl through the variation of the daily calculated
+        possible through the variation of the daily calculated
         degree days.
         
         @type stage: list
-        @param stage: List with names and total thermaltime requirement for each stage in [degreedays].
-                      Example: [['Emergence',160.],['Leaf development',208.],...]
+        @param stage: List with names and total thermaltime requirement 
+        for each stage in [°C].
         @rtype: development
         @return: Development instance        
         """
-        #List with all names and thermaltime thresholds of each stage
         self.stages=[]
-        #State vairbles updated in every timestep
         self.tt=0.
         for s in stage:
             self.__setitem__(s)
     @property
     def StageIndex(self):
         """
-        Returns the index of the actual development stage in the stage attribute of the development class
+        Returns the index of the actual development stage in the stage 
+        attribute of the development class
         
-        @rtype: interger
+        @rtype: integer
         @return: Index of the actual development stage
         """
         return self.stages.index(self.Stage)
@@ -68,16 +90,16 @@ class Development:
         Return True, if germination is complete.
         
         @rtype: boolean
-        @return: True, if germmination is complete.
+        @return: True, if germination is complete.
         """
         return True if self.tt > self.stages[0][1] else False
     @property
     def Thermaltime(self):
         """
-        Return actual thermaltime
+        Return actual thermaltime.
         
         @rtype: double
-        @return: Thermaltime in [degreedays].
+        @return: Thermaltime in [°days].
         """
         return self.tt
     @property
@@ -100,33 +122,36 @@ class Development:
             yield s
     def __call__(self,step,tmin,tmax,tbase):
         """
-        Calcultes thermaltime.
+        Calculates thermaltime.
         
         @type step: double
         @param step: Time step of the actual model period in [days or hours].
         @type tmin: double
-        @param tmin: Daily minimum temperature in [Celsius].
+        @param tmin: Daily minimum temperature in [°C].
         @type tmax: double
-        @param tmax: Daily maximum temperature in [Celsius].
+        @param tmax: Daily maximum temperature in [°C].
         @type tbase: double 
-        @param tbase: Crop specific base temperature over which development can occur in [Celsius].
+        @param tbase: Crop specific base temperature over which development 
+        can occur in [°C].
         """
         self.tt = self.tt + self.develop(tmin, tmax, tbase) * step
     def develop(self,tmin,tmax,tbase):
         """
-        Returns thermaltime rate for given temperature and crop specific base temperature.
+        Returns thermaltime rate.
         
-        If tmax or min smaller than tbase, the rate is defined to be zero.
+        If tmax or tmin smaller than tbase, the rate is defined to be zero.
         Else the rate is computed as (tmax+tmin/2 - tbase).
         
         @type tmin: double
-        @param tmin: Daily minimum temperature in [Celsius].
+        @param tmin: Daily minimum temperature in [°C].
         @type tmax: double
-        @param tmax: Daily maximum temperature in [Celsius].
+        @param tmax: Daily maximum temperature in [°C].
         @type tbase: double 
-        @param tbase: Crop specific base temperature over which development can occur in [Celsius].
+        @param tbase: Crop specific base temperature over which development 
+        can occur in [°C].
+        
         @rtype: double
-        @return: Thermaltime rate in [degreedays].
+        @return: Development rate as thermatime in [°C].
          
         @see: [Bonhomme, 2000, McMaster & Wilhelm, 1997] 
         """
@@ -136,17 +161,11 @@ class Development:
             return ((tmax+tmin)/2.0-tbase)
 class SoilLayer:
     """
-    SoilLayer is the framework for the rootingzone and holds the geometrica attributes.
+    SoilLayer is the framework for the rooting zone.
     
-    Soillayer holds values for the geometrical descritpion
-    of the rootingzone. It is devided into layers which can
-    be penetrated from the plant root. 
-    
-    
-    Soillayer holds values which describe the constantant
-    
-    Development is an implementation of the plant interface
-    development with the required functions.
+    Soillayer holds values for the geometrical description
+    of the rootingzone. It is divided into layers which can
+    be penetrated from the plant root.
 
     Implementation
     ==============
@@ -156,8 +175,8 @@ class SoilLayer:
     Call signature
     ==============
     Call Soillayer calculates the actual rootingzone, depending
-    on the pentration depth of the plant root.For that
-    the root penetration for each layer is calculated.
+    on the depth of the plant root. For that the root penetration for 
+    each layer is calculated.
     """
     def __init__(self,lower=0.,upper=0.,center=0.,thickness=0.,penetration=0.,soilprofile=[]):
         """
@@ -166,11 +185,14 @@ class SoilLayer:
         To create a rootingzone get_rootingzone() must be called.
         
         @type lower: double
-        @param lower: Lower limit of the soil layer relative to ground surface level in [cm].
+        @param lower: Lower limit of the soil layer relative to ground 
+        surface level in [cm].
         @type upper: double
-        @param upper: Upper limit of the soil layer relative to ground surface level in [cm].
+        @param upper: Upper limit of the soil layer relative to ground 
+        surface level in [cm].
         @type center: double
-        @param center: Center of the soil layer relative to ground surface level in [cm].
+        @param center: Center of the soil layer relative to ground 
+        surface level in [cm].
         @type thickness: double
         @param thickness: Thickness of the layer in [cm].
         @type penetration: double 
@@ -178,20 +200,12 @@ class SoilLayer:
         @rtype: soillayer
         @return: soillayer instance
         """
-        #Constant variables
-        #Geometrical detail of the layer
         self.lower=lower
         self.upper=upper
         self.center=center
         self.thickness=thickness
-        
-        
-        #List with all layers in the soilprofile, which is created with get_rootingzone()
         self.rootingzone=[]
-        
         self.get_rootingzone(soilprofile)
-        
-        #State variables updated in every timestep
         self.penetration=penetration
     def __getitem__(self,index):
         return self.rootingzone[index]
@@ -201,10 +215,11 @@ class SoilLayer:
     def __len__(self):
         return len(self.rootingzone)
     def get_rootingzone(self,soilprofile):
-        """ Returns a rootingzone with the geomertical details of each layer.
+        """ Returns a rootingzone.
         
         @type soilprofile: list
-        @param soilprofile: List with the lower limits of the layers in the soilprofile in [cm].
+        @param soilprofile: List with the lower limits of the layers in the 
+        soilprofile in [cm].
         @rtype: soilprofile
         @return: Soilprofile which defines the actual rootingzone.
         """
@@ -225,7 +240,7 @@ class SoilLayer:
             self.rootingzone[i].thickness = self.rootingzone[i].lower - self.rootingzone[i].upper
     def __call__(self,Zr):
         """
-        Calculates the pentration depth for each soillayer in the rootingzone.
+        Calculates the penetration depth for each soillayer in the rootingzone.
         
         @type Zr: double
         @param: Rootingdepth in [cm].
@@ -244,50 +259,51 @@ class SoilLayer:
                 layer.penetration = Zr - layer.upper
 class ET_FAO:
     """
-    Calculates crop specific Evapotranspiration and correponds with the plant inferface evaporation.
+    Calculates crop specific Evapotranspiration.
     
     ET_FAO calculates the crop specific Evapotranspiration.
     This concept based on the Penmnan-Monteith equation. 
-    Reference Evapotranspiration (ETo) is ajdusted with crop 
+    Reference Evapotranspiration (ETo) is adjusted with crop 
     specific values. The resulting crop specific Evapotranspiration (ETc)
     is divided into a transpiration and a evaporation component.
-    All equations and concepts implenented in this class are taken from
-    "Crop evapotranspiration - Guidelines for computing crop water requirements - FAO Irrigation and drainage paper 56"
+    All equations and concepts implemented in this class are taken from
+    "Crop evapotranspiration Guidelines for computing crop water requirements 
+    FAO Irrigation and drainage paper 56"
     except for the calculation of the fieldcover. In this case the calculation
     based on the leaf area index and not on the FAO-concept.
-    All coefficiants used in this approach can be recieved from
+    All coefficients used in this approach can be received from
     these guidelines.
        
     
     Implementation
     ==============
-    ET_FAO must be implemented with the crop specif parameter.
+    ET_FAO must be implemented with the crop specific parameter.
     These parameter are related to the development of the plant.
-    For the discritpion of influences of the development the development
+    For the description of influences of the development the development
     of the plant is divided into four seasons. This arrangement
     can be taken form the plant development class. For the calculation
-    of the transpiration crop specific transpiration coefficiants for 
-    each season are required, which can be received from th FAO-guidelines.
+    of the transpiration crop specific transpiration coefficients for 
+    each season are required, which can be received from the FAO-guidelines.
     
     Call signature
     ==============
-    ET_FAO msut be called with crop specific values discribing vegetation
-    strucute and development and the actual wheather conditions. For the calculation
+    ET_FAO must be called with crop specific values describing vegetation
+    structure and development and the actual weather conditions. For the calculation
     of the evaporation the calculation of a daily oil water balance is needed. For
     that the FAO water balance model can be used. These model is 
     implemented in the class SWC - SoilWaterContainer. It is possible
     to use other water balance models, if they match the interface requirements.    
     
-     @see: [Allen et al, 1998]
+    @see: [Allen et al, 1998]
     """
     def __init__(self,kcb_values,seasons, kcmin = 0.15):
         """
         Returns a ET_FAO instance.
         
         @type seasons: list
-        @param seasons: List with the length of the four development seasons in [degreedays].
+        @param seasons: List with the length of the four development seasons in [°C].
         @type kcb_values: list
-        @param kcb_values: List with basal crop coefficiants for each season in seasons parameter in [-].
+        @param kcb_values: List with basal crop coefficients for each season in seasons parameter in [-].
         @type Kcmin: double
         @param Kcmin: Minimum Kc for dry bare soil with no ground cover [0.15 - 0.20] in [-].
         
@@ -312,7 +328,7 @@ class ET_FAO:
         Returns transpiration
         
         @rtype: double
-        @return: transpiration in [mm].
+        @return: Transpiration in [mm].
         """
         return self.eto * self.kcb
     @property
@@ -353,18 +369,21 @@ class ET_FAO:
         return self.eto * (self.kcb*self.ks+self.ke)
     def __call__(self,Kr,thermaltime,Rn,T,e_s,e_a,windspeed,LAI,alt=0.,RHmin=30.,h=1.):
         """
-        Calculates reference Evapotranspiration and the crop specific adjustment factors Kcb and Ke.
+        Calculates reference Evapotranspiration and the crop specific adjustment 
+        factors Kcb and Ke.
         
-        The user cann call the transpiration coefficiants wit hthe corresonding properties of the class.
+        The user can call the transpiration coefficiEnts with the corresonding 
+        properties of the class.
         
         @type Kr: double 
-        @param Kr: evaporation reduction coefficient dependent on the soil water depletion from the topsoil layer in [-].
+        @param Kr: evaporation reduction coefficient dependent on the soil water
+        depletion from the topsoil layer in [-].
         @type thermaltime: double
         @param thermaltime: Thermaltime in [degreedays].
         @type Rn: double
         @param Rn: Net radiation at the crop surface in [MJ m-2].
         @type T: double
-        @param T: Mean daily air temperature at 2 m height in  [Celsius].
+        @param T: Mean daily air temperature at 2 m height in  [°c].
         @type e_s: double
         @param e_s: Saturation vapour pressure in [kPa].
         @type e_a: double
@@ -378,15 +397,14 @@ class ET_FAO:
         @type stomatal_resistance: double
         @param stomatal_resistance: Stomatal ristance in [s m-1].
         @type RHmin: double
-        @param RHmin: Mean value for daily minimum relative humidity during the mid- or late season growth stage in [percent].
+        @param RHmin: Mean value for daily minimum relative humidity during the 
+        mid- or late season growth stage in [percent].
         @type h: double
-        @param h: mean maximum plant height during the period of calculation (initial, development, mid-season, or late-season) in [m].
-        
-        @todo: Calculation of altitude.
+        @param h: mean maximum plant height during the period of calculation 
+        (initial, development, mid-season, or late-season) in [m].
         """
         #Calculates reference Evapotranspiration
         self.eto = self.calc_ETo(Rn,T,e_s,e_a,windspeed)
-        
         #Calculates basal crop coefficaint for thhe transpiration calculation
         self.kcb = self.calc_Kcb(thermaltime, self.kcb_values[0], self.kcb_values[1],
                                  self.kcb_values[2], self.seasons[0], self.seasons[1], 
@@ -484,26 +502,30 @@ class ET_FAO:
         return ETo * (Kcb+Ke)
     def adjust_Kcb(self,Kcb_tab,windspeed,RHmin,h):
         """ 
-        Adjust basal crio coefficiant (Kcb) to environmental conditions.
+        Adjust basal crOP coefficiant (Kcb) to environmental conditions.
         
         @type Kcb_tab: double
-        @param Kcb_tab: Constant basal crop coefficient (Kcb) related to the development season in [-].
+        @param Kcb_tab: Constant basal crop coefficient (Kcb) related to the 
+        development season in [-].
         @type windspeed: double
         @param windspedd: Wind speed at 2 m height [m s-1].
         @type RHmin: double
-        @param RHmin: Mean value for daily minimum relative humidity during the mid- or late season growth stage in [percent].
+        @param RHmin: Mean value for daily minimum relative humidity during 
+        the mid- or late season growth stage in [percent].
         @type h: double
-        @param h: mean maximum plant height during the period of calculation (initial, development, mid-season, or late-season) in [m].
+        @param h: mean maximum plant height during the period of calculation 
+        (initial, development, mid-season, or late-season) in [m].
         @rtype: double
-        @return: Kcb adjusted with windspeed, plant height and relative humidity in [-].
+        @return: Kcb adjusted with windspeed, plant height and relative 
+        humidity in [-].
         """
         return Kcb_tab + (0.04*(windspeed-2.)-0.004*(RHmin-45))*(h/3.)**0.3
     def calc_Kcb(self,time,Kcb_ini,Kcb_mid,Kcb_end,Lini,Ldev,Lmid,Llate):
         """ 
-        Constructed basal crop coefficient (Kcb) curve. 
+        Constructs basal crop coefficient (Kcb) curve. 
             
         @type time: double 
-        @param time: Day is the actual day or thermaltime in [days] or [degreedays]. 
+        @param time: Day is the actual day or thermaltime in [days] or [°days]. 
         @type Kcb_ini: double 
         @param Kcb_ini: Kcb for initial season  
         @type Kcb_mid: double 
@@ -513,7 +535,7 @@ class ET_FAO:
         @type Lini: double 
         @param Lini: Length of initial season  
         @type Ldev: double 
-        @param Ldev: ength of crop development season  
+        @param Ldev: Length of crop development season  
         @type Lmid: double 
         @param Lmid: Length of mid season
         @type Llate: double 
@@ -531,29 +553,33 @@ class ET_FAO:
         Calculates evaporation coefficiant.
         
         @type Kr: double
-        @param Kr: evaporation reduction coefficient dependent on the cumulative depth of water depleted (evaporated) from the topsoil.
+        @param Kr: evaporation reduction coefficient dependent on the cumulative
+        depth of water depleted (evaporated) from the topsoil.
         @type Kcmax: double
         @param Kcmax: Maximum value of Kc following rain or irrigation in [-].
         @type Kcb: double
         @param Kcb: Basal crop coefficient in [mm].
         @type few: double
-        @param few: Fraction of the soil that is both exposed and wetted, i.e., the fraction of soil surface from which most evaporation occurs.
+        @param few: Fraction of the soil that is both exposed and wetted, i.e.,
+        the fraction of soil surface from which most evaporation occurs.
         @rtype: double
         @return: evaporation coefficiant in [mm].
         """
         return min(Kr*(Kcmax - Kcb), few*Kcmax,)
     def calc_Kcmax(self,Kcb,h,windspeed,RHmin):
         """ 
-        Calcualtes maximum value of Kc following rain or irrigation.
+        Calculates maximum value of Kc following rain or irrigation.
         
         @type Kcb: double
         @param Kcb: Basal crop coefficient in [mm].
         @type windspeed: double
         @param windspedd: Wind speed at 2 m height [m s-1].
         @type RHmin: double
-        @param RHmin: Mean value for daily minimum relative humidity during the mid- or late season growth stage in [percent].
+        @param RHmin: Mean value for daily minimum relative humidity during the 
+        mid- or late season growth stage in [percent].
         @type h: double
-        @param h: mean maximum plant height during the period of calculation (initial, development, mid-season, or late-season) in [m].
+        @param h: mean maximum plant height during the period of calculation 
+        (initial, development, mid-season, or late-season) in [m].
         @rtype: double
         @return: Maximum value of Kc following rain or irrigation in [-].
         """
@@ -566,30 +592,33 @@ class ET_FAO:
         that can be evaporated from the soil when the topsoil
         has been initially completely wetted.
         
-        
         @type qFC: double
         @param qFC: Soil water content at field capacity in [m3 m-3].
         @type qWP: double
         @param qWP: Soil water content at wilting point in [m3 m-3].
         @type Ze: double
-        @param Ze: Depth [0.10-0.15m] of the surface soil layer that is subject to drying by way of evaporation in [m].
+        @param Ze: Depth [0.10-0.15m] of the surface soil layer that is subject 
+        to drying by way of evaporation in [m].
         @rtype: double
         @return: Total evaporable water in [mm].
         """
         return 1000(qFC-0.5*qWP)*Ze
     def calc_Kr(self,De,TEW,REW):
         """
-        Calcualtes vaporation reduction coefficient
+        Calculates evaporation reduction coefficient
         
-        Kr is the dimensionless evaporation reduction coefficient dependent on the soil 
-        water depletion (cumulative depth of evaporation) from the topsoil layer.
+        Kr is the dimensionless evaporation reduction coefficient dependent 
+        on the soil  water depletion (cumulative depth of evaporation) 
+        from the topsoil layer.
         
         @type De: double
-        @param De:  Cumulative depth of evaporation (depletion) from the soil surface layer at the end of the previos day in [mm].
+        @param De:  Cumulative depth of evaporation (depletion) from the soil 
+        surface layer at the end of the previos day in [mm].
         @type TEW: double
         @param TEW: Total evaporable water in [mm] 
         @type param: double
-        @param param: cumulative depth of evaporation (depletion) at the end of stage 1 (REW = readily evaporable water)in [mm].
+        @param param: cumulative depth of evaporation (depletion) at the end of 
+        stage 1 (REW = readily evaporable water)in [mm].
         @rtype: double
         @return: Dimensionless evaporation reduction coefficient in [-].
         """
@@ -604,40 +633,42 @@ class ET_FAO:
         fc and fw: [0.01 - 1], for precipitation fw = 1.0
         
         @type fc: double
-        @param gc: Effective fraction of soil surface covered by vegetation in [-].
+        @param gc: Effective fraction of soil surface covered by vegetation 
+        in [-].
         @type fw: double
-        @param fw: Average fraction of soil surface wetted by irrigation or precipitation in [-].
+        @param fw: Average fraction of soil surface wetted by irrigation or 
+        precipitation in [-].
         @rtype: double
         @return: Fraction of the soil that is both exposed and wetted in [-].
         """
         return min(1-fc,fw)
     def calc_fc_dynamic(self,Kcb,Kcmax,h,Kcmin):#
         """ 
-        Dynamic calculates effective fraction of soil surface covered by vegetation.
+        Dynamic calculates effective fraction of soil surface covered by 
+        vegetation.
         
-        This equation should be used with caution and validated from field observations.
-        
-        Kcmin=0.15 - annual crops under nearly bare soil condition
+        Kcmin =0.15 - annual crops under nearly bare soil conditions
         
         @type Kcb: double
         @param Kcb: Basal crop coefficient in [mm].
         @type Kcmax: double
         @param Kcmax: Maximum value of Kc following rain or irrigation in [-].
         @type h: double
-        @param h: mean maximum plant height during the period of calculation (initial, development, mid-season, or late-season) in [m].
+        @param h: mean maximum plant height during the period of calculation 
+        (initial, development, mid-season, or late-season) in [m].
         @type Kcmin: double
-        @param Kcmin: Minimum Kc for dry bare soil with no ground cover [0.15 - 0.20] in [-].
+        @param Kcmin: Minimum Kc for dry bare soil with no ground cover 
+        [0.15 - 0.20] in [-].
         @rtype: double
-        @return: Effective fraction of soil surface covered by vegetation in [-].
+        @return: Effective fraction of soil surface covered by vegetation 
+        in [-].
         """
         return ((Kcb-Kcmin)/(Kcmax-Kcmin))**(1+0.5*h) 
     def calc_fc_static(self,thermaltime,seasons):
         """
         Calculates effective fraction of soil surface covered by vegetation.
-        
-        
-        The value for fc is limited to < 0.99. The user should assume appropriate values
-        for the various growth stages. 
+        The value for fc is limited to < 0.99. The user should assume 
+        appropriate values for the various growth stages. 
         Typical values for fc :
         Season    fc
         1        0.0-0.1
@@ -648,12 +679,14 @@ class ET_FAO:
         @type thermaltime: double
         @param thermaltime: Thermaltime in [degreedays].
         @type seasons: list
-        @param seasons: List with the length of the four development seasons in [degreedays].
+        @param seasons: List with the length of the four development seasons 
+        in [°C].
         @rtype: double
-        @return: Effective fraction of soil surface covered by vegetation in [-].
+        @return: Effective fraction of soil surface covered by vegetation 
+        in [-].
         """
         if thermaltime <= seasons[0]: return 0.1 
-        elif thermaltime <= seasons[0]+seasons[1]: return 0.8#
+        elif thermaltime <= seasons[0]+seasons[1]: return 0.8
         elif thermaltime <= seasons[0]+seasons[1]+seasons[2]:return 1.
         else: return 0.8
     def fc_from_LAI(self,LAI,fullcover = 3.):
@@ -672,30 +705,31 @@ class ET_FAO:
         @rtype: double
         @return: Effective fraction of soil surface covered by vegetation in [-].
         """ 
-        return min(LAI / fullcover,1.)
+        return min(LAI / fullcover,1.)    
 class Waterstress_FAO:
     """
-    Simple water uptake model which computes water uptake under stressed condtionins.
+    Simple water uptake model which computes water uptake under stressed
+    conditions.
     
     The model calculates plant water uptake under water stress
-    conditon. Plant water demand equals the potential transpiration.
+    conditions. Plant water demand equals the potential transpiration.
     If the soil cannot satisfy these demand, stress occurs and 
     the potential transpiration is reduced to the actual water uptake.
-    The reduction facro through water stress is computed in realtion
+    The reduction factor through water stress is computed in relation
     to "Crop evapotranspiration - Guidelines for computing crop 
     water requirements - FAO Irrigation and drainage paper 56".
-    All equations and concepts implenented in this class are taken 
+    All equations and concepts implemented in this class are taken 
     from these approach.
     
     Implementation
     ==============
-    WAter_FAO must be implemented wit ha crop specific stress
+    WAter_FAO must be implemented with a crop specific stress
     coefficiant, which can be taken from the guidelines.
     
     Call signature
     ==============
-    Waterstress_FAO calculates the wateruptake under stressed pr no stressed
-    conditions for a given soilprofile or rootingzone.
+    Waterstress_FAO calculates the wateruptake under stressed 
+    conditions for a given rootingzone.
     
     @see: [Allen et al, 1998]
     """
@@ -704,13 +738,14 @@ class Waterstress_FAO:
         Returns a Waterstress_FAO instance.
         
         @type average_available_soilwater: double
-        @param average_available_soilwater:  fraction of TAW that a crop can extract from the root zone without suffering water stress in [-].
+        @param average_available_soilwater:  fraction of TAW that a crop 
+        can extract from the root zone without suffering water stress in [-].
+        
         @rtype: water_fao
-        @return: WAter_FAO instance
+        @return: Water_FAO instance
         """
         self.waterbalance=waterbalance
         self.plant=plant
-        
         #Constant variables
         self.p = average_available_soilwater
         #State variables
@@ -719,10 +754,10 @@ class Waterstress_FAO:
         self.Ks=0.
     def __call__(self,rootzone):
         """
-        Calculates actual water uptake and contributes the uptake over the layer in the soil profile.
+        Calculates water stress values for each layer in the rooting zone.
         
         @type rootzone: list
-        @param rootzone: List with centre depth of each layer in  [m].
+        @param rootzone: List with middle depth of each layer in [cm].
         @rtype: list
         @return: Stress values for each layer in rootzone in [-].
         """
@@ -736,16 +771,11 @@ class Waterstress_FAO:
         return Ks
     def calc_Ks(self,TAW,Dr,RAW,p):
         """ 
-        Calculates transpiration reduction factor
+        Calculates transpiration reduction factor.
         
-        Water content in me root zone can also be expressed by root zone depletion,
-        Dr, i.e., water shortage relative to field capacity. At field capacity, the root 
-        zone depletion is zero (Dr = 0). When soil water is extracted by evapotranspiration, 
-        the depletion increases and stress will be induced when Dr becomes equal to RAW. After 
-        the root zone depletion exceeds RAW (the water content drops below the threshold q t), 
-        the root zone depletion is high enough to limit evapotranspiration to less than potential 
-        values and the crop evapotranspiration begins to decrease in proportion to the amount of 
-        water remaining in the root zone.
+        Potential transpiration is reducees, if the depletion exceeds the
+        readily available soil water. When the root zone depletion is smaller 
+        than RAW, Ks = 1.
         
         @type TAW: double
         @param TAW: Total available soil water in the root zone in [mm].
@@ -754,13 +784,12 @@ class Waterstress_FAO:
         @type RAW: double
         @param RAW: Readily available soil water in the root zone in [mm].
         @type p: double
-        @param p: Fraction of TAW that a crop can extract from the root zone without suffering water stress in [-].
+        @param p: Fraction of TAW that a crop can extract from the root zone 
+        without suffering water stress in [-].
         @rtype: double
-        @return: transpiration reduction factor dependent on available soil water in [-].
-        
-        When the root zone depletion is smaller than RAW, Ks = 1
+        @return: Transpiration reduction factor dependent on available soil
+        water in [-].       
         """
-        
         Ks = (TAW-Dr)/((1-p)*TAW) if Dr > RAW else 1.
         return max(Ks,0.)
     def adjust_p(self,p_table,ETc):
@@ -772,7 +801,8 @@ class Waterstress_FAO:
         adjusted with the daily ETc. 
     
         @type p_table: double
-        @param p_table: Fraction of TAW that a crop can extract from the root zone without suffering water stress in [-].
+        @param p_table: Fraction of TAW that a crop can extract from the root 
+        zone without suffering water stress in [-].
         @type ETc: double
         @param ETc: Crop specific evapotranspiration in [mm].
         @rtype: double
@@ -801,7 +831,8 @@ class Waterstress_FAO:
         return 1000*(FC-WP)*Zr
 class Waterstress_Feddes:
     """
-    Water uptake model based on soil matrixpotential and a crop specific uptake function.
+    Water uptake model based on soil matrixpotential and a crop specific 
+    uptake function.
     
     The water uptake is limited througt a sink therm variable alpha.
     This value vary with the water pressure head in the soil layer. 
@@ -853,11 +884,10 @@ class Waterstress_Feddes:
         self.Shcomp=[0. for l in range(self.layercount)]
     def __call__(self,rootzone):
         """
-        Calulates water uptake under stressed conditions and compensation.
-        
-       
+        Calculates water uptake under stressed conditions.
+    
         @type rootzone: list
-        @param rootzone: List with centre depth of each layer in  [cm].
+        @param rootzone: List with middle depth of each layer in  [cm].
         @rtype: list
         @return: Stress values for each layer in rootzone in [-].
         """
@@ -866,20 +896,25 @@ class Waterstress_Feddes:
         """
         Calculates compensation factors for each layer in the rootingzone.
         
-        Compensation capacity = (Actual uptake- Potential uptake) * maxcom
+        Compensation capacity = (Actual uptake-Potential uptake)*maxcom
         
         @type s_p: list
-        @param s_p: List with the potential water uptake for each soillayer in rootingzone in [mm].
+        @param s_p: List with the potential water uptake for each soillayer in
+        rootingzone in [mm].
         @type s_h: list
-        @param s_h: List with the actual water uptake for each soillayer in rootingzone in [mm].
+        @param s_h: List with the actual water uptake for each soillayer in
+        rootingzone in [mm].
         @type pressurehead: list
-        @param pressurehead: List with the soil pressurehead for each soillayer in rootingzone in [cm].
+        @param pressurehead: List with the soil pressurehead for each soillayer
+        in rootingzone in [cm].
         @type alpha: list
-        @param alpha: Prescribed crop specific function of soil water pressure head with values between or equal zero and one in [-].
+        @param alpha: Prescribed crop specific function of soil water pressure
+        head with values between or equal zero and one in [-].
         @type maxcomp: double
         @param maxcomp: Maximal compensation capacity factor in [-].
         @type maxopth: double
-        @param maxopth: Plant pressure head until water uptake can occur without stress in [cm water column].
+        @param maxopth: Plant pressure head until water uptake can occur without
+        stress in [cm water column].
         @rtype: list
         @return: List with the compensated uptake in [mm].
         """
@@ -897,17 +932,20 @@ class Waterstress_Feddes:
         This value vary with the water pressure head in the soil layer. 
         Alpha is a dimensonless factor between zero and one. The factor 
         limits water uptake due to the wilting point and oxygen dificiency. 
-        After alpha is determinded with four threshold values for the pressure head 
-        (h1-oxygen deficiency,h-4 wiliting point, h2 and h3 -optimal conditons). 
-        Values for the parameters vary with the crop.  H3 also varies with the 
-        transpiration.
+        After alpha is determinded with four threshold values for the pressure 
+        head (h1-oxygen deficiency,h-4 wiliting point, h2 and
+        h3 -optimal conditons). Values for the parameters vary with the crop. 
+        H3 also varies with the transpiration.
         
         @type h_soil: list
-        @param h_soil: List with soil pressurehead for each layer in [cm water column].
+        @param h_soil: List with soil pressurehead for each layer in 
+        [cm water column].
         @type h_plant: list
-        @param h_plant: List with soil pressurehead. These conditions limiting wate uptake in. [cm water column].
+        @param h_plant: List with soil pressurehead. These conditions limiting 
+        water uptake in. [cm water column].
         @rtype: list
-        @return: Prescribed crop specific function of soil water pressure head with values between or equal zero and one in [-].
+        @return: Prescribed crop specific function of soil water pressure head 
+        with values between or equal zero and one in [-].
         
         @see: [Feddes and Raats, 2004]
         """
@@ -922,10 +960,10 @@ class Biomass_LOG:
     """
     Calculates plant growth based on a logistical growth function.
     
-    Growth is simulated with a logistic growth function The amount of biomass 
-    in per time step depends on a crop specific growth coefficiant
-    multiplied with the total biomass. A capacity limit limits 
-    the growth. The growthrate for a timestep is given by the following equation.
+    Growth is simulated with a logistic growth function. The amount of biomass 
+    in gram per time step depends on a crop specific growth coefficiant
+    multiplied with the total biomass. A capacity limit retricts growth.
+    The growthrate for a timestep is given by the following equation.
     
     Implementation
     ==============
@@ -985,10 +1023,11 @@ class Biomass_LOG:
         return self.total
     def __call__(self,stress,step):
         """
-        Calculats total plant biomass under stressed conditions.
+        Calculates total plant biomass under stressed conditions.
         
         @type stress: double
-        @param stress: Parameter for water and nitrogen stress between 0 - 1. in [-].
+        @param stress: Parameter for water and nitrogen stress between 0 - 1
+        in [-].
         @type step: double
         @param step: Time of the actual intervall.
         @return: -
@@ -1022,8 +1061,8 @@ class Biomass_LUE:
     
     Calculates the daily biomass gorwht form a crop specific
     radiatiion use efficiency and the daily incoming absorbed
-    photosynthetic active radiation (aPAR). aPAR depnds on the
-    plant leaf area index and a dimensionless distinction
+    photosynthetic active radiation (aPAR). aPAR depends on the
+    plant leaf area index and a dimensionless extinction
     coefficiant.
     
     Implementation
@@ -1075,22 +1114,23 @@ class Biomass_LUE:
     @property
     def Total(self):
         """
-        Return actual growth influenced by water and nitorgen stress.
+        Returns total biomass.
         
         @rtype: double
-        @return: Actual growth in [g biomass day-1].
+        @return: Biomass in [g biomass day-1].
         """ 
         return self.total
     def __call__(self,step,stress,Rs,LAI):
         """
-        Calcultes the stressed and unstressed growth of the plant.
+        Calculates the stressed and unstressed growth of the plant.
         
         @type step: double
-        @param step: Time step in [ddays
+        @param step: Time step in [days].
         @type Rs: double
         @param Rs: total solar radiation [MJ m-2 day-1].
         @type stress: double
-        @param stress: Parameter for water and nitrogen stress between 0 - 1. in [-].
+        @param stress: Parameter for water and nitrogen stress between 0 - 1. 
+        in [-].
         @type LAI: double
         @param LAI: Leaf area index of the plant in [m2 m-2].
         @param Rs: total solar radiation [MJ m-2 day-1].
@@ -1104,18 +1144,19 @@ class Biomass_LUE:
         """ 
         Returns photosynthetically active absorbed radiation
         
-        Canopy photosynthesis is closely related to the photosynthetically active 
-        (400 to 700 mm) absorbed radiation (PARa) by green tissue in the canopy. 
-        The values 0.5 is the fraction of total solar energy, which is photosynthetically 
-        active interception - fraction of total solar radiation flux, which is 
-        intercepted by the crop. The value 0.9 is the fraction of radiation 
-        absorbed by the crop  allowing for a 6 percent albedo and for inactive radiation absorption.
+        Canopy photosynthesis is closely related to the photosynthetically 
+        active (400 to 700 mm) absorbed radiation (PARa) by green tissue in the 
+        canopy. The values 0.5 is the fraction of total solar energy, which is 
+        photosynthetically active interception - fraction of total solar 
+        radiation flux, which is intercepted by the crop. The value 0.9 is the 
+        fraction of radiation absorbed by the crop  allowing for a 6 percent 
+        albedo and for inactive radiation absorption.
         
         @type Rs: double
         @param Rs: total solar radiation [MJ m-2 day-1].
         @type interception: double
-        @param interception: Fraction of total solar radiation flux, which is intercepted by the crop in [-].
-        
+        @param interception: Fraction of total solar radiation flux, which is 
+        intercepted by the crop in [-].
         
         @rtype: double
         @return: Photosynthetically active absorbed radiation in [MJ m-2 day-1].
@@ -1139,7 +1180,8 @@ class Biomass_LUE:
         return pylab.exp(-k*LAI)
     def atmosphere_values(self,atmosphere,time_act):
         """
-        Returns a method to interfere with the atmosphere interface over the plant instance.
+        Returns a method to interfere with the atmosphere interface over the 
+        plant instance.
         
         @type atmosphere: atmosphere
         @param atmosphere: Atmosphere object from the plant interface soil.
@@ -1153,8 +1195,7 @@ class Nitrogen:
     """
     Calculates nitrogen uptake from the soil.
     
-    The concepts for nitrogen uptake is taken from.The root 
-    nitrogen uptake is divided into active and passive uptake. 
+    The root nitrogen uptake is divided into active and passive uptake. 
     Aktive uptake will occure, if passive uptake cannot satisfy 
     the demand. The passive uptake in each soil layer pa depends 
     on the soil water extraction sh and a maximum allowed solution 
@@ -1164,14 +1205,11 @@ class Nitrogen:
     
     The potential active uptake from each soil layer is calculated with 
     the Michaelis-Menten function. This function descirbes the relationship 
-    between influx and its concentration at the root surface. For that, the 
-    crop specific Mechaelis Menten Constant Km, the minimum concentration cmin 
-    at which can net influx occurr and the soil nitrogen concentration nutrientc  
-    is needed
+    between influx and its concentration at the root surface.
     
     Implementation
     ==============
-    Nitrogen msut be impleneted withthe paramter
+    Nitrogen must be implemeted with the paramter
     for the michaelis menten equation.
     
     Call signature
@@ -1237,7 +1275,7 @@ class Nitrogen:
         return [pa + self.Aa[i] for i,pa in enumerate(self.Pa)]
     def __call__(self,NO3_conc,Sh,Rp,root_fraction):
         """
-        Calculates active and passive nitrogen uptake
+        Calculates active and passive nitrogen uptake.
         
         @type NO3_conc: list
         @param NO3_conc: NO3 concnetrations in rootzone.
@@ -1261,3 +1299,275 @@ class Nitrogen:
         self.Aa = [Ap * michaelis_menten[i] * fraction for i,fraction in enumerate(root_fraction)]
         if min(self.Pa)<0 or min(self.Aa)<0:
             a=2
+            
+class SWC:
+    """ 
+    Soil water calculates a daily water balance.
+    
+    The root zone can be presented by means of a container in
+    which the water content may fluctuate. To express the water
+    content as root zone depletion is useful. It makes the adding
+    and subtracting of losses and gains straightforward as the various
+    parameters of the soil water budget are usually expressed in terms
+    of water depth. Rainfall, irrigation and capillary rise of groundwater
+    towards the root zone add water to the root zone and decrease the root
+    zone depletion. Soil evaporation, crop transpiration and percolation
+    losses remove water from the root zone and increase the depletion.
+    This concept is taken from the "Crop evapotranspiration - Guidelines 
+    for computing crop water requirements - FAO Irrigation and drainage 
+    paper 56 ". 
+
+    Implementation
+    ==============
+    SWC is implemented with the sand and clay fractions from the
+    soil. SWC calculates the usda soiltype, the water cocntent at
+    field capacity and the water content at wilting point. 
+    
+    Call signature
+    ==============
+    Must be called with environmental paramters and calculates the actual water
+    status.
+    
+    @see: [Allen et al, 1998]
+    """
+    def __init__(self,fc=.22,wp=.09,rew=8.,initial_Zr=0.1,Ze=0.1):
+        """
+        Returns a SWC instance.
+        
+        @param rew: Cumulative depth of evaporation (depletion) at the end of 
+        stage 1 (REW = readily evaporable water) [mm]
+        @type  rew: double
+        @type initital_Zr: double
+        @param initial_Zr: Initial rooting depth in [m].
+        @type Ze: double
+        @param param: Effective depth of the soil evaporation layer in [m].
+        @type fc: double 
+        @param fc: Water content at field capacity in [m3 m-3].
+        @type wp: double 
+        @param wp: Water content at wilting point in [m3 m-3].
+        
+        @rtype: swc
+        @return: SWC instance.
+        """        
+        #Water content at fieldcapacity and wiltingpoint
+        self.fc=fc
+        self.wp=wp
+        #effective depth of the soil evaporation layer, of 0.10-0.15 m is recommended
+        self.ze=Ze
+        #Cumulative depth of evaporation (depletion) at the end of stage 1 (REW = readily evaporable water) in [mm].
+        self.rew = rew
+        #total evaporable water
+        self.tew = self.calc_TEW(self.fc, self.wp, self.ze)
+        #State variables
+        #Initial depletion = total evaporable water
+        self.de = self.tew
+        #Initial root zone depletion 
+        self.dr = 0.        
+        #Dimensionless evaporation reduction coefficient
+        self.kr=0.
+        #fraction of soil surface wetted by irrigation or precipitation; fw = 1. for pcp
+        self.fw = 1. 
+    @property
+    def Dr(self):
+        """
+        Returns root zone depletion at the end of day.
+        
+        @rtype: double
+        @return: Root zone depletion at the end of day in [mm]. 
+        """
+        return self.dr
+    
+    def Kr(self):
+        """
+        Returns evaporation reduction coefficient.
+        
+        @rtype: double
+        @return: Revaporation reduction coefficient in [-].
+        """
+        return self.kr
+    def get_nutrients(self,depth):
+        return 100000
+    def __call__(self,ETc,evaporation,rainfall,Zr,runoff=0.,irrigation=0.,capillarrise=0.):
+        """
+        Calculates Root zone depletion Dr, total available soil water TAW, 
+        cumulative depth of evaporation De and the evaporation reduction 
+        coefficient Kr. 
+        
+        @type ETc: double
+        @param ETc: crop evapotranspiration in [mm],
+        @type evaporation: double
+        @param evaporation: Evaporation in [mm],
+        @type rainfall: double
+        @param rainfall:  Rainfall in [-].
+        @type Zr: double
+        @param Zr:  Rooting depth in [m].
+        @type fc:double 
+        @param fc: File cover in [-].
+        @type runoff: double
+        @param runoff: Runoff from the soil surface on day in [mm],
+        @type irrigation: double
+        @param irrigation: Net irrigation depth on day i that infiltrates the 
+        soil in [mm] 
+        @type capillarrise: double
+        @param capillarrise: Capillary rise from the groundwater table in [mm].
+        
+        @return: -
+        """
+        #Root zone depletion
+        dr = max(self.dr-rainfall,0)
+        dr = self.calc_WaterBalance(dr, rainfall, runoff, irrigation, capillarrise, ETc)
+        self.dr = max(dr,0.)
+        #Cumulative depth of evaporation
+        self.de = max(self.de-rainfall,0)
+        self.de =  self.calc_EvaporationLayer(self.de, rainfall, runoff, irrigation, self.fw, evaporation)
+        #Evaporation reduction coefficient
+        self.kr = self.calc_Kr(self.de, self.tew, self.rew)
+    def soilprofile(self):
+        return [200]
+    def calc_EvaporationLayer(self,de,P,RO,I,fw,E,Tew=0.):
+        """
+        Returns the cumulative depth of evaporation.
+        
+        The estimation of Ke in the calculation procedure requires a 
+        daily water balance computation for the surface soil layer for
+        the calculation of the cumulative evaporation or depletion from 
+        the wet condition.
+        
+        Following heavy rain or irrigation, the soil water content in the 
+        topsoil (Ze layer) might exceed field capacity. However, in this simple 
+        procedure it is assumed that the soil water content is at q FC nearly 
+        immediately following a complete wetting event. As long as the soil 
+        water content in the evaporation layer is below field capacity the soil 
+        will not drain and DPe, i = 0. 
+        
+        @type De: double
+        @param De: Cumulative depth of evaporation in [mm]
+        @type P: double
+        @param P: Precipitation on day in [mm]
+        @type RO: double
+        @param RO: Precipitation run off from the soil surface in [mm].
+        @type I: double 
+        @param I: Irrigation depth that infiltrates the soil in [mm].
+        @type fw: double 
+        @param fw: Fraction of soil surface wetted by irrigation in [-].
+        @type E: double
+        @param E: Evaporation in [mm],
+        @type Tew: double
+        @param Tew: Depth of transpiration from the exposed and wetted fraction 
+        of the soil surface layer in [mm].
+        
+        @rtype: double
+        @return: Cumulative depth of evaporation (depletion) following complete 
+        wetting at the end of the day in [mm]
+        """
+        DPe = max(P + I/fw - de,0)
+        return de-(P-RO)-(I/fw)+E+Tew+DPe
+    def calc_WaterBalance(self,Dr,P,RO,I,CR,ETc):
+        """ 
+        Returns root zone depletion at the end of day.
+        
+        The root zone can be presented by means of a container in which the 
+        water content may fluctuate. To express the water content as root zone 
+        depletion is useful. It makes the adding and subtracting of losses and 
+        gains straightforward as the various parameters of the soil water budget
+        are usually expressed in terms of water depth. Rainfall, irrigation and
+        capillary rise of groundwater towards the root zone add water to the 
+        root zone and decrease the root zone depletion. Soil evaporation, 
+        crop transpiration and percolation losses remove water from the root 
+        zone and increase the depletion.
+        
+        By assuming that the root zone is at field capacity following heavy rain
+        or irrigation, the minimum value for the depletion Dr is zero. At that 
+        moment no water is left for evapotranspiration in the root zone, Ks 
+        becomes zero, and the root zone depletion has reached its maximum value
+        TAW.
+        
+        Following heavy rain or irrigation, the soil water content in the root 
+        zone might exceed field capacity. In this simple procedure it is assumed
+        that the soil water content is at q FC within the same day of the 
+        wetting event, so that the depletion Dr becomes zero. Therefore, 
+        following heavy rain or irrigation.
+            
+        @type Dr: double
+        @param Dr: Water content in the root zone at the end of the previous day
+        in [mm].
+        @type P: double
+        @param P: Precipitation in [mm].
+        @type RO: double
+        @param RO: Runoff from the soil surface in [mm].
+        @type I: double
+        @param I: Net irrigation depth that infiltrates the soil in [mm].
+        @type CR: double
+        @param CR: Capillary rise from the groundwater table in [mm].
+        @type ETc: double
+        @param ETc: Crop evapotranspiration in [mm],
+        
+        @rtype: double
+        @return: Root zone depletion at the end of day in [mm].
+        """
+        DP = max(P - RO + I - ETc - Dr,0)
+        return Dr - (P-RO) - I - CR + ETc + DP
+    def calc_InitialDepletion(self,FC,q,Zr):
+        """ 
+        Returns initial depletion.
+        
+        To initiate the water balance for the root zone, the initial depletion 
+        Dr, i-1 should be estimated.Where q i-1 is the average soil water 
+        content for the effective root zone. Following heavy rain or irrigation,
+        the user can assume that the root zone is near field capacity.
+        
+        @type FC: double 
+        @param FC: Water content at field capacity in [m3 m-3].
+        @type q: double
+        @param q: Average soil water content for the effective root zone in [-].
+        @type Zr: double
+        @param Zr: Initial rooting depth in [-].
+        
+        @rtype: double
+        @return: Initial depletion in [mm].
+        """
+        return 1000*(FC-q)*Zr
+    def calc_Kr(self,De,TEW,REW):
+        """
+        Returns evaporation reduction coefficient.
+        
+        Kr is the dimensionless evaporation reduction coefficient dependent on 
+        the soil water depletion (cumulative depth of evaporation) from the 
+        topsoil layer.
+        
+        @type De: double
+        @param De: Cumulative depth of evaporation in [mm]
+        @type TEW: double
+        @param TEW: Depth of transpiration from the exposed and wetted fraction 
+        of the soil surface layer on day in [mm].
+        @type REW: double
+        @param REW: Cumulative depth of evaporation (depletion) at the end of 
+        stage 1 (REW = readily evaporable water) in [mm].
+        
+        @rtype: double
+        @return: Evaporation reduction coefficient in [-].
+        """
+        if De > REW:
+            return (TEW-De)/(TEW-REW)
+        else:
+            return 1.
+    def calc_TEW(self,FC,WP,Ze):
+        """
+        Returns total evaporable water.
+        
+        TEW total evaporable water = maximum depth of water 
+        that can be evaporated from the soil when the topsoil
+        has been initially completely wetted [mm],
+        
+        @type FC: double
+        @param FC: Soil water content at field capacity in [m3 m-3] 
+        @type WP: double
+        @param WP: Soil water content at wilting point in [m3 m-3]
+        @type Ze: double
+        @param Ze: Depth of the surface soil layer that is subject to drying by 
+        way of evaporation in [m].
+       
+        @rtype: double
+        @return: Total evaporable water in [mm].
+        """
+        return 1000*(FC-0.5*WP)*Ze
