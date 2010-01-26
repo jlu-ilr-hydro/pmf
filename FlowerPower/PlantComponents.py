@@ -59,7 +59,7 @@ class Plant:
     @summary: Plant connects the plant components, holds the process modules and
       interacts with the environmental models
     """ 
-    Plant.Count=0   
+    #Plant.Count=0   
     def __init__(self,et,water,biomass,development,nitrogen,layer,
                  shoot_percent =   [.0,.5,.5,.9,.95,1.,1.,1.],
                  root_percent =    [.0,.5,.5,.1,.05,.0,.0,.0],
