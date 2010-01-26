@@ -88,7 +88,7 @@ if __name__=='__main__':
     atmosphere=cmf1d()
     atmosphere.load_meteo(rain_factor=1)
     
-    soil = FlowerPower.SWC()
+    soil = FlowerPower.ProcessLibrary.SWC()
     baresoil = FlowerPower.ProcessLibrary.ET_FAO([0.,0.,0.,0.],[0.,0.,0.,0.],kcmin = 0.)
     #set management
     sowingdate = set(datetime(i,3,1) for i in range(1980,2100))
