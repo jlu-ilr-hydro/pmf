@@ -6,7 +6,7 @@
 
 from distutils.core import setup
 pymods=['PMF.__init__','PMF.Interface','PMF.PlantBuildingSet','PMF.PlantModel',
-        'PMF.ProcessLibrary']
+        'PMF.ProcessLibrary','PMF.CropDatabase']
 scripts=['Case_Study_I.py','Case_Study_II.py','Case_Study_III.py',
          'cmf_fp_interface.py','cmf_setup.py', 
          'giessen.rain','giessen.rHmean','giessen.Sunshine','giessen.Tmax',
