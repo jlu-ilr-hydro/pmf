@@ -34,10 +34,9 @@ Holds functions for plant implementation
  more details. You should have received a copy of the GNU General 
  Public License along  with this program;
  if not, see <http://www.gnu.org/licenses/>.
- 
-
 """
 import PMF
+import CropDatabase
 import copy as copy
 def clone(plant):
     """
@@ -97,32 +96,8 @@ def connect(plant,soil,atmosphere,**args):
     else:
         return 'Error: No plant instance'
 
-class CropCoefficiants:
-    """
-    Holds crop specific parameters.
-    """
-    def __init__(self,
-                 tbase = 0.,
-                 stage = [['Emergence',160.],
-                          ['Leaf development',208.],
-                          ['Tillering',421.],
-                          ['Stem elongation',659.],
-                          ['Anthesis',901.],
-                          ['Seed fill',1174.],
-                          ['Dough stage',1556.],
-                          ['Maturity',1665.]],
-                 RUE=3.,
-                 k=.4,
-                 seasons =[160.0, 499.0, 897.0, 1006.0],
-                 kcb =[0.15,1.1,0.15] ):
-        self.tbase = tbase
-        self.stage=stage
-        self.seasons = seasons
-        self.k=k
-        self.kcb=kcb
-        self.RUE=RUE
 
-wheat=CropCoefficiants()
+wheat=CropDatabase.CropCoefficiants()
 
 def createPlant_CMF(**args):
     """
