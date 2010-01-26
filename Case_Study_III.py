@@ -23,7 +23,7 @@ Changing conditions: The upper soil layers dry out in the early growing season.
 
 @author: Sebastian Multsch
 
-@version: 1.0 (01.10.2009)
+@version: 0.1 (26.10.2010)
 
 @copyright: 
  This program is free software; you can redistribute it and/or modify it under  
