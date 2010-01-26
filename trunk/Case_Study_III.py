@@ -226,4 +226,5 @@ imshow(transpose([r[:20] for r in res[1].Sh]),cmap=cm.Blues,aspect='auto',interp
 ylabel('Depth [cm]')
 xlabel('Day of year')
 colorbar()
+show()
         

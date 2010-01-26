@@ -364,7 +364,7 @@ class Plant:
             #Nutrient uptake
             NO3content=self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
             self.Rp=self.NO3dem(self.biomass.PotentialGrowth, NO3content)
-            self.nitrogen([self.soil.get_nutrients(l.center) for l in self.root.zone],
+            self.nitrogen([self.soil.get_nitrogen(l.center) for l in self.root.zone],
                               s_h, self.Rp,biomass_distribution)  
         if self.developmentstage.IsGrowingseason:
             self.water_stress = max(0,1 - sum(s_h) / Tpot*self.stress_adaption)
@@ -380,7 +380,7 @@ class Plant:
                 Sh = sum(s_h)
                 Ra = sum(self.nitrogen.Total)
                 Rp=self.Rp
-                NO3dis = [self.soil.get_nutrients(l.center) if l.penetration>0 else 0. for l in self.root.zone]
+                NO3dis = [self.soil.get_nitrogen(l.center) if l.penetration>0 else 0. for l in self.root.zone]
                 H2Odis = [alpha[i]  if l.penetration>0 else 0. for i,l in enumerate(self.root.zone)]
                 fgi = self.get_fgi(Sh, Tpot, Ra, Rp, NO3dis, H2Odis)
                 
