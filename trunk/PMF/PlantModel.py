@@ -33,8 +33,8 @@ class Plant:
     ==============
     The implementation includes the connection to the environmental models
     and the definition of the process modules. 
-    The module FlowerPower.makePlant.py holds methods for the implementation 
-    with process modules from FlowerPower.PorcessLibrary.py. The required 
+    The module PMF.makePlant.py holds methods for the implementation 
+    with process modules from PMF.PorcessLibrary.py. The required 
     modules are as follows:
       - Two environmental interfaces:
         - Soil (water balance data)
@@ -59,7 +59,7 @@ class Plant:
     @summary: Plant connects the plant components, holds the process modules and
       interacts with the environmental models
     """ 
-    #Plant.Count=0   
+    Count=0   
     def __init__(self,et,water,biomass,development,nitrogen,layer,
                  shoot_percent =   [.0,.5,.5,.9,.95,1.,1.,1.],
                  root_percent =    [.0,.5,.5,.1,.05,.0,.0,.0],
@@ -146,7 +146,7 @@ class Plant:
         @summary: Returns a plant instance
         """
         #Raise Count variable for each plant instance
-        Plant.Count+=1
+        self.Count+=1
         
         #Constant variables
         self.plantN=plantN
