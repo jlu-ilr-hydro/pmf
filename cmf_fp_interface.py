@@ -6,7 +6,7 @@ Created on Wed Sep 30 15:40:40 2009
 """
 import cmf
 class cmf_fp_interface:
-    """This class implements the Atmosphere and the soil interface of the FlowerPower (Multsch et al. 2010) model
+    """This class implements the Atmosphere and the soil interface of the PMF (Multsch et al. 2010) model
     """
     def __init__(self,cmf_cell, cmf_tracer_N=None):
         """Creates an interface for a cmf cell to flower_power
