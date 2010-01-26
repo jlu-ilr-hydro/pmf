@@ -1,15 +1,15 @@
 """
 This setup build a cmf1d cell with defualt values. For a
 given management with harvest and sowingdates a crop is 
-created from the FlowerPower crop model. The plant growth
-processes are taken from the FlowerPower process library.
+created from the PMF crop model. The plant growth
+processes are taken from the PMF process library.
 The crop parameters are created from liture data which refer
 to summer wheat. Meterological timeseries refer to a weather 
 station from Giessen.
 """
 from pylab import *
 from datetime import *
-import FlowerPower
+import PMF
 import cmf
 from cmf_setup import *
 import struct
@@ -110,7 +110,7 @@ def createCrop_LogisticGrowth(soil,atmosphere,CropParams):
     @type CropParams: list
     @param CropParams: List with specific crop coeffciants.
     
-    @rtype: FlowerPower.PlantComponents.Plant
+    @rtype: PMF.PlantModel.Plant
     @return: Plant with specific parameters and soil and atmospere interface.
     """
     #SummerWheat
@@ -158,16 +158,16 @@ def createCrop_LogisticGrowth(soil,atmosphere,CropParams):
     capacity_limit = CropParams[19]#1500
     
     #Crop process models from ProcesLibrary
-    et = FlowerPower.ET_FAO(kcb,seasons)
+    et = PMF.ET_FAO(kcb,seasons)
     
-    biomass = FlowerPower.Biomass_LOG(capacity_limit,logistic_growthrate)
-    development = FlowerPower.Development(stage)
-    layer = FlowerPower.SoilLayer()
+    biomass = PMF.Biomass_LOG(capacity_limit,logistic_growthrate)
+    development = PMF.Development(stage)
+    layer = PMF.SoilLayer()
     layer.get_rootingzone(c.get_profile())
-    nitrogen = FlowerPower.Nitrogen(layercount=len(layer))
-    water = FlowerPower.Water_Feddes(layercount=len(layer))
+    nitrogen = PMF.Nitrogen(layercount=len(layer))
+    water = PMF.Water_Feddes(layercount=len(layer))
     #Creates plant
-    return FlowerPower.Plant(soil,atmosphere,et,water,biomass,development,layer,nitrogen,
+    return PMF.Plant(soil,atmosphere,et,water,biomass,development,layer,nitrogen,
                  shoot,root,leaf,stem,storage)
 def createCrop_LUEconcept(soil,atmosphere,CropParams):
     """
@@ -206,7 +206,7 @@ def createCrop_LUEconcept(soil,atmosphere,CropParams):
     @type CropParams: list
     @param CropParams: List with specific crop coeffciants.
     
-    @rtype: FlowerPower.PlantComponents.Plant
+    @rtype: PMF.PlantModel.Plant
     @return: Plant with specific parameters and soil and atmospere interface.
     """
     #SummerWheat
@@ -250,16 +250,16 @@ def createCrop_LUEconcept(soil,atmosphere,CropParams):
     max_height = CropParams[17]#1.0
     
     #Crop process models from ProcesLibrary
-    et = FlowerPower.ET_FAO(kcb,seasons)
+    et = PMF.ET_FAO(kcb,seasons)
     
-    biomass = FlowerPower.Biomass_LUE(LUE,k)
-    development = FlowerPower.Development(stage)
-    layer = FlowerPower.SoilLayer()
+    biomass = PMF.Biomass_LUE(LUE,k)
+    development = PMF.Development(stage)
+    layer = PMF.SoilLayer()
     layer.get_rootingzone(c.get_profile())
-    nitrogen = FlowerPower.Nitrogen(layercount=len(layer))
-    water = FlowerPower.Water_Feddes(layercount=len(layer))
+    nitrogen = PMF.Nitrogen(layercount=len(layer))
+    water = PMF.Water_Feddes(layercount=len(layer))
     #Creates plant
-    return FlowerPower.Plant(soil,atmosphere,et,water,biomass,development,layer,nitrogen,
+    return PMF.Plant(soil,atmosphere,et,water,biomass,development,layer,nitrogen,
                  shoot,root,leaf,stem,storage)
 def run(start,end,step):
      #Set cmf time
@@ -269,15 +269,15 @@ def run(start,end,step):
         time = num2date(t)
             
         #sowing
-        if t in sowingdate: crop = FlowerPower.connect(FlowerPower.createPlant_CMF(),c,c)
+        if t in sowingdate: crop = PMF.connect(PMF.createPlant_CMF(),c,c)
         #harvest
-        if t in harvestdate: FlowerPower.Plant.Count-=1
+        if t in harvestdate: PMF.Plant.Count-=1
 
         #Let grow
-        if FlowerPower.Plant.Count > 0: crop(time,'day',1.)
+        if PMF.Plant.Count > 0: crop(time,'day',1.)
         
         #Water flux from soil to plant
-        c.flux = [uptake*-1. for uptake in crop.Wateruptake] if FlowerPower.Plant.Count >0 else [0]*50
+        c.flux = [uptake*-1. for uptake in crop.Wateruptake] if PMF.Plant.Count >0 else [0]*50
         
         
         #Calculation of water balance with cmf
@@ -287,9 +287,9 @@ def run(start,end,step):
         #Save results for each element from output
         for i,out in enumerate(output):
             #Call plant only if plant exists
-            if FlowerPower.Plant.Count > 0:
-                #call out objects with flowerpower values
-                out([eval(param) for param in flowerpower_params[i]])
+            if PMF.Plant.Count > 0:
+                #call out objects with PMF values
+                out([eval(param) for param in PMF_params[i]])
             else:
                 #call out objects with zero values
                 out([0. for l in range(len(out.labels))])
@@ -445,8 +445,8 @@ if __name__=='__main__':
     #Initialise output classes whith labels for each parameter
     output = [Output(['Wateruptake'],start,end,step,dynamic=True)]
     
-    #Set FlowerPower call function for each parameter in output
-    flowerpower_params =[['sum(crop.Wateruptake)']]
+    #Set PMF call function for each parameter in output
+    PMF_params =[['sum(crop.Wateruptake)']]
     
     #run simulation
     #run(start,end,step)

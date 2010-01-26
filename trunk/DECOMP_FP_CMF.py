@@ -12,7 +12,7 @@ from cmf_DECOMP import DECOMPcmf
 from cmf_fp_interface import cmf_fp_interface
 from datetime import datetime
 from time import clock
-import FlowerPower
+import PMF
 import pylab
 import numpy as np
 from cmf_setup import cmf1d
@@ -22,7 +22,7 @@ c1.load_meteo(rain_factor=0.5)
 print "meteo loaded"
 N,DOC = c1.project.solutes
 cmf_fp = cmf_fp_interface(c1.cell, N)
-print "Interface to FlowerPower"
+print "Interface to PMF"
 DECOMPcell=DECOMPcmf(c1.cell)
 print "DECOMP layers ok"
 def fertilize(kgN_ha):
@@ -42,7 +42,7 @@ start = datetime(1980,1,1)
 end = datetime(1980,12,31)
 
 #Create evapotranspiration instance or bare soil conditions
-baresoil = FlowerPower.ProcessLibrary.ET_FAO([0.,0.,0.,0.],[0.,0.,0.,0.],kcmin = 0.)
+baresoil = PMF.ProcessLibrary.ET_FAO([0.,0.,0.,0.],[0.,0.,0.,0.],kcmin = 0.)
 plant=None
 class Res(object):
     def __init__(self):        
@@ -70,7 +70,7 @@ c1.t = start
 
 def run_step(t,res,plant):
     if t.day==1 and t.month==3:
-        plant=FlowerPower.connect(FlowerPower.createPlant_CMF(),cmf_fp,cmf_fp)
+        plant=PMF.connect(PMF.createPlant_CMF(),cmf_fp,cmf_fp)
     if t.day==1 and t.month==8:
         DECOMPcell.depose_litter((plant.shoot.leaf.Wtot + plant.shoot.stem.Wtot) * c1.cell.area ,0.0)
         DECOMPcell.set_root_litter(plant.root.branching)
