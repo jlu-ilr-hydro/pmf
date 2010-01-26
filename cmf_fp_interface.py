@@ -25,7 +25,7 @@ class cmf_fp_interface:
     def matrix_potential(self):
         """Returns the capillary suction in m for each layer (including the bedrock layer)"""
         return [l.matrix_potential for l in self.cmf_cell.layers]
-    def get_nutrients(self,depth):
+    def get_nitrogen(self,depth):
         """ Depth in cm; Returns the nitrogen concentration in the soil solution in [g l-1]"""
         l=self.get_layer(depth)
         if isinstance(self.N,cmf.solute):

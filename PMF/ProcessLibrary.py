@@ -1385,7 +1385,7 @@ class SWC:
         @return: Revaporation reduction coefficient in [-].
         """
         return self.kr
-    def get_nutrients(self,depth):
+    def get_nitrogen(self,depth):
         return 100000
     def __call__(self,ETc,evaporation,rainfall,Zr,runoff=0.,irrigation=0.,capillarrise=0.):
         """
