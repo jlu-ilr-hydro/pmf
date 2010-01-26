@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-Plant interface to the environmental models
+PMF interface to the environmental models
 
 @author: Sebastian Multsch
 
@@ -24,7 +24,7 @@ def get_pressurehead(self,depth):
     """ Depth in cm; Returns the capillary suction for a given depth in [cm]."""
     pass
 def get_nutrients(self,depth):
-    """ Depth in cm; Returns the nitrogen concentration in the soil solution in [mol l-1] """
+    """ Depth in cm; Returns the nitrogen concentration in the soil solution in [g l-1] """
     pass
 def soilprofile(self):
     """ Returns a list with the lower limits of the layers in the whole soilprofile in [cm]. """
@@ -63,5 +63,9 @@ def get_windspeed(self,time):
     """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns windspeed in [m s-1]"""
     pass
 def Kr(self):
-    pass
+    """
+    Kr is the dimensionless evaporation reduction coefficient dependent 
+    on the soil  water depletion (cumulative depth of evaporation) 
+    from the topsoil layer.
+    """
 
