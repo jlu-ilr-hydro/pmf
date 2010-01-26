@@ -2,17 +2,17 @@
 Holds functions for plant implementation  
 
   1. Set Processes from ProcessLibrary (note *1):
-    - et = FlowerPower.ET_FAO(kcb_values = [0.15,1.1,0.15],seasons = [160.0, 499.0, 897.0, 1006.0])
-    - biomass = FlowerPower.Biomass_LUE(RUE = 3.,k=.4)
-    - development = FlowerPower.Development(stage = [['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',1200.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]])
-    - layer = FlowerPower.SoilLayer(soillayer=[10,20,30,40,50,60,100])
-    - nitrogen = FlowerPower.Nitrogen(layercount = len(layer))
-    - water = FlowerPower.Water_Feddes(layercount = len(layer))
+    - et = PMF.ET_FAO(kcb_values = [0.15,1.1,0.15],seasons = [160.0, 499.0, 897.0, 1006.0])
+    - biomass = PMF.Biomass_LUE(RUE = 3.,k=.4)
+    - development = PMF.Development(stage = [['Emergence',160.],['Leaf development',208.],['Tillering',421.],['Stem elongation',659.],['Anthesis',1200.],['Seed fill',1174.],['Dough stage',1556.],['Maturity',1665.]])
+    - layer = PMF.SoilLayer(soillayer=[10,20,30,40,50,60,100])
+    - nitrogen = PMF.Nitrogen(layercount = len(layer))
+    - water = PMF.Water_Feddes(layercount = len(layer))
 
 
   2. Create plant (note*2,*3):
-    - wheat_instance = makePlant(FlowerPower.Plant,et=et,biomass=biomass,development=development,layer=layer,nitrogen=nitrogen,water=water)
-    - wheat_classobj = FlowerPower.Plant
+    - wheat_instance = makePlant(PMF.Plant,et=et,biomass=biomass,development=development,layer=layer,nitrogen=nitrogen,water=water)
+    - wheat_classobj = PMF.Plant
 
   3. Connect plant with soil and amtosphere interface:
     - Loess = Soil()
@@ -37,7 +37,7 @@ Holds functions for plant implementation
  
 
 """
-import FlowerPower
+import PMF
 import copy as copy
 def clone(plant):
     """
@@ -47,7 +47,7 @@ def clone(plant):
     Constructs a new compound object and then, recursively, 
     inserts copies into it of the objects found in the original.
     
-    @rtype: FlowerPower.Plant
+    @rtype: PMF.Plant
     @return: New plant instance with same values.
     @see: [http://docs.python.org/library/copy.html, 11.11.2009]
     """
@@ -56,7 +56,7 @@ def setProcess(p,**args):
     """
     Returns a process with the given paramter.
     
-    @param p: Process class from FlowerPower.ProcessLibrary.py
+    @param p: Process class from PMF.ProcessLibrary.py
     @type p: process class
     
     @rtype: process class
@@ -69,7 +69,7 @@ def makePlant(plant,**args):
     Returns a plant wit hthe given arguments.
     
     @param plant: plant
-    @type plant: Plant instance from FlowerPower.PlantModel.Plant.py.
+    @type plant: Plant instance from PMF.PlantModel.Plant.py.
     
     @rtype: plant
     @return: Plant instance
@@ -81,7 +81,7 @@ def connect(plant,soil,atmosphere,**args):
     Connects a plant with environmental interfaces.
     
     @param plant: plant
-    @type plant: Plant instance from FlowerPower.PlantModel.Plant.py.
+    @type plant: Plant instance from PMF.PlantModel.Plant.py.
     @type  soil: soil
     @param soil: Interface to water balance data.
     @type  atmosphere: atmosphere
@@ -90,7 +90,7 @@ def connect(plant,soil,atmosphere,**args):
     @rtype: plant
     @return: Plant instance
     """
-    if isinstance(plant,FlowerPower.Plant):
+    if isinstance(plant,PMF.Plant):
         plant.set_soil(soil)
         plant.set_atmosphere(atmosphere)
         return plant
@@ -128,32 +128,32 @@ def createPlant_CMF(**args):
     """
     Implements a specific plant setup with summer wheat values.
     """
-    et = FlowerPower.ET_FAO(kcb_values = wheat.kcb,seasons = wheat.seasons)
+    et = PMF.ET_FAO(kcb_values = wheat.kcb,seasons = wheat.seasons)
     print 'Evapotranspiration: FAO - Penman-Monteith'
-    biomass = FlowerPower.Biomass_LUE(wheat.RUE,wheat.k)
+    biomass = PMF.Biomass_LUE(wheat.RUE,wheat.k)
     print 'Biomass: Light-use-efficiency concept' 
-    development = FlowerPower.Development(stage = wheat.stage)
-    nitrogen = FlowerPower.Nitrogen()
-    water = FlowerPower.Water_Feddes()
+    development = PMF.Development(stage = wheat.stage)
+    nitrogen = PMF.Nitrogen()
+    water = PMF.Waterstress_Feddes()
     print 'Waterstress: Feddes'
-    layer = FlowerPower.SoilLayer()
-    return makePlant(FlowerPower.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)
+    layer = PMF.SoilLayer()
+    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)
 
 def createPlant_SWC(**args):
     """
     Implements a specific plant setup with summer wheat values.
     """
-    et = FlowerPower.ET_FAO(kcb_values = wheat.kcb,seasons = wheat.seasons)
+    et = PMF.ET_FAO(kcb_values = wheat.kcb,seasons = wheat.seasons)
     print 'Evapotranspiration: FAO - Penman-Monteith'
-    biomass = FlowerPower.Biomass_LUE(wheat.RUE,wheat.k)
+    biomass = PMF.Biomass_LUE(wheat.RUE,wheat.k)
     print 'Biomass: Light-use-efficiency concept' 
-    development = FlowerPower.Development(stage = wheat.stage)
-    nitrogen = FlowerPower.Nitrogen()
+    development = PMF.Development(stage = wheat.stage)
+    nitrogen = PMF.Nitrogen()
     print 'No nitrogen uptake'
-    water = FlowerPower.Water_FAO()
+    water = PMF.Waterstress_FAO()
     print 'Waterstress: FAO'
-    layer = FlowerPower.SoilLayer()
-    return makePlant(FlowerPower.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)
+    layer = PMF.SoilLayer()
+    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)
 
 
 
