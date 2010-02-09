@@ -1,25 +1,29 @@
 # -*- coding: utf-8 -*-
 """
-Case Study II: Water balance - Single layer Storage approach
+Case Study II: Drought event
 The Case Study represents a summer wheat setup of PMF and with the
-SoilWaterContainer (SWC) as water balance model:
+Catchment Modeling Framework (CMF) in the version cmf1d.
 
 Weather     : Giessen,
 
 Soil texture: Silt
 
-Soil        : SWC,
+Soil        : cmf1d
 
 Atmosphere  : cmf1d,      
 
-Simulation  : 1.1.1980 - 31.12.1980 and 
+Simulation  : 1.1.1980 - 8.9.1980 and 
 
 Management  : Sowing - 1.3.JJJJ, Harvest - 8.1.JJJJ.
+
+Changing conditions: The upper soil layers dry out in the early growing season.
+                    This effect is represented through increased water fluxes
+                    from the upper three soil layers between 1.4.JJ And 1.5.JJ.
 
 
 @author: Sebastian Multsch
 
-@version: 0.1 (26.10.2010)
+@version: 0.1 (01.02.2010)
 
 @copyright: 
  This program is free software; you can redistribute it and/or modify it under  
@@ -37,143 +41,241 @@ Management  : Sowing - 1.3.JJJJ, Harvest - 8.1.JJJJ.
 ### Runtime Loop
 
 def run(t,res,plant):
+    #Management
     if t.day==1 and t.month==3:
-        plant = PMF.connect(PMF.createPlant_SWC(),soil,atmosphere)
-        plant.nitrogen.Km = 27 * 62e-6
-        plant.nitrogen.NO3min = 0.1e-3
-
-    if t.day==1 and t.month==8:
-        plant =  None
-    #Let grow
-    if plant: 
-        plant(t,'day',1.)
-     
-    
+        plant_swc = PMF.connect(PMF.createPlant_SWC(),swc_fp,cmf_fp)
+        plant_cmf = PMF.connect(PMF.createPlant_CMF(),cmf_fp,cmf_fp)
+        plant = [plant_swc,plant_cmf]
+    if t.day==1 and t.month==8:           
+        plant = None  
+        
     #Calculates evaporation for bare soil conditions
-   
-    ETc_adj = sum(plant.Wateruptake)+plant.et.evaporation if plant else baresoil.evaporation
-    evaporation = plant.et.evaporation if plant else baresoil.evaporation
-    rainfall = atmosphere.cell.rain(t)
-    Zr = plant.root.depth/100. if plant else 0.
-    soil(ETc_adj,evaporation,rainfall,Zr)
+    baresoil(c.Kr(),0.,c.get_Rn(t, 0.12, True),c.get_tmean(t),c.get_es(t),c.get_ea(t), c.get_windspeed(t),0.,RHmin=30.,h=1.)    
     
-    res.water_stress.append(plant.water_stress) if plant else res.water_stress.append(0)
-    res.potential_depth.append(plant.root.potential_depth) if plant else res.potential_depth.append(0)
-    res.rooting_depth.append(plant.root.depth) if plant else res.rooting_depth.append(0)
-    res.water_uptake.append(plant.Wateruptake) if plant else res.water_uptake.append([0])
-    res.transpiration.append(plant.et.transpiration) if plant else res.transpiration.append(0)
-    res.evaporation.append(plant.et.evaporation) if plant else  res.evaporation.append(0)
-    res.biomass.append(plant.biomass.Total) if plant else res.biomass.append(0)
-    res.root_biomass.append(plant.root.Wtot) if plant else res.root_biomass.append(0)
-    res.shoot_biomass.append(plant.shoot.Wtot) if plant else res.shoot_biomass.append(0)
-    res.lai.append(plant.shoot.leaf.LAI) if plant else res.lai.append(0)
-    res.ETo.append(plant.et.Reference) if plant else res.ETo.append(0)
-    res.ETc.append(plant.et.Cropspecific) if plant else res.ETc.append(0)
-    res.rain.append(atmosphere.cell.rain(t))
-    res.DAS.append(t-datetime(1980,3,1)) if plant else res.DAS.append(0)
-    res.temperature.append(atmosphere.get_tmean(t))
-    res.radiation.append(atmosphere.get_Rs(t))
-    res.stress.append(plant.water_stress if plant else 0.)
-    res.leaf.append(plant.shoot.leaf.Wtot if plant else 0.)
-    res.stem.append(plant.shoot.stem.Wtot if plant else 0.)
-    res.storage.append(plant.shoot.storage_organs.Wtot if plant else 0.)
-    res.Dr.append(soil.Dr)
-    res.TAW.append(plant.water.TAW if plant else 0.)
-    res.RAW.append(plant.water.RAW if plant else 0.)
-    atmosphere.run(cmf.day) 
+    #plant growth
+    if plant: [p(t,'day',1.) for p in plant]
+    
+    #swc_fp_interaction
+    Wateruptake = sum(plant[0].Wateruptake) if plant else 0.
+    evaporation = plant[0].et.evaporation if plant else baresoil.evaporation
+    rainfall =c.cell.rain(t)
+    Zr = plant[0].root.depth/100. if plant else 0.
+    ETc_adj = Wateruptake + evaporation
+    swc_fp(ETc_adj,evaporation,rainfall,Zr)
+        
+    #cmf_fp_interaction
+    flux = [uptake*-1. for uptake in plant[1].Wateruptake] if plant  else zeros(c.cell.layer_count())
+    flux[0] -= plant[1].et.evaporation if plant else baresoil.evaporation
+    
+    #influences through lateral flow
+ 
+    if t.day>=1  and t.month==4 or t.month==5:
+        flux[0]-=  c.wetness[0]*5
+        flux[1]-=  c.wetness[0]*5
+        flux[2]-=  c.wetness[0]*5
+
+    c.flux=flux
+    
+   
+        
+    res[1].Dr.append(c.wetness)
+    res[0].Dr.append(swc_fp.Dr)
+    res[0].rain.append(c.cell.rain(t)) 
+    res[0].radiation.append(c.get_Rn(t, 0.12, True))
+    #Results
+    if plant:
+        res[0].TAW.append(plant[0].water.TAW)
+        res[0].RAW.append(plant[0].water.RAW)
+        res[0].rootdepth.append(plant[0].root.depth)
+        res[1].rootdepth.append(plant[1].root.branching)
+        res[1].root_growth.append(plant[1].root.actual_distribution)
+        
+        for i,p in enumerate(plant):
+            res[i].W_shoot.append(p.shoot.Wtot)
+            res[i].W_root.append(p.root.Wtot)
+            res[i].LAI.append(p.shoot.leaf.LAI)
+            res[i].Sh.append(p.Wateruptake)
+            res[i].T.append(p.et.transpiration)
+            res[i].E.append(p.et.evaporation)
+            res[i].stress.append(p.water_stress)
+            res[i].W_potential.append(p.biomass.pot_total)
+            res[i].rootdepth_pot.append(p.root.potential_depth)
+            res[i].W_leaf.append(p.shoot.leaf.Wtot)
+            res[i].W_stem.append(p.shoot.stem.Wtot)
+            res[i].W_storage.append(p.shoot.storage_organs.Wtot)
+           
+    else:
+        res[0].TAW.append(0.)
+        res[0].RAW.append(0.)
+        res[0].rootdepth.append(0)
+        res[1].rootdepth.append(zeros(c.cell.layer_count()))
+        res[1].root_growth.append(zeros(c.cell.layer_count()))
+        res[0].Sh.append(0.)
+        res[1].Sh.append(zeros(c.cell.layer_count()))
+        for r in res:
+            r.W_shoot.append(0.)
+            r.W_root.append(0.)
+            r.LAI.append(0.)
+            
+            r.T.append(0.)
+            r.E.append(0.)
+            r.stress.append(0.)
+            r.W_potential.append(0.)
+            r.rootdepth_pot.append(0.)
+            r.W_leaf.append(0.)
+            r.W_stem.append(0.)
+            r.W_storage.append(0.)
+            
+    c.run(cmf.day)
     return plant
 
-class Res(object):
+
+class Results():
     def __init__(self):
-        self.water_uptake = []
-        self.transpiration = []
-        self.evaporation = []
-        self.biomass = []
-        self.root_biomass = []
-        self.shoot_biomass = []
-        self.lai = []
-        self.ETo = []
-        self.ETc = []
-        self.rain = []
-        self.temperature = []
-        self.radiation = []
-        self.DAS = []
-        self.leaf=[]
-        self.stem=[]
-        self.storage=[]
-        self.Dr=[]
+        self.W_shoot=[]
+        self.W_root=[]
+        self.W_leaf=[]
+        self.W_stem=[]
+        self.W_storage=[]
+        self.rootdepth=[]
+        self.LAI=[]
+        self.Sh=[]
+        self.T=[]
+        self.E=[]
+        self.stress=[]
         self.TAW=[]
         self.RAW=[]
-        self.stress=[]
-        self.fc=[]
-        self.wp=[]
-        self.rooting_depth=[]
-        self.potential_depth=[]
-        self.water_stress=[]
+        self.Dr=[]
+        self.rain=[]
+        self.W_potential=[]
+        self.rootdepth_pot=[]
+        self.radiation=[]
+        self.root_growth=[]
+        
         
     def __repr__(self):
-        return "Shoot=%gg, Root=%gg, ETc = %gmm, Wateruptake=%gmm, Stress=%s" % (self.shoot_biomass[-1],self.root_biomass[-1],self.ETc[-1],sum(self.water_uptake[-1]),self.stress[-1])
-if __name__=='__main__':
-#######################################
-#######################################
-### Setup script   
+        return "Shoot = %gg, Root =% gg, LAI = %gm2/m2, Wateruptake =% gmm, T = %gmm, E = %gmm, Stress = %g" % (self.W_shoot[-1],self.W_root[-1],self.LAI[-1],sum(self.Sh[-1]),self.T[-1],self.E[-1],self.stress[-1])
 
+#######################################
+#######################################
+### Setup script
+
+if __name__=='__main__':
     from pylab import *
     from datetime import *
     import PMF
     import cmf
     from cmf_setup import cmf1d
-    import psyco
-    psyco.full()
+    from cmf_fp_interface import cmf_fp_interface
+    import time
+    
+    r1=Results()
+    r2=Results()
+    res = [r1,r2]
+    
+    #Create Evaporation modul
+    baresoil = PMF.ProcessLibrary.ET_FAO([0.,0.,0.,0.],[0.,0.,0.,0.],kcmin = 0.)
     
     #Create cmf cell    
-    atmosphere=cmf1d()
-    atmosphere.load_meteo(rain_factor=1)
+    c=cmf1d()
+    c.load_meteo(rain_factor=.75)
+    cmf_fp = cmf_fp_interface(c.cell)
+    c.cell.saturated_depth=5.
     
-    soil = PMF.ProcessLibrary.SWC()
-    baresoil = PMF.ProcessLibrary.ET_FAO([0.,0.,0.,0.],[0.,0.,0.,0.],kcmin = 0.)
-    #set management
+    #Create Soilwater container
+    swc_fp = PMF.SWC()
+    
+    #Create management
     sowingdate = set(datetime(i,3,1) for i in range(1980,2100))
     harvestdate = set(datetime(i,8,1) for i in range(1980,2100))
     #Simulation period
-    start = datetime(1980,1,1)
-    end = datetime(1982,12,31)
-    #Simulation
-    res = Res()
+    start = datetime(1980,2,20)
+    end = datetime(1980,9,8)
+    
     plant = None
-    print "Run ... "    
-    start_time = datetime.now()
-    atmosphere.t = start
-    while atmosphere.t<end:
-        plant=run(atmosphere.t,res,plant)
-        print atmosphere.t
-    
-#######################################
-#######################################
-### Show results
+    c.t = start
+    while c.t<end:
+        plant=run(c.t,res,plant)
+        
+        #shoot_data[i] += res[0].W_shoot[-1]
+        #shoot_line = make_show(shoot_line,shoot_data)
+        #i+=1
+        
+        print c.t
 
-timeline=drange(start,end,timedelta(1))
-subplot(311)
-plot_date(timeline,res.RAW,'k',label='Readily available Water')
-plot_date(timeline,res.Dr,'r--',label='Depletion')
-legend(loc=0)
-ylabel('Water balance [mm]')   
-subplot(312)
-plot_date(timeline,res.water_stress,'b',label='Drought stress')
-ylabel('Stress index [-]')
-ylim(0,1)
-legend(loc=0)
-subplot(313)
-plot_date(timeline,[-r for r in res.rooting_depth],'g',label='Actual')
-plot_date(timeline,[-r for r in res.potential_depth],'k--',label='Potential')
-ylabel('Rooting depth [mm]')
-legend(loc=0)
-show()
-    
-    
-    
-    
-    
    
-    
-    
+#######################################
+#######################################
+### Show results    
+import pylab
+params = {'backend': 'ps',
+          'axes.labelsize': 22,
+          'text.fontsize': 22,
+          'legend.fontsize': 22,
+          'xtick.labelsize': 22,
+          'ytick.labelsize': 22,
+          'legend.fontsize': 22,
+          'font.family' : 'Arial',
+          'font.style' : 'normal',
+          'font.variant' : 'normal',
+          'font.weight' : 'normal',
+          'font.stretch' : 'normal',
+          'font.size' : 'large'}
+
+pylab.rcParams.update(params)
+
+
+# Wurzelwachstum und Wasserhaushaltsbilanz
+"""
+subplot(311)
+imshow(transpose([r[:20] for r in res[1].rootdepth]),cmap=cm.Greens,aspect='auto',interpolation='nearest',extent=[100,260,100,0])
+ylabel('Depth [cm]')
+cb = colorbar()
+cb.set_label('Root biomass [g]')
+
+
+
+subplot(312)
+imshow(transpose([r[:20] for r in res[1].root_growth]),cmap=cm.Greens,aspect='auto',interpolation='nearest',extent=[100,260,100,0])
+ylabel('Depth [cm]')
+cb = colorbar()
+cb.set_label('Root growth [g]')
+
+subplot(313)
+imshow(transpose([r[:20] for r in res[1].Sh]),cmap=cm.Blues,aspect='auto',interpolation='nearest',extent=[100,260,100,0])
+ylabel('Depth [cm]')
+xlabel('Day of year')
+cb = colorbar()
+cb.set_label('Water uptake [mm]')
+show()
+"""
+
+# Wurzelwachstum und Wasserbilanz als Jahresssume
+
+total_root_biomass = [r for r in res[1].rootdepth[150]]
+#sum([r(i) for r in res[1].Sh])*-1 if type(res[1].Sh[i]) == 'list' else 0. for i in range(20) 
+total_water_uptake = []
+for layer in range(20):
+    total_water_uptake.append(sum([day[layer] for day in res[1].Sh]))
+   
+   
+plot(total_water_uptake[:20],[r*-5 for r in range(len(total_root_biomass[:20]))][:20], label='Root biomass')
+
+
+subplot(221)
+imshow(transpose([r[:20] for r in res[1].rootdepth]),cmap=cm.Greens,aspect='auto',interpolation='nearest',extent=[100,260,-100,0])
+#ylabel('Depth [cm]')
+#xlabel('Day of Year')
+cb = colorbar()
+#cb.set_label('Root [g]')
+subplot(222)
+plot(total_root_biomass[:20],[r*-5 for r in range(len(total_root_biomass[:20]))][:20],'g',label='Root biomass')
+#xlabel('Root Biomass in [g cm-1 a^-1]')
+#legend(loc=3)
+twiny()
+plot(total_water_uptake[:20],[r*-5 for r in range(len(total_root_biomass[:20]))][:20], 'k--',label='Water Uptake')
+#xlabel('Water Uptake in [mm cm-1 a-1]')
+#legend(loc=4)
+show()
+
+        

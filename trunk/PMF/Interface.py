@@ -33,7 +33,7 @@ class Atmosphere:
         """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns total solar radiation in [MJ m-2]"""
         pass
     def get_Rn(self,time,albedo,daily=True):
-        """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns total solar radiation in [MJ m-2]"""
+        """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns net radiation in [MJ m-2]"""
         pass
     def get_ea(self,time):
         """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns actual vapor pressure in [kPa]"""

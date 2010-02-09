@@ -1,4 +1,4 @@
-#Tue Jan 26 17:33:14 CET 2010
+#Tue Feb 02 18:54:46 CET 2010
 eclipse.preferences.version=1
 encoding//FlowerPower/FlowerPowerInterface.py=utf-8
 encoding//FlowerPower/PlantComponents.py=utf-8
@@ -9,8 +9,8 @@ encoding//PMF/PlantModel.py=utf-8
 encoding//PMF/ProcessLibrary.py=utf-8
 encoding/Case_Study_I.py=utf-8
 encoding/Case_Study_II.py=utf-8
-encoding/Case_Study_III.py=utf-8
 encoding/DECOMP_FP_CMF.py=utf-8
 encoding/FlowerPower_with_SWC.py=utf-8
 encoding/cmf_fp_interface.py=utf-8
+encoding/old_Case_Study_I.py=utf-8
 encoding/setup.py=utf-8
