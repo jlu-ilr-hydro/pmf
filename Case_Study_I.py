@@ -117,12 +117,52 @@ if __name__=='__main__':
 #######################################
 #######################################
 ### Setup script   
-
+    import os ####### MOVIE !!!
     from pylab import *
     from datetime import *
     import PMF
     import cmf
     from cmf_setup import cmf1d
+    
+    class Movie: ####### MOVIE !!!
+        def __init__(self,figure):
+            """
+            Creates a figure wtih one subplot
+            """
+            ion()
+            self.files = []
+            self.fig =  figure
+            self.ax1 = self.fig.add_subplot(211)
+            self.ax2 = self.fig.add_subplot(212)
+            
+            
+        def __call__(self,data,i):
+            self.ax1.cla()
+            ylim(0,20)
+            self.ax1.plot(data[0],label='Precipitation')
+            
+            legend(loc=1)
+            
+            self.ax2.cla()
+            self.ax2.plot(data[1],'r--',label='Dr')
+            self.ax2.plot(data[2],'k',label='RAW')
+            ylim(0,150)
+            legend(loc=1)
+            
+            
+            
+            fname = '_%03d.png'%i
+            print 'Saving frame', fname
+            self.fig.savefig(fname)
+            self.files.append(fname)
+        def makeMovie(self,fps=5,name='Movie'):
+            """
+            Makes a .mpg movie with the .png - files in the same folder.
+            The mencoder.exe must be included to the file-folder.
+            """
+            import os
+            os.system("mencoder mf://*.png -mf type=png:fps="+str(fps)+" -ovc lavc -lavcopts vcodec=wmv2 -oac copy -o "+name+".mpg")
+    
     
     #Create cmf cell    
     atmosphere=cmf1d()
@@ -134,18 +174,37 @@ if __name__=='__main__':
     sowingdate = set(datetime(i,3,1) for i in range(1980,2100))
     harvestdate = set(datetime(i,8,1) for i in range(1980,2100))
     #Simulation period
-    start = datetime(1980,1,1)
-    end = datetime(1982,12,31)
+    start = datetime(1980,3,1)
+    end = datetime(1980,8,31)
+   
     #Simulation
     res = Res()
     plant = None
     print "Run ... "    
     start_time = datetime.now()
     atmosphere.t = start
+    i=0 ####### MOVIE !!!
+    
+    rain=zeros(185)####### MOVIE !!!
+    dr=zeros(185)####### MOVIE !!!
+    raw=zeros(185)
+    movie = Movie(figure()) ####### MOVIE !!!
+    
+    
     while atmosphere.t<end:
+        rain[i]+=atmosphere.cell.rain(atmosphere.t)####### MOVIE !!!
+        dr[i]+=soil.Dr####### MOVIE !!!
+        raw[i]+=res.RAW[-1] if sum(res.RAW) >1 else 0.####### MOVIE !!!
+        
+        movie([rain,dr,raw],i) ####### MOVIE !!!
         plant=run(atmosphere.t,res,plant)
         print atmosphere.t
-    
+        i+=1 ####### MOVIE !!!
+movie.makeMovie()####### MOVIE !!!
+
+
+
+"""
 #######################################
 #######################################
 ### Show results
@@ -167,27 +226,37 @@ pylab.rcParams.update(params)
 
 timeline=drange(start,end,timedelta(1))
 
-pylab.subplot(311)
-pylab.plot_date(timeline,res.RAW,'k',label='Readily available water')
-pylab.plot_date(timeline,res.Dr,'r--',label='Depletion')
-pylab.legend(loc=0)
-pylab.ylabel('Water balance [mm]')
+
+fig = figure()
+fig.subplots_adjust(left=0.2, wspace=0.6)
+labelx = -0.05  # axes coords
+fig.patch.set_alpha(0.5)
+
+ax1 = fig.add_subplot(311)
+ax1.plot_date(timeline,res.RAW,'k',label='Readily available water')
+ax1.plot_date(timeline,res.Dr,'r--',label='Depletion')
+ax1.legend(loc=0)
+ax1.set_ylabel('Water balance [mm]')
+ax1.yaxis.set_label_coords(labelx, 0.5)
+
 
   
-pylab.subplot(312)
-pylab.plot_date(timeline,res.water_stress,'b',label='Drought stress')
-pylab.ylabel('Stress index [-]')
-pylab.ylim(0,1)
-pylab.legend(loc=0)
+ax2 = fig.add_subplot(312)
+ax2.plot_date(timeline,res.water_stress,'b',label='Drought stress')
+ax2.set_ylabel('Stress index [-]')
+ax2.set_ylim(0,1)
+ax2.legend(loc=0)
+ax2.yaxis.set_label_coords(labelx, 0.5)
 
-pylab.subplot(313)
-pylab.plot_date(timeline,[-r for r in res.rooting_depth],'g',label='Actual')
-pylab.plot_date(timeline,[-r for r in res.potential_depth],'k--',label='Potential')
-pylab.ylabel('Rooting depth [cm]')
-pylab.legend(loc=4)
+ax3 = fig.add_subplot(313)
+ax3.plot_date(timeline,[-r for r in res.rooting_depth],'g',label='Actual')
+ax3.plot_date(timeline,[-r for r in res.potential_depth],'k--',label='Potential')
+ax3.set_ylabel('Rooting depth [cm]')
+ax3.legend(loc=4)
+ax3.yaxis.set_label_coords(labelx, 0.5)
 
 show()
-    
+""" 
     
     
     
