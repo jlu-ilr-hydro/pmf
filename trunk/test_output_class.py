@@ -448,7 +448,7 @@ if __name__=='__main__':
     #Set PMF call function for each parameter in output
     PMF_params =[['sum(crop.Wateruptake)']]
     
-    #run simulation
-    #run(start,end,step)
+
+    run(start,end,step)
 
     
