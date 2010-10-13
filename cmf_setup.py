@@ -88,7 +88,7 @@ class cmf1d(object):
         # Add a bedrock layer
         c.add_layer(7,cmf.BrooksCoreyRetentionCurve(bedrock_K,0.1,1,0.01))
         # Add a groundwater boundary (potential=-5.0 m)
-        self.groundwater=cmf.DricheletBoundary(self.project,-5)
+        self.groundwater=self.project.NewOutlet('Groundwater @ ' + str(c),c.x,c.y,-5)
         #self.groundwater.is_source=True
         self.groundwater.Name="Groundwater"
         # Connect bedrock layer with groundwater boundary, using Richards equation
