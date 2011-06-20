@@ -75,24 +75,27 @@ class cmf1d(object):
         nbc.Name="Boundary condition #%i" % (8)
         self.__bc.append(nbc)
         
-        soil = [d for d in arange(.05,2.05,0.05)]
-        for i in range(8,len(soil),1):
-            print i,soil[i]
-            KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)#clay,silt,sand
-            r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
-            c.add_layer(soil[i],r_curve)
-            nbc=cmf.NeumannBoundary.create(c.layers[-1])
-            nbc.Name="Boundary condition #%i" % (i+1)
-            self.__bc.append(nbc)
+        #=======================================================================
+        # soil = [d for d in arange(.05,2.05,0.05)]
+        # for i in range(8,len(soil),1):
+        #    print i,soil[i]
+        #    KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)#clay,silt,sand
+        #    r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
+        #    c.add_layer(soil[i],r_curve)
+        #    nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        #    nbc.Name="Boundary condition #%i" % (i+1)
+        #    self.__bc.append(nbc)
+        #=======================================================================
     
         # Add a bedrock layer
         c.add_layer(7,cmf.BrooksCoreyRetentionCurve(bedrock_K,0.1,1,0.01))
         # Add a groundwater boundary (potential=-5.0 m)
-        self.groundwater=self.project.NewOutlet('Groundwater @ ' + str(c),c.x,c.y,-5)
+        self.groundwater=cmf.DirichletBoundary(self.project,-5)
         #self.groundwater.is_source=True
         self.groundwater.Name="Groundwater"
         # Connect bedrock layer with groundwater boundary, using Richards equation
-        cmf.connect(cmf.Richards,c.layers[-1],self.groundwater)
+        cmf.Richards(c.layers[-1],self.groundwater)
+        
         
         # Use Richards equation for percolation
         c.install_connection(cmf.Richards)
@@ -104,7 +107,7 @@ class cmf1d(object):
         """The model time"""
         return self.integrator.t.AsPython()  
     def __set_t(self,time):
-        self.integrator.t=time        
+        self.integrator.t=cmf.AsCMFtime(time)        
     t=property(__get_t,__set_t)
     def layer(self,depth):
         pos=min(int(depth/0.1),len(self.cell.layers)-1)
@@ -194,8 +197,10 @@ class cmf1d(object):
         """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns sunshine hours in [hour]"""
         return self.cell.get_weather(time).sunshine
     def load_meteo(self,stationname='Giessen',rain_factor=1.):
+        
         # Load rain timeseries (doubled rain of giessen for more interstingresults)
         rain=cmf.timeseries.from_file(stationname + '.rain')*rain_factor
+        rainstation = self.project.rainfall_stations.add('Giessen',rain,(0,0,0))
         # Create a meteo station
         meteo=self.project.meteo_stations.add_station(stationname)
         # Meteorological timeseries
@@ -205,10 +210,11 @@ class cmf1d(object):
         meteo.Windspeed=cmf.timeseries.from_file(stationname+'.Windspeed')
         meteo.Sunshine=cmf.timeseries.from_file(stationname+'.Sunshine')
         # Use the rainfall for each cell in the project
-        cmf.set_precipitation(self.project.cells,rain)
+        self.project.use_nearest_rainfall()
         # Use the meteorological station for each cell of the project
-        cmf.set_meteo_station(self.project.cells,meteo)
-
+        self.project.use_nearest_meteo()
+        
+        
 if __name__=='__main__':
     c1=cmf1d()
     print "gw_flux=",c1.groundwater_flux
