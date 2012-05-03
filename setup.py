@@ -6,9 +6,6 @@
 
 from distutils.core import setup
 
-
-
-
 from distutils.core import setup
 pymods=['PMF.__init__','PMF.Interface','PMF.PlantBuildingSet','PMF.PlantModel',
         'PMF.ProcessLibrary','PMF.CropDatabase']
@@ -23,4 +20,4 @@ data_files=[('PMF', ['cmf_setup.py'])]
    
 setup(name='PMF', py_modules=pymods,
       author='Sebastian Multsch',
-      author_email='sebastian.multsch@agrar.uni-giessen.de',version='0.1')
+      author_email='sebastian.multsch@umwelt.uni-giessen.de',version='0.1')

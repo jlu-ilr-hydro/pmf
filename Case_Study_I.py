@@ -35,7 +35,6 @@ Management  : Sowing - 1.3.JJJJ, Harvest - 8.1.JJJJ.
 #######################################
 #######################################
 ### Runtime Loop
-
 def run(t,res,plant):
     if t.day==1 and t.month==3:
         plant = PMF.connect(PMF.createPlant_CMF(),cmf_fp,cmf_fp)
@@ -57,8 +56,7 @@ def run(t,res,plant):
     c.flux=flux
     c.run(cmf.day)    
     
-    
-    
+        
     res.water_stress.append(plant.water_stress) if plant else res.water_stress.append(0)
     res.potential_depth.append(plant.root.potential_depth) if plant else res.potential_depth.append(0)
     res.rooting_depth.append(plant.root.depth) if plant else res.rooting_depth.append(0)
@@ -74,13 +72,25 @@ def run(t,res,plant):
     res.root_growth.append(plant.root.actual_distribution) if plant else  res.root_growth.append(zeros(c.cell.layer_count()))
     res.ETo.append(plant.et.Reference) if plant else res.ETo.append(0)
     res.ETc.append(plant.et.Cropspecific) if plant else res.ETc.append(0)
-    res.wetness.append(c.wetness) 
+    res.wetness.append(c.wetness)
     res.rain.append(c.cell.get_rainfall(t))
     res.DAS.append(t-datetime(1980,3,1)) if plant else res.DAS.append(0)
     res.temperature.append(cmf_fp.get_tmean(t))
     res.radiation.append(cmf_fp.get_Rs(t))
     res.stress.append((plant.water_stress, plant.nutrition_stress) if plant else (0,0))
-
+    res.developmentstage.append(plant.developmentstage.Stage[0]) if plant else res.developmentstage.append("")
+  
+    if plant:
+       
+        if plant.developmentstage.Stage[0] != "D": 
+            res.developmentindex.append(plant.developmentstage.StageIndex) if plant else res.developmentindex.append("")
+        else:
+            res.developmentindex.append("")
+    else:
+        res.developmentindex.append("")
+    res.PotentialGrowth.append(plant.biomass.PotentialGrowth) if plant else res.PotentialGrowth.append(0)
+    res.ActualGrowth.append(plant.biomass.ActualGrowth) if plant else res.ActualGrowth.append(0)
+    
     res.matrix_potential.append(c.matrix_potential)
     res.activeNO3.append(plant.nitrogen.Active)if plant else res.activeNO3.append(zeros(c.cell.layer_count()))
     res.passiveNO3.append(plant.nitrogen.Passive)if plant else res.passiveNO3.append(zeros(c.cell.layer_count()))
@@ -88,6 +98,7 @@ def run(t,res,plant):
     res.stem.append(plant.shoot.stem.Wtot) if plant else res.stem.append(0)
     res.storage.append(plant.shoot.storage_organs.Wtot) if plant else res.storage.append(0)
     res.Rp.append(plant.Rp if plant else 0.)
+    res.time.append(t)
     return plant
 
 class Res(object):
@@ -119,6 +130,11 @@ class Res(object):
         self.water_stress=[]
         self.potential_depth=[]
         self.rooting_depth=[]
+        self.time = []
+        self.developmentstage = []
+        self.PotentialGrowth = []
+        self.ActualGrowth = []
+        self.developmentindex=[]
         
     def __repr__(self):
         return "Shoot=%gg, Root=%gg, ETc = %gmm, Wateruptake=%gmm, Stress=%s" % (self.shoot_biomass[-1],self.root_biomass[-1],self.ETc[-1],sum(self.water_uptake[-1]),self.stress[-1])
@@ -158,34 +174,51 @@ if __name__=='__main__':
     harvestdate = set(datetime(i,8,1) for i in range(1980,2100))
     #Simulation period
     start = datetime(1980,1,1)
-    end = datetime(1982,12,31)
+    end = datetime(2000,12,31)
     #Simulation
     res = Res()
     plant = None
     print "Run ... "    
     start_time = datetime.now()
     c.t = start
+
     while c.t<end:
+        
         plant=run(c.t,res,plant)
         print c.t,res
-    print 'Duration:',datetime.now()-start_time
-    
-#######################################
-#######################################
-### Show results
-    timeline=drange(start,end,timedelta(1))
-    subplot(311)
-    imshow(transpose([r[:20] for r in res.wetness]),cmap=cm.Blues,aspect='auto',interpolation='nearest',extent=[0,len(timeline),100,0])
-    ylabel('Depth [cm]')
-    xlabel('Day of year')
-    subplot(312)
-    plot_date(timeline,res.water_stress,'b',label='Drought stress')
-    ylabel('Stress index [-]')
-    ylim(0,1)
-    legend(loc=0)
-    subplot(313)
-    plot_date(timeline,[-r for r in res.rooting_depth],'g',label='Actual')
-    plot_date(timeline,[-r for r in res.potential_depth],'k--',label='Potential')
-    ylabel('Rooting depth [mm]')
-    legend(loc=0)
-    show()
+    #print 'Duration:',datetime.now()-start_time
+
+
+
+######################################
+######################################
+## Show results
+timeline=drange(start,end,timedelta(1))
+subplot(311)
+imshow(transpose([r[:20] for r in res.wetness]),cmap=cm.Blues,aspect='auto',interpolation='nearest',extent=[0,len(timeline),100,0])
+ylabel('Depth [cm]')
+xlabel('Day of year')
+subplot(312)
+plot_date(timeline,res.water_stress,'b',label='Drought stress')
+ylabel('Stress index [-]')
+ylim(0,1)
+legend(loc=0)
+subplot(313)
+plot_date(timeline,[-r for r in res.rooting_depth],'g',label='Actual')
+plot_date(timeline,[-r for r in res.potential_depth],'k--',label='Potential')
+ylabel('Rooting depth [mm]')
+legend(loc=0)
+show()
+
+#===============================================================================
+# import csv, codecs, cStringIO
+# 
+# with open('cmf1D.csv', 'wb') as f:    
+#     writer = csv.writer(f,delimiter='\t', quotechar='"',quoting=csv.QUOTE_ALL)
+#     writer.writerow(['Year','Month','Day','Rainfall','Temperature','Radiation','Wetness','Stage','StageIndex','Transpiration','Evaporation','Wateruptake','Root biomass','Shoot biomass','PotentialGrowth','ActualGrowht','LAI','RootingDepth','Stress'])
+#     for i,day in enumerate(res.time):
+#         writer.writerow([day.year,day.month,day.day,
+#                          res.rain[i],res.temperature[i],res.radiation[i],sum(res.wetness[i]),
+#                          res.developmentstage[i],res.developmentindex[i],res.transpiration[i],res.evaporation[i],sum(res.water_uptake[i]),res.root_biomass[i],res.shoot_biomass[i],res.PotentialGrowth[i],res.ActualGrowth[i],res.lai[i],res.rooting_depth[i],res.stress[i][0]])
+#===============================================================================
+
