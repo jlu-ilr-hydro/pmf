@@ -3,7 +3,7 @@ from cmf.soil import layer as ka4_soil
 import numpy as np
 from pylab import *
 class cmf1d(object):
-    def __init__(self,sand=.9,silt=.1,clay=.1,c_org=2.0,bedrock_K=0.01,layercount=40,layerthickness=0.05,tracertext=''):
+    def __init__(self,sand=.2,silt=.6,clay=.2,c_org=2.0,bedrock_K=0.01,layercount=40,layerthickness=0.05,tracertext=''):
         self.project=cmf.project(tracertext)
         self.cell=self.project.NewCell(0,0,0,1000)
         c=self.cell
@@ -13,67 +13,78 @@ class cmf1d(object):
         # Add 50 layers with 10cm thickness, and 50 Neumann boundary conditions
         self.__bc=[]
         
-        #.05
-        KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
-        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
-        c.add_layer(0.05,r_curve)
-        nbc=cmf.NeumannBoundary.create(c.layers[-1])
-        nbc.Name="Boundary condition #%i" % (1)
-        self.__bc.append(nbc)
-        
-        #.1
-        KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
-        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
-        c.add_layer(.1,r_curve)
-        nbc=cmf.NeumannBoundary.create(c.layers[-1])
-        nbc.Name="Boundary condition #%i" % (2)
-        self.__bc.append(nbc)
-        
-        #.15
-        KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
-        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
-        c.add_layer(.15,r_curve)
-        nbc=cmf.NeumannBoundary.create(c.layers[-1])
-        nbc.Name="Boundary condition #%i" % (3)
-        self.__bc.append(nbc)
-        
-        
-        #.2
-        KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
-        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
-        c.add_layer(.2,r_curve)
-        nbc=cmf.NeumannBoundary.create(c.layers[-1])
-        nbc.Name="Boundary condition #%i" % (4)
-        self.__bc.append(nbc)
-        
-        #.25
-        KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
-        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
-        c.add_layer(.25,r_curve)
-        nbc=cmf.NeumannBoundary.create(c.layers[-1])
-        nbc.Name="Boundary condition #%i" % (5)
-        self.__bc.append(nbc)
-        #.3
-        KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
-        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
-        c.add_layer(.3,r_curve)
-        nbc=cmf.NeumannBoundary.create(c.layers[-1])
-        nbc.Name="Boundary condition #%i" % (6)
-        self.__bc.append(nbc)
-        #.35
-        KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
-        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
-        c.add_layer(.35,r_curve)
-        nbc=cmf.NeumannBoundary.create(c.layers[-1])
-        nbc.Name="Boundary condition #%i" % (7)
-        self.__bc.append(nbc)
-        #.4
-        KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
-        r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
-        c.add_layer(.4,r_curve)
-        nbc=cmf.NeumannBoundary.create(c.layers[-1])
-        nbc.Name="Boundary condition #%i" % (8)
-        self.__bc.append(nbc)
+        for i in arange(0.05,2.0,layerthickness):
+            print i
+            KA4_soil=ka4_soil(0.05,clay,silt,sand,Corg=c_org)
+            r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
+            c.add_layer(i,r_curve)
+            nbc=cmf.NeumannBoundary.create(c.layers[-1])
+            nbc.Name="Boundary condition #%i" % (1)
+            self.__bc.append(nbc)
+            
+        #=======================================================================
+        # #.05
+        # KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
+        # r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
+        # c.add_layer(0.05,r_curve)
+        # nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        # nbc.Name="Boundary condition #%i" % (1)
+        # self.__bc.append(nbc)
+        # 
+        # #.1
+        # KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
+        # r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
+        # c.add_layer(.1,r_curve)
+        # nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        # nbc.Name="Boundary condition #%i" % (2)
+        # self.__bc.append(nbc)
+        # 
+        # #.15
+        # KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
+        # r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
+        # c.add_layer(.15,r_curve)
+        # nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        # nbc.Name="Boundary condition #%i" % (3)
+        # self.__bc.append(nbc)
+        # 
+        # 
+        # #.2
+        # KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
+        # r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
+        # c.add_layer(.2,r_curve)
+        # nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        # nbc.Name="Boundary condition #%i" % (4)
+        # self.__bc.append(nbc)
+        # 
+        # #.25
+        # KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
+        # r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
+        # c.add_layer(.25,r_curve)
+        # nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        # nbc.Name="Boundary condition #%i" % (5)
+        # self.__bc.append(nbc)
+        # #.3
+        # KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
+        # r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
+        # c.add_layer(.3,r_curve)
+        # nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        # nbc.Name="Boundary condition #%i" % (6)
+        # self.__bc.append(nbc)
+        # #.35
+        # KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
+        # r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
+        # c.add_layer(.35,r_curve)
+        # nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        # nbc.Name="Boundary condition #%i" % (7)
+        # self.__bc.append(nbc)
+        # #.4
+        # KA4_soil=ka4_soil(0.05,1,1,9,Corg=c_org)
+        # r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
+        # c.add_layer(.4,r_curve)
+        # nbc=cmf.NeumannBoundary.create(c.layers[-1])
+        # nbc.Name="Boundary condition #%i" % (8)
+        # self.__bc.append(nbc)
+        #=======================================================================
         
         #=======================================================================
         # soil = [d for d in arange(.05,2.05,0.05)]

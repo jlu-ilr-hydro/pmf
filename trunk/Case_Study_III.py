@@ -58,7 +58,7 @@ def run(t,res,plant):
     #swc_fp_interaction
     Wateruptake = sum(plant[0].Wateruptake) if plant else 0.
     evaporation = plant[0].et.evaporation if plant else baresoil.evaporation
-    rainfall =c.cell.rain(t)
+    rainfall = c.cell.get_rainfall(t)
     Zr = plant[0].root.depth/100. if plant else 0.
     ETc_adj = Wateruptake + evaporation
     swc_fp(ETc_adj,evaporation,rainfall,Zr)
@@ -69,7 +69,7 @@ def run(t,res,plant):
     
     #influences through lateral flow
     if t.day>=1  and t.month==4 or t.month==5:
-        flux[0]-=1
+        flux[0]-=.5
         flux[1]-=1
         flux[2]-=1
   
@@ -79,7 +79,7 @@ def run(t,res,plant):
         
     res[1].Dr.append(c.wetness)
     res[0].Dr.append(swc_fp.Dr)
-    res[0].rain.append(c.cell.rain(t)) 
+    res[0].rain.append(c.cell.get_rainfall(t)) 
     res[0].radiation.append(c.get_Rn(t, 0.12, True))
     #Results
     if plant:
@@ -88,7 +88,7 @@ def run(t,res,plant):
         res[0].rootdepth.append(plant[0].root.depth)
         res[1].rootdepth.append(plant[1].root.branching)
         res[1].root_growth.append(plant[1].root.actual_distribution)
-        
+       
         for i,p in enumerate(plant):
             res[i].W_shoot.append(p.shoot.Wtot)
             res[i].W_root.append(p.root.Wtot)
@@ -150,6 +150,7 @@ class Results():
         self.rootdepth_pot=[]
         self.radiation=[]
         self.root_growth=[]
+       
         
         
     def __repr__(self):
@@ -179,7 +180,7 @@ if __name__=='__main__':
     
     #Create cmf cell    
     c=cmf1d()
-    c.load_meteo(rain_factor=.75)
+    c.load_meteo(rain_factor=1.0)
     cmf_fp = cmf_fp_interface(c.cell)
     c.cell.saturated_depth=5.
     
@@ -192,7 +193,7 @@ if __name__=='__main__':
     #Simulation period
     start = datetime(1980,3,1)
     end = datetime(1980,12,31)
-    
+   
     plant = None
     c.t = start
     while c.t<end:
@@ -208,7 +209,6 @@ if __name__=='__main__':
 #######################################
 #######################################
 ### Show results    
-
 
 subplot(311)
 title('Root biomass in each soil layer [g]')
@@ -226,4 +226,47 @@ imshow(transpose([r[:20] for r in res[1].Sh]),cmap=cm.Blues,aspect='auto',interp
 ylabel('Depth [cm]')
 xlabel('Day of year')
 colorbar()
+show()
+
+
+#===============================================================================
+# from rpy2_Library import *
+# import rpy2.robjects as rObjects
+# rObj = rObjects.r
+# rObjects.r['library']("Cairo")
+# rObjects.r['library']("RColorBrewer")
+# 
+# 
+# Wroot = [sum([profile[i] for profile in res[1].root_growth]) for i in range(len(res[1].root_growth[0]))]
+# WaterUptake = [sum([profile[i] for profile in res[1].Sh]) for i in range(len(res[1].Sh[0]))]
+# 
+# 
+# #Layout settings
+# path = 'D:/Arbeit/Konferenzen/2011 MODSIM/PMF/Bilder/'
+# onefile=True
+# family = "Times"
+# bg = "transparent"
+# pointsize=9
+# width=3.5
+# height=3.5
+# paper="special"
+# #Create figure and open
+# rObj.CairoSVG(file=path+ 'FeelingGoodIndex' + '.svg',onefile=onefile,family=family,bg=bg,pointsize=pointsize,width=width,height=height)
+# #Create single/multiple graph
+# nrows = 1 # number of rows
+# ncols = 2 # number of columns
+# #Bar charts with land use
+# rObj.par(fig=rObj.c(.7,1,.4,.7),new=rObj.T,cex=1.0,mar = rObj.c(4,.1,2,2))
+# rObj.plot(WaterUptake[:20],[i*-10 for i in range(len(res[1].root_growth[0]))][:20],xlab='Root biomass',ylab="Depth [cm]")    
+# rObj.par(fig=rObj.c(.7,1,.7,1),new=rObj.T,cex=1,mar = rObj.c(4,1,2,1))
+# rObj.plot(WaterUptake[:20],[i*-10 for i in range(len(res[1].root_growth[0]))][:20],xlab='Root biomass',ylab="Depth [cm]")    
+# 
+# #Make axes labels and figure title 
+# #rObj.mtext(rObj.c("Yield potential [%]"), rObj.c(SOUTH=1, WEST=2,EAST=3),line=1, cex=1, col="black", outer= True) 
+# #Close figure
+# rObj['dev.off']()
+#===============================================================================
+
+
+
         

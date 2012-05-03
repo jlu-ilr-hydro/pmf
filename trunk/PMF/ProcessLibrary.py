@@ -74,6 +74,7 @@ class Development:
         @rtype: integer
         @return: Index of the actual development stage
         """
+        
         return self.stages.index(self.Stage)
     @property
     def IsGrowingseason(self):
@@ -1093,6 +1094,7 @@ class Biomass_LUE:
         self.total=0.
         self.growthrate=0.
         self.pot_total=0.
+        self.stress = 0.
     @property
     def PotentialGrowth(self):
         """
