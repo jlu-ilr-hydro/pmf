@@ -42,3 +42,7 @@ class CropCoefficiants:
         self.k=k
         self.kcb=kcb
         self.RUE=RUE
+        
+
+stage = [['sftgs',343.],[],[]]
+WW = CropCoefficiants(stage=stage)

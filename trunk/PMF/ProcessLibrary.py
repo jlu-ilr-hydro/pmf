@@ -1056,6 +1056,7 @@ class Biomass_LOG:
         Biomass_LOG need no atmosphere values.
         """
         pass
+    
 class Biomass_LUE:
     """
     Calculates biomass growth with the radiation use efficiency concept.

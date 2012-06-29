@@ -394,6 +394,8 @@ class Plant:
                        (self.shoot.stem.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        (self.shoot.storage_organs.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        self.developmentstage.Thermaltime)
+        else: self.biomass.growthrate = 0.0
+             
     def get_fgi(self,Sh,Tpot,Ra,Rp,NO3dis,H2Odis):
         """
         Returns the FellingGoodIndex (fgi) for given distribtuion of water
