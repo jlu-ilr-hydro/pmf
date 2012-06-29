@@ -133,10 +133,21 @@ def createPlant_SWC(**args):
 
 
 
-
-
-
-
+def createPlant_fromCoefficiant(CropCoefficiant,**args):
+    """
+    Implements a specific plant setup with the values from the crop coefficant class.
+    """
+    et = PMF.ET_FAO(kcb_values =CropCoefficiant.kcb,seasons = CropCoefficiant.seasons)
+    print 'Evapotranspiration: FAO - Penman-Monteith'
+    biomass = PMF.Biomass_LUE(CropCoefficiant.RUE,CropCoefficiant.k)
+    print 'Biomass: Light-use-efficiency concept' 
+    development = PMF.Development(stage =CropCoefficiant.stage)
+    nitrogen = PMF.Nitrogen()
+    print 'No nitrogen uptake'
+    water = PMF.Waterstress_FAO()
+    print 'Waterstress: FAO'
+    layer = PMF.SoilLayer()
+    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)
 
 
 
