@@ -19,6 +19,7 @@ class cmf1d(object):
             nbc=cmf.NeumannBoundary.create(c.layers[-1])
             nbc.Name="Boundary condition #%i" % (1)
             self.__bc.append(nbc)
+        self.cell.surfacewater_as_storage()
             
     
 #        #Add a bedrock layer
@@ -33,6 +34,7 @@ class cmf1d(object):
         
         # Use Richards equation for percolation
         c.install_connection(cmf.Richards)
+        c.install_connection(cmf.MatrixInfiltration)
         self.integrator=cmf.CVodeIntegrator(self.project,1e-6)
         self.integrator.LinearSolver=0
     def run(self,dt=cmf.h):

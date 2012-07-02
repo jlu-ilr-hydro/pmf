@@ -36,73 +36,71 @@ Management  : Sowing - 1.3.JJJJ, Harvest - 8.1.JJJJ.
 #######################################
 ### Runtime Loop
 def run(t,res,plant):
-    if t.day==1 and t.month==3:
-        plant = PMF.connect(PMF.createPlant_CMF(),cmf_fp,cmf_fp)
-        #plant.nitrogen.max_passive_uptake=1
-        #plant.nitrogen.Km=27*14e-6
-        plant.nitrogen.Km = 27 * 62e-6
-        plant.nitrogen.NO3min = 0.1e-3
-
-    if t.day==1 and t.month==8:
-        plant =  None
-    #Let grow
-    if plant: 
-        plant(t,'day',1.)
-        
-    #Calculates evaporation for bare soil conditions
+    if t.day==1 and t.month==3: #check sowing
+        plant = PMF.createPlant_CMF() #create a plant instance without interfaces
+        plant = PMF.connect(plant,cmf_fp,cmf_fp) #connect the plant with soil and atmosphere interface
+    if t.day==1 and t.month==8: #check harvest
+        plant =  None #delete plant instance
+    if plant: #check, if plant exists
+        plant(t,'day',1.) #run plant, daily time step, timeperiod: 1.             
+    #calculate evaporation from bare soil
     baresoil(cmf_fp.Kr(),0.,cmf_fp.get_Rn(t, 0.12, True),cmf_fp.get_tmean(t),cmf_fp.get_es(t),cmf_fp.get_ea(t), cmf_fp.get_windspeed(t),0.,RHmin=30.,h=1.)    
-    flux = [uptake*-1. for uptake in plant.Wateruptake] if plant  else zeros(c.cell.layer_count())
+    #get plant water uptake   
+    flux = [uptake*-1. for uptake in plant.Wateruptake] if plant  else zeros(c.cell.layer_count())    
+    #get evaporation from bare soil or plant model    
     flux[0] -= plant.et.evaporation if plant else baresoil.evaporation
+    # set water flux of each soil layer from cmf   
     c.flux=flux
-    c.run(cmf.day)    
-    
-        
-    res.water_stress.append(plant.water_stress) if plant else res.water_stress.append(0)
-    res.potential_depth.append(plant.root.potential_depth) if plant else res.potential_depth.append(0)
-    res.rooting_depth.append(plant.root.depth) if plant else res.rooting_depth.append(0)
-    
-    res.water_uptake.append(plant.Wateruptake) if plant else res.water_uptake.append(zeros(c.cell.layer_count()))
-    res.branching.append(plant.root.branching) if plant else res.branching.append(zeros(c.cell.layer_count()))
-    res.transpiration.append(plant.et.transpiration) if plant else res.transpiration.append(0)
-    res.evaporation.append(plant.et.evaporation) if plant else  res.evaporation.append(0)
-    res.biomass.append(plant.biomass.Total) if plant else res.biomass.append(0)
-    res.root_biomass.append(plant.root.Wtot) if plant else res.root_biomass.append(0)
-    res.shoot_biomass.append(plant.shoot.Wtot) if plant else res.shoot_biomass.append(0)
-    res.lai.append(plant.shoot.leaf.LAI) if plant else res.lai.append(0)
-    res.root_growth.append(plant.root.actual_distribution) if plant else  res.root_growth.append(zeros(c.cell.layer_count()))
-    res.ETo.append(plant.et.Reference) if plant else res.ETo.append(0)
-    res.ETc.append(plant.et.Cropspecific) if plant else res.ETc.append(0)
-    res.wetness.append(c.wetness)
-    res.rain.append(c.cell.get_rainfall(t))
-    res.DAS.append(t-datetime(1980,3,1)) if plant else res.DAS.append(0)
-    res.temperature.append(cmf_fp.get_tmean(t))
-    res.radiation.append(cmf_fp.get_Rs(t))
-    res.stress.append((plant.water_stress, plant.nutrition_stress) if plant else (0,0))
+    # run cmf
+    c.run(cmf.day)        
+    #get status variables of cmf
+    res.waterstorage.append(c.cell.layers.volume) #water content of each layer in [mm/day] (list with 40 soil layers)
+    res.flux.append(c.flux) #water flux of each layer in [mm/day] (list with 40 soil layers)
+    res.wetness.append(c.wetness) #wetness/water content of each layer in [%/day] (list with 40 soil layers)
+    res.deep_percolation.append(c.groundwater.waterbalance(t)) #water flux to groundwater [mm/day]
+    res.rain.append(c.cell.get_rainfall(t)) #rainfall in [mm/day]
+    #get baresoil evaporation [mm/day]
+    res.baresoil_evaporation.append(0.0) if plant else  res.baresoil_evaporation.append(baresoil.evaporation)       
+    #get status variables of pmf
+    #biomass status
+    res.PotentialGrowth.append(plant.biomass.PotentialGrowth) if plant else res.PotentialGrowth.append(0) #[g/m2/day]
+    res.ActualGrowth.append(plant.biomass.ActualGrowth) if plant else res.ActualGrowth.append(0) #[g/m2/day]
+    res.biomass.append(plant.biomass.Total) if plant else res.biomass.append(0) #[g/m2]
+    res.root_biomass.append(plant.root.Wtot) if plant else res.root_biomass.append(0) #[g/m2]
+    res.shoot_biomass.append(plant.shoot.Wtot) if plant else res.shoot_biomass.append(0) #[g/m2]
+    res.leaf.append(plant.shoot.leaf.Wtot) if plant else res.leaf.append(0) #[g/m2]
+    res.stem.append(plant.shoot.stem.Wtot) if plant else res.stem.append(0) #[g/m2]
+    res.storage.append(plant.shoot.storage_organs.Wtot) if plant else res.storage.append(0) #[g/m2]   
+    res.lai.append(plant.shoot.leaf.LAI) if plant else res.lai.append(0) #[m2/m2]
+    #development    
     res.developmentstage.append(plant.developmentstage.Stage[0]) if plant else res.developmentstage.append("")
-  
-    if plant:
-       
+    res.DAS.append(t-datetime(1980,3,1)) if plant else res.DAS.append(0)
+    if plant:       
         if plant.developmentstage.Stage[0] != "D": 
             res.developmentindex.append(plant.developmentstage.StageIndex) if plant else res.developmentindex.append("")
         else:
             res.developmentindex.append("")
     else:
-        res.developmentindex.append("")
-    res.PotentialGrowth.append(plant.biomass.PotentialGrowth) if plant else res.PotentialGrowth.append(0)
-    res.ActualGrowth.append(plant.biomass.ActualGrowth) if plant else res.ActualGrowth.append(0)
-    
-    res.matrix_potential.append(c.matrix_potential)
-    res.activeNO3.append(plant.nitrogen.Active)if plant else res.activeNO3.append(zeros(c.cell.layer_count()))
-    res.passiveNO3.append(plant.nitrogen.Passive)if plant else res.passiveNO3.append(zeros(c.cell.layer_count()))
-    res.leaf.append(plant.shoot.leaf.Wtot) if plant else res.leaf.append(0)
-    res.stem.append(plant.shoot.stem.Wtot) if plant else res.stem.append(0)
-    res.storage.append(plant.shoot.storage_organs.Wtot) if plant else res.storage.append(0)
-    res.Rp.append(plant.Rp if plant else 0.)
+        res.developmentindex.append("")    
+    #plant water balance [mm/day]
+    res.ETo.append(plant.et.Reference) if plant else res.ETo.append(0)
+    res.ETc.append(plant.et.Cropspecific) if plant else res.ETc.append(0)
+    #transpiration is not equal to water uptake! transpiration is calculated without stress and wateruptake with stress!!!
+    res.transpiration.append(plant.et.transpiration) if plant else res.transpiration.append(0) 
+    res.evaporation.append(plant.et.evaporation) if plant else  res.evaporation.append(0)
+    res.water_uptake.append(plant.Wateruptake) if plant else res.water_uptake.append(zeros(c.cell.layer_count())) #(list with 40 layers)    
+    res.stress.append((plant.water_stress, plant.nutrition_stress) if plant else (0,0)) # dimensionsless stress index (0-->no stress; 1-->full stress)    
+    #root growth
+    res.potential_depth.append(plant.root.potential_depth) if plant else res.potential_depth.append(0) #[cm]
+    res.rooting_depth.append(plant.root.depth) if plant else res.rooting_depth.append(0) #[cm]
+    res.branching.append(plant.root.branching) if plant else res.branching.append(zeros(c.cell.layer_count())) # growth RATE in each layer per day [g/day](list with 40 layers)
+    res.root_growth.append(plant.root.actual_distribution) if plant else  res.root_growth.append(zeros(c.cell.layer_count())) # total root biomass in each layer [g/layer]
     res.time.append(t)
     return plant
 
 class Res(object):
     def __init__(self):
+        self.flux=[]
         self.water_uptake = []
         self.branching = []
         self.transpiration = []
@@ -114,20 +112,14 @@ class Res(object):
         self.root_growth = []
         self.ETo = []
         self.ETc = []
-        self.matrix_potential = []
         self.wetness = []
         self.rain = []
         self.temperature = []
-        self.radiation = []
         self.DAS = []
         self.stress = []
-        self.activeNO3=[]
-        self.passiveNO3=[]
         self.leaf=[]
         self.stem=[]
         self.storage=[]
-        self.Rp=[]
-        self.water_stress=[]
         self.potential_depth=[]
         self.rooting_depth=[]
         self.time = []
@@ -135,7 +127,9 @@ class Res(object):
         self.PotentialGrowth = []
         self.ActualGrowth = []
         self.developmentindex=[]
-        
+        self.deep_percolation=[]
+        self.baresoil_evaporation=[]
+        self.waterstorage=[]
     def __repr__(self):
         return "Shoot=%gg, Root=%gg, ETc = %gmm, Wateruptake=%gmm, Stress=%s" % (self.shoot_biomass[-1],self.root_biomass[-1],self.ETc[-1],sum(self.water_uptake[-1]),self.stress[-1])
 
@@ -174,22 +168,30 @@ if __name__=='__main__':
     harvestdate = set(datetime(i,8,1) for i in range(1980,2100))
     #Simulation period
     start = datetime(1980,1,1)
-    end = datetime(1981,12,31)
+    end = datetime(1980,12,31)
     #Simulation
     res = Res()
     plant = None
     print "Run ... "    
     start_time = datetime.now()
     c.t = start
-
+    start_content = np.sum(c.cell.layers.volume)
     while c.t<end:
-        
         plant=run(c.t,res,plant)
-        print c.t,res
-    #print 'Duration:',datetime.now()-start_time
+
+    P = np.sum(res.rain) # precipitation
+    E = np.sum(res.evaporation)+np.sum(res.baresoil_evaporation) # evaporation from baresoil and covered soil
+    T = np.sum(np.sum(res.water_uptake)) # actual transpiration
+    DP = np.sum(res.deep_percolation) # deep percolation (groundwater losses)
+    storage =np.sum(c.cell.layers.volume)- start_content 
+    print '\n################################\n' + '################################\n' + 'Water balance'
+    print  "%gmm (P) = %gmm (E) +  %gmm (T) + %gmm (DP) + %gmm (delta)" % (P,E,T,DP,storage)
+    print  "Water content according to water balance: %gmm \nActual water content of soil: %gmm" % ((start_content + P-DP-T-E),np.sum(c.cell.layers.volume))
+
     
-
-
+    
+    ######
+    # groundwater.waterbalance -> der Fluß ist nicht in flux mit drin!!!
 ######################################
 ######################################
 ## Show results
@@ -199,7 +201,7 @@ imshow(transpose([r[:20] for r in res.wetness]),cmap=cm.Blues,aspect='auto',inte
 ylabel('Depth [cm]')
 xlabel('Day of year')
 subplot(312)
-plot_date(timeline,res.water_stress,'b',label='Drought stress')
+plot_date(timeline,[i[0] for i in res.stress],'b',label='Drought stress')
 ylabel('Stress index [-]')
 ylim(0,1)
 legend(loc=0)
