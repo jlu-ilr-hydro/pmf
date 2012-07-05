@@ -4,21 +4,43 @@ import numpy as np
 from pylab import *
 from traceback import format_exc as traceback
 class cmf1d(object):
-    def __init__(self,sand=.2,silt=.6,clay=.2,c_org=2.0,bedrock_K=0.01,layercount=40,layerthickness=0.05,tracertext=''):
+    def __init__(self,sand,silt,clay,c_org,bedrock_K,layercount,layerthickness,tracertext=''):
         self.project=cmf.project(tracertext)
         self.cell=self.project.NewCell(0,0,0,1000)
-        c=self.cell
-        KA4_soil=ka4_soil(0.05,clay,silt,sand,Corg=c_org)        
+        c=self.cell      
         # Add 50 layers with 10cm thickness, and 50 Neumann boundary conditions
         self.__bc=[]
+        soil_depth=[]
         
-        for i in arange(0.05,2.0,layerthickness):
-            KA4_soil=ka4_soil(0.05,clay,silt,sand,Corg=c_org)
-            r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
-            c.add_layer(i,r_curve)
+        def summe(list):
+            s = 0
+            for element in list:
+                s = s + element
+            return s
+            
+    
+        for i,val in enumerate(sand):
+            Anteil_clay=clay[i]
+            Anteil_silt =silt[i]
+            Anteil_sand=sand[i]
+            Anteil_layerthickness=layerthickness[i]
+            soil_depth.append(layerthickness[i])            
+            Anteil_Corg=c_org[i]
+            KA4_soil=ka4_soil(Anteil_layerthickness,Anteil_clay,Anteil_silt,Anteil_sand,Corg=Anteil_Corg) # Berechnung von Ksat, Porositaet, etc. mit pedo-Transferfunktion nach kartieranleitung 4
+            r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) # BROOKS90, berechnung der Retentionskurve mit KA4 Werten
+            c.add_layer(summe(soil_depth),r_curve)
             nbc=cmf.NeumannBoundary.create(c.layers[-1])
             nbc.Name="Boundary condition #%i" % (1)
-            self.__bc.append(nbc)
+            self.__bc.append(nbc)        
+        
+        
+#        for i in arange(0.05,2.0,layerthickness):
+#            KA4_soil=ka4_soil(0.05,clay,silt,sand,Corg=c_org)
+#            r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
+#            c.add_layer(i,r_curve)
+#            nbc=cmf.NeumannBoundary.create(c.layers[-1])
+#            nbc.Name="Boundary condition #%i" % (1)
+#            self.__bc.append(nbc)
         self.cell.surfacewater_as_storage()
             
     
@@ -113,5 +135,5 @@ class cmf1d(object):
 if __name__=='__main__':
     c1=cmf1d()
     print "gw_flux=",c1.groundwater_flux
-    print "P(750cm)=",c1.get_pressurehead(750)
+    #print "P(750cm)=",c1.get_pressurehead(750)
 
