@@ -149,7 +149,27 @@ if __name__=='__main__':
 #    psyco.full()
     
     #Create cmf cell    
-    c=cmf1d(sand=20,silt=60,clay=20,c_org=2.0,bedrock_K=0.01,layercount=20,layerthickness=0.05)
+
+    
+#########Plot1 Kersebaum#########
+#########Bodenschichten##########
+    c=cmf1d(sand=[90.,90.,80.,92.,94.,96.],silt=[3.,5.,8.,4.,3.,2.],clay=[7.,5.,12.,4.,3.,2.],c_org=[.66,.16,.08,0.,0.,0.],bedrock_K=0.01,layercount=6,layerthickness=[.3,.3,.3,.3,.3,.75],tracertext='')
+#################################
+#################################
+
+#########Plot2 Kersebaum#########
+#########Bodenschichten##########
+    #c=cmf1d(sand=[85.,90.,80.,80.,90.,90],silt=[10.,5.,8.,10.,5.,5.],clay=[5.,5.,12.,10.,5.,5.],c_org=[.58,.13,0.,0.,0.,0.],bedrock_K=0.01,layercount=6,layerthickness=[.3,.6,.4,.4,.1,.45],tracertext='')
+#################################
+#################################
+
+#########Plot3 Kersebaum#########
+#########Bodenschichten##########
+    #c=cmf1d(sand=[85.,90.,81.,80.],silt=[9.,5.,6.,9],clay=[6.,5.,13.,11.],c_org=[.62,.13,0.,0.],bedrock_K=0.01,layercount=4,layerthickness=[.3,.7,.1,1.15],tracertext='')
+#################################
+#################################
+
+ 
     print "cmf is setup"
     c.load_meteo(rain_factor=1.)
     print "meteo loaded"
