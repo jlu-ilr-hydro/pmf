@@ -1,8 +1,13 @@
+
 import cmf
 from cmf.soil import layer as ka4_soil
 import numpy as np
 from pylab import *
 from traceback import format_exc as traceback
+from datetime import datetime, timedelta
+
+
+
 class cmf1d(object):
     def __init__(self,sand,silt,clay,c_org,bedrock_K,layercount,layerthickness,tracertext=''):
         self.project=cmf.project(tracertext)
@@ -113,24 +118,75 @@ class cmf1d(object):
     
     
    
-    def load_meteo(self,stationname='Giessen',rain_factor=1.):
+    def load_meteo(self,stationname='Muenchenberg',rain_factor=1.):
+#        #meteo2= ClimateStation() #!!!
+#        #meteo2.load_weather('climate_giessen.csv') #!!!
+#        #meteo3= meteo2.rain
+#        # Load rain timeseries (doubled rain of giessen for more interstingresults)
+#        rain=cmf.timeseries.from_file(stationname+'.Rain')*rain_factor
+#        rainstation = self.project.rainfall_stations.add('Giessen',rain,(0,0,0))
+#        # Create a meteo station
+#        meteo=self.project.meteo_stations.add_station(stationname,(0,0,0))
+#        # Meteorological timeseries
+#        meteo.Tmax=cmf.timeseries.from_file(stationname+'.Tmax')
+#        meteo.Tmin=cmf.timeseries.from_file(stationname+'.Tmin')
+#        meteo.rHmean=cmf.timeseries.from_file(stationname+'.rHmean')
+#        meteo.Windspeed=cmf.timeseries.from_file(stationname+'.Windspeed')
+#        meteo.Sunshine=cmf.timeseries.from_file(stationname+'.Sunshine')
+#        # Use the rainfall for each cell in the project
+#        self.project.use_nearest_rainfall()
+#        # Use the meteorological station for each cell of the project
+#        self.project.use_nearest_meteo()
         
-        # Load rain timeseries (doubled rain of giessen for more interstingresults)
-        rain=cmf.timeseries.from_file(stationname + '.rain')*rain_factor
-        rainstation = self.project.rainfall_stations.add('Giessen',rain,(0,0,0))
+        """
+        Loads the meteorology from a csv file.
+        """
+            
+        # Create a timeseries for rain - timeseries objects in cmf is a kind of extensible array of 
+        # numbers, with a begin date, a timestep.
+        begin = datetime(1992,1,1)
+        rain = cmf.timeseries(begin = begin, step = timedelta(days=1))
+    
         # Create a meteo station
-        meteo=self.project.meteo_stations.add_station(stationname,(0,0,0)) 
-        # Meteorological timeseries
-        meteo.Tmax=cmf.timeseries.from_file(stationname+'.Tmax')
-        meteo.Tmin=cmf.timeseries.from_file(stationname+'.Tmin')
-        meteo.rHmean=cmf.timeseries.from_file(stationname+'.rHmean')
-        meteo.Windspeed=cmf.timeseries.from_file(stationname+'.Windspeed')
-        meteo.Sunshine=cmf.timeseries.from_file(stationname+'.Sunshine')
+        meteo=self.project.meteo_stations.add_station(name ='Muenchenberg',position = (0,0,0))
+    
+        # Meteorological timeseries, if you prefer the beginning of the timeseries
+        # read in from file, just go ahead, it is only a bit of Python programming
+        meteo.Tmax      = cmf.timeseries(begin = begin, step = timedelta(days=1))
+        meteo.Tmin      = cmf.timeseries(begin = begin, step = timedelta(days=1))
+        meteo.rHmean    = cmf.timeseries(begin = begin, step = timedelta(days=1))
+        meteo.Windspeed = cmf.timeseries(begin = begin, step = timedelta(days=1))
+        meteo.Sunshine  = cmf.timeseries(begin = begin, step = timedelta(days=1))
+        meteo.Rs        = cmf.timeseries(begin = begin, step = timedelta(days=1))
+        meteo.Cloud     = cmf.timeseries(begin = begin, step = timedelta(days=1))
+        meteo.T         = (meteo.Tmax + meteo.Tmin) * 0.5
+        
+       
+        
+        # Load climate data from csv file
+        # could be simplified with numpy's 
+        csvfile =file('climate_Muenchenberg92_98.csv') 
+        csvfile.readline() # Read the headers, and ignore them
+        for line in csvfile:
+            columns = line.split(';')
+            # Get the values, but ignore the date, we have begin and steo
+            # of the data file hardcoded
+            # If you don't get this line - it is standard Python, I would recommend the official Python.org tutorial
+            for timeseries,value in zip([rain,meteo.Tmax,meteo.Tmin,meteo.rHmean,meteo.Windspeed,meteo.Sunshine,meteo.Rs,meteo.Cloud],
+                                       [float(col) for col in columns[0:]]):    
+                # Add the value from the file to the timeseries
+                timeseries.add(value)
+            print line
+        # Create a rain gauge station
+        self.project.rainfall_stations.add('Muenchenberg',rain,(0,0,0))
+            
         # Use the rainfall for each cell in the project
         self.project.use_nearest_rainfall()
         # Use the meteorological station for each cell of the project
         self.project.use_nearest_meteo()
-#        
+    
+        
+        
         
 if __name__=='__main__':
     c1=cmf1d()

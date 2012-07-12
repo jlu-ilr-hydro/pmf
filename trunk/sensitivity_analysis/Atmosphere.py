@@ -90,7 +90,7 @@ class ClimateStation: #!!!
         csvfile.readline()
         for line in csvfile:
             columns = line.split(';')
-            Wetter[columns[0]] = float(columns[value])
+            Wetter[columns[0]] = double(columns[value])
     def __call__(self,t, time_step):
         t += time_step
         return t

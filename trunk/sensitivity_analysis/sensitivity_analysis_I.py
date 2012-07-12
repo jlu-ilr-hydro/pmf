@@ -145,6 +145,7 @@ if __name__=='__main__':
     import cmf
     from cmf_setup import cmf1d
     from cmf_fp_interface import cmf_fp_interface
+    from Atmosphere import ClimateStation
 #    import psyco
 #    psyco.full()
     
@@ -153,7 +154,7 @@ if __name__=='__main__':
     
 #########Plot1 Kersebaum#########
 #########Bodenschichten##########
-    c=cmf1d(sand=[90.,90.,80.,92.,94.,96.],silt=[3.,5.,8.,4.,3.,2.],clay=[7.,5.,12.,4.,3.,2.],c_org=[.66,.16,.08,0.,0.,0.],bedrock_K=0.01,layercount=6,layerthickness=[.3,.3,.3,.3,.3,.75],tracertext='')
+    #c=cmf1d(sand=[90.,90.,80.,92.,94.,96.],silt=[3.,5.,8.,4.,3.,2.],clay=[7.,5.,12.,4.,3.,2.],c_org=[.66,.16,.08,0.,0.,0.],bedrock_K=0.01,layercount=6,layerthickness=[.3,.3,.3,.3,.3,.75],tracertext='')
 #################################
 #################################
 
@@ -165,12 +166,15 @@ if __name__=='__main__':
 
 #########Plot3 Kersebaum#########
 #########Bodenschichten##########
-    #c=cmf1d(sand=[85.,90.,81.,80.],silt=[9.,5.,6.,9],clay=[6.,5.,13.,11.],c_org=[.62,.13,0.,0.],bedrock_K=0.01,layercount=4,layerthickness=[.3,.7,.1,1.15],tracertext='')
+    c=cmf1d(sand=[85.,90.,81.,80.],silt=[9.,5.,6.,9],clay=[6.,5.,13.,11.],c_org=[.62,.13,0.,0.],bedrock_K=0.01,layercount=4,layerthickness=[.3,.7,.1,1.15],tracertext='')
 #################################
 #################################
 
  
     print "cmf is setup"
+    
+    #Station1_Giessen = meteo() #!!!
+    #Station1_Giessen.load_weather('climate_giessen.csv') #!!!
     c.load_meteo(rain_factor=1.)
     print "meteo loaded"
     cmf_fp = cmf_fp_interface(c.cell)
@@ -187,8 +191,8 @@ if __name__=='__main__':
     sowingdate = set(datetime(i,3,1) for i in range(1980,2100))
     harvestdate = set(datetime(i,8,1) for i in range(1980,2100))
     #Simulation period
-    start = datetime(1980,1,1)
-    end = datetime(1980,12,31)
+    start = datetime(1992,1,1)
+    end = datetime(1992,12,31)
     #Simulation
     res = Res()
     plant = None
