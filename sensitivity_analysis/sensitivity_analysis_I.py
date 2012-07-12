@@ -4,9 +4,9 @@ Case Study I: Water balance - Multi layer Richards approach
 The Case Study represents a summer wheat setup of PMF and with the
 Catchment Modeling Framework (CMF) in the version cmf1d:
 
-Weather     : Giessen,
+Weather     : Muenchenberg,
 
-Soil texture: Silt,
+Soil texture: Various Sand,
 
 Soil        : cmf1d,
 
@@ -145,7 +145,7 @@ if __name__=='__main__':
     import cmf
     from cmf_setup import cmf1d
     from cmf_fp_interface import cmf_fp_interface
-    from Atmosphere import ClimateStation
+    #from Atmosphere import ClimateStation
 #    import psyco
 #    psyco.full()
     
@@ -160,13 +160,13 @@ if __name__=='__main__':
 
 #########Plot2 Kersebaum#########
 #########Bodenschichten##########
-    #c=cmf1d(sand=[85.,90.,80.,80.,90.,90],silt=[10.,5.,8.,10.,5.,5.],clay=[5.,5.,12.,10.,5.,5.],c_org=[.58,.13,0.,0.,0.,0.],bedrock_K=0.01,layercount=6,layerthickness=[.3,.6,.4,.4,.1,.45],tracertext='')
+    c=cmf1d(sand=[85.,90.,80.,80.,90.,90],silt=[10.,5.,8.,10.,5.,5.],clay=[5.,5.,12.,10.,5.,5.],c_org=[.58,.13,0.,0.,0.,0.],bedrock_K=0.01,layercount=6,layerthickness=[.3,.6,.4,.4,.1,.45],tracertext='')
 #################################
 #################################
 
 #########Plot3 Kersebaum#########
 #########Bodenschichten##########
-    c=cmf1d(sand=[85.,90.,81.,80.],silt=[9.,5.,6.,9],clay=[6.,5.,13.,11.],c_org=[.62,.13,0.,0.],bedrock_K=0.01,layercount=4,layerthickness=[.3,.7,.1,1.15],tracertext='')
+    #c=cmf1d(sand=[85.,90.,81.,80.],silt=[9.,5.,6.,9],clay=[6.,5.,13.,11.],c_org=[.62,.13,0.,0.],bedrock_K=0.01,layercount=4,layerthickness=[.3,.7,.1,1.15],tracertext='')
 #################################
 #################################
 
