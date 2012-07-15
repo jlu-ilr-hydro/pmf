@@ -5,6 +5,7 @@ import numpy as np
 from pylab import *
 from traceback import format_exc as traceback
 from datetime import datetime, timedelta
+#from sensitivity_analysis_I import get_starttimeT
 
 
 
@@ -118,7 +119,7 @@ class cmf1d(object):
     
     
    
-    def load_meteo(self,stationname='Muenchenberg',rain_factor=1.):
+    def load_meteo(self,start, stationname, rain_factor=1.): # am Besten mit in Sensitiv_Analysis_I aufnehmen 
 #        #meteo2= ClimateStation() #!!!
 #        #meteo2.load_weather('climate_giessen.csv') #!!!
 #        #meteo3= meteo2.rain
@@ -144,50 +145,50 @@ class cmf1d(object):
             
         # Create a timeseries for rain - timeseries objects in cmf is a kind of extensible array of 
         # numbers, with a begin date, a timestep.
-        begin = datetime(1992,1,1)
+        #begin = datetime(1992,1,1)
+        #begin = get_starttimeT()
+        begin=start
         rain = cmf.timeseries(begin = begin, step = timedelta(days=1))
     
         # Create a meteo station
-        meteo=self.project.meteo_stations.add_station(name ='Muenchenberg',position = (0,0,0))
+        meteo=self.project.meteo_stations.add_station(stationname,position = (0,0,0))
     
         # Meteorological timeseries, if you prefer the beginning of the timeseries
         # read in from file, just go ahead, it is only a bit of Python programming
         meteo.Tmax      = cmf.timeseries(begin = begin, step = timedelta(days=1))
         meteo.Tmin      = cmf.timeseries(begin = begin, step = timedelta(days=1))
-        meteo.rHmean    = cmf.timeseries(begin = begin, step = timedelta(days=1))
+        meteo.rHmin     = cmf.timeseries(begin = begin, step = timedelta(days=1))# als RHmin das Minimum aus Rh14uhr und Rhmean nehmen, Rhmean braucht python nicht. Rhmax auf 100 setzen. Sind das wirklich Rh Daten bei Muencheberg oder ist das das Saettigungsdefizit? Ueberpruefen!
+        meteo.rHmax     = cmf.timeseries(begin = begin, step = timedelta(days=1))        
         meteo.Windspeed = cmf.timeseries(begin = begin, step = timedelta(days=1))
-        meteo.Sunshine  = cmf.timeseries(begin = begin, step = timedelta(days=1))
+        meteo.Sunshine  = cmf.timeseries(begin = begin, step = timedelta(days=1)) # sind cloud daten 1-(cloud/100)
         meteo.Rs        = cmf.timeseries(begin = begin, step = timedelta(days=1))
-        meteo.Cloud     = cmf.timeseries(begin = begin, step = timedelta(days=1))
+        #meteo.Cloud     = cmf.timeseries(begin = begin, step = timedelta(days=1)) # so nicht cloud = sunshine
         meteo.T         = (meteo.Tmax + meteo.Tmin) * 0.5
         
        
         
         # Load climate data from csv file
         # could be simplified with numpy's 
-        csvfile =file('climate_Muenchenberg92_98.csv') 
+        csvfile =file('ClimateMuencheberg.csv') 
         csvfile.readline() # Read the headers, and ignore them
         for line in csvfile:
             columns = line.split(';')
             # Get the values, but ignore the date, we have begin and steo
             # of the data file hardcoded
             # If you don't get this line - it is standard Python, I would recommend the official Python.org tutorial
-            for timeseries,value in zip([rain,meteo.Tmax,meteo.Tmin,meteo.rHmean,meteo.Windspeed,meteo.Sunshine,meteo.Rs,meteo.Cloud],
-                                       [float(col) for col in columns[0:]]):    
+            for timeseries,value in zip([rain,meteo.Tmax,meteo.Tmin,meteo.rHmin, meteo.rHmax,meteo.Windspeed,meteo.Rs,meteo.Sunshine], #zip fuegt zwei Listen zu einer Zusammen
+                                       [float(col) for col in columns[2:]]):    
                 # Add the value from the file to the timeseries
                 timeseries.add(value)
-            print line
+            #print line
         # Create a rain gauge station
-        self.project.rainfall_stations.add('Muenchenberg',rain,(0,0,0))
+        self.project.rainfall_stations.add(stationname,rain,(0,0,0))
             
         # Use the rainfall for each cell in the project
         self.project.use_nearest_rainfall()
         # Use the meteorological station for each cell of the project
         self.project.use_nearest_meteo()
     
-        
-        
-        
 if __name__=='__main__':
     c1=cmf1d()
     print "gw_flux=",c1.groundwater_flux
