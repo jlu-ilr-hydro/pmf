@@ -119,7 +119,7 @@ class cmf1d(object):
     
     
    
-    def load_meteo(self,start, stationname, rain_factor=1.): # am Besten mit in Sensitiv_Analysis_I aufnehmen 
+    def load_meteo(self,Datenstart,start, stationname, rain_factor=1.): # am Besten mit in Sensitiv_Analysis_I aufnehmen 
 #        #meteo2= ClimateStation() #!!!
 #        #meteo2.load_weather('climate_giessen.csv') #!!!
 #        #meteo3= meteo2.rain
@@ -148,6 +148,8 @@ class cmf1d(object):
         #begin = datetime(1992,1,1)
         #begin = get_starttimeT()
         begin=start
+        Differenz = start-Datenstart
+        Sprung = Differenz.days +1
         rain = cmf.timeseries(begin = begin, step = timedelta(days=1))
     
         # Create a meteo station
@@ -170,7 +172,9 @@ class cmf1d(object):
         # Load climate data from csv file
         # could be simplified with numpy's 
         csvfile =file('ClimateMuencheberg.csv') 
-        csvfile.readline() # Read the headers, and ignore them
+        for i in range(Sprung):
+            csvfile.readline()        
+        #csvfile.readline() # Read the headers, and ignore them
         for line in csvfile:
             columns = line.split(';')
             # Get the values, but ignore the date, we have begin and steo

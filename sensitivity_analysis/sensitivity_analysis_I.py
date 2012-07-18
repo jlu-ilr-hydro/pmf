@@ -196,12 +196,14 @@ if __name__=='__main__':
 #################################
     print "cmf is setup"
     #start = get_starttimeT()
-    start = datetime(1992,1,1)    
-    end = datetime(1992,12,31)    
+    Datenstart = datetime(1992,1,1)    
+    start = datetime(1994,1,1)    
+    end = datetime(1994,12,31) 
+   
     #end = get_endtimeT()
     #Station1_Giessen = meteo() #!!!
     #Station1_Giessen.load_weather('climate_giessen.csv') #!!!
-    c.load_meteo(start, 'Muencheberg', rain_factor=1.)
+    c.load_meteo(Datenstart,start, 'Muencheberg', rain_factor=1.)
     print "meteo loaded"
     cmf_fp = cmf_fp_interface(c.cell)
     cmf_fp.default_Nconc = .3
@@ -231,6 +233,7 @@ if __name__=='__main__':
     start_content = np.sum(c.cell.layers.volume)
     while c.t<end:
         plant=run(c.t,res,plant)
+        
 
 
     P = np.sum(res.rain) # precipitation
@@ -241,7 +244,7 @@ if __name__=='__main__':
     print '\n################################\n' + '################################\n' + 'Water balance'
     print  "%gmm (P) = %gmm (E) +  %gmm (T) + %gmm (DP) + %gmm (delta)" % (P,E,T,DP,storage)
     print  "Water content according to water balance: %gmm \nActual water content of soil: %gmm" % ((start_content + P-DP-T-E),np.sum(c.cell.layers.volume))
-
+    print np.max(res.storage)
     
     
     ######
