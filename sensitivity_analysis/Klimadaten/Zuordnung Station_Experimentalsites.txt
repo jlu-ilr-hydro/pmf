@@ -1,0 +1,5 @@
+274    KOELN-WAHN (FLUGWEWA)    2667    KL      01.09.1957    10.12.2006   = Stationsnr. 2222 = Feienberg
+
+4063    HARZBURG,BAD            2039    KL    01.01.1936    10.12.2006  = Stationsnr. 3978 = Neuenkirchen
+
+10263   UELZEN                  5146    KL      01.01.1951      10.12.2006  = Stationsnr. 3883 = Nienwohlde

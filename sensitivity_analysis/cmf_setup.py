@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 
 class cmf1d(object):
-    def __init__(self,sand,silt,clay,c_org,bedrock_K,layercount,layerthickness,tracertext=''):
+    def __init__(self,sand,silt,clay,c_org,bedrock_K,layercount,layerthickness,tracertext=''): #was ist mit Bulkdensity? gibt es auch in den Daten
         self.project=cmf.project(tracertext)
         self.cell=self.project.NewCell(0,0,0,1000)
         c=self.cell      
@@ -38,8 +38,7 @@ class cmf1d(object):
             nbc=cmf.NeumannBoundary.create(c.layers[-1])
             nbc.Name="Boundary condition #%i" % (1)
             self.__bc.append(nbc)        
-        
-        
+            #print KA4_soil.porosity
 #        for i in arange(0.05,2.0,layerthickness):
 #            KA4_soil=ka4_soil(0.05,clay,silt,sand,Corg=c_org)
 #            r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
@@ -84,6 +83,10 @@ class cmf1d(object):
         """The pF value for each layer """
         return [l.pF for l in self.cell.layers]
     @property
+    def porosity(self):
+        """The porosity value for each layer """
+        return [l.porosity for l in self.cell.layers]
+    @property
     def potential(self):
         """ The actual water head of each layer """
         return [l.potential for l in self.cell.layers]
@@ -120,25 +123,7 @@ class cmf1d(object):
     
    
     def load_meteo(self,Datenstart,start, stationname, rain_factor=1.): # am Besten mit in Sensitiv_Analysis_I aufnehmen 
-#        #meteo2= ClimateStation() #!!!
-#        #meteo2.load_weather('climate_giessen.csv') #!!!
-#        #meteo3= meteo2.rain
-#        # Load rain timeseries (doubled rain of giessen for more interstingresults)
-#        rain=cmf.timeseries.from_file(stationname+'.Rain')*rain_factor
-#        rainstation = self.project.rainfall_stations.add('Giessen',rain,(0,0,0))
-#        # Create a meteo station
-#        meteo=self.project.meteo_stations.add_station(stationname,(0,0,0))
-#        # Meteorological timeseries
-#        meteo.Tmax=cmf.timeseries.from_file(stationname+'.Tmax')
-#        meteo.Tmin=cmf.timeseries.from_file(stationname+'.Tmin')
-#        meteo.rHmean=cmf.timeseries.from_file(stationname+'.rHmean')
-#        meteo.Windspeed=cmf.timeseries.from_file(stationname+'.Windspeed')
-#        meteo.Sunshine=cmf.timeseries.from_file(stationname+'.Sunshine')
-#        # Use the rainfall for each cell in the project
-#        self.project.use_nearest_rainfall()
-#        # Use the meteorological station for each cell of the project
-#        self.project.use_nearest_meteo()
-        
+
         """
         Loads the meteorology from a csv file.
         """
@@ -167,8 +152,7 @@ class cmf1d(object):
         #meteo.Cloud     = cmf.timeseries(begin = begin, step = timedelta(days=1)) # so nicht cloud = sunshine
         meteo.T         = (meteo.Tmax + meteo.Tmin) * 0.5
         
-       
-        
+              
         # Load climate data from csv file
         # could be simplified with numpy's 
         csvfile =file('ClimateMuencheberg.csv') 
@@ -193,6 +177,42 @@ class cmf1d(object):
         # Use the meteorological station for each cell of the project
         self.project.use_nearest_meteo()
     
+    def load_water_content(self,Dateiname):
+        Plot=[]        
+        Datum=[]
+        Jahr=[]
+        Monat=[]
+        Tag=[]
+        Julian_Day=[]
+        water0_30=[]
+        water30_60=[]
+        water60_90=[]        
+        water_content_file =file(Dateiname) 
+        water_content_file.readline()        
+        #csvfile.readline() # Read the headers, and ignore them
+        for line in water_content_file:
+            columns = line.split(';')
+            # Get the values, but ignore the date, we have begin and steo
+            # of the data file hardcoded
+            # If you don't get this line - it is standard Python, I would recommend the official Python.org tutorial
+            Plot.append(columns[0])            
+            Datum.append(columns[1])
+            Jahr.append(columns[2])
+            Monat.append(columns[3])
+            Tag.append(columns[4])
+            Julian_Day.append(columns[5])
+            water0_30.append(columns[6])
+            water30_60.append(columns[7])
+            water60_90.append(columns[8])
+        print '\nWassergehalt gemessen fuer: ' + Datum[0]
+        print 'Wassergehalt 0 bis 30 cm:'
+        print water0_30[0]
+        print 'Wassergehalt 30 bis 60 cm:'
+        print water30_60[0]
+        print 'Wassergehalt 60 bis 90 cm:'
+        print water60_90[0]
+        
+                    
 if __name__=='__main__':
     c1=cmf1d()
     print "gw_flux=",c1.groundwater_flux

@@ -78,6 +78,8 @@ def run(t,res,plant):
     res.flux.append(c.flux) #water flux of each layer in [mm/day] (list with 40 soil layers)
     res.wetness.append(c.wetness) #wetness/water content of each layer in [%/day] (list with 40 soil layers)
     res.pF.append(c.pF)
+    res.potential.append(c.potential)#!!
+    res.porosity.append(c.porosity)#!!
     res.deep_percolation.append(c.groundwater.waterbalance(t)) #water flux to groundwater [mm/day]
     res.rain.append(c.cell.get_rainfall(t)) #rainfall in [mm/day]
     #get baresoil evaporation [mm/day]
@@ -135,6 +137,8 @@ class Res(object):
         self.ETc = []
         self.wetness = []
         self.pF=[]
+        self.potential=[]#!!
+        self.porosity=[]#!!
         self.rain = []
         self.temperature = []
         self.DAS = []
@@ -171,9 +175,9 @@ if __name__=='__main__':
 #########Plot1 Kersebaum#########
 #########Bodenschichten##########
     #Interpolated Soillayers    
-    c=cmf1d(sand=[90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,88.33,86.67,85.00,83.33,81.67,80.00,82.00,84.00,86.00,88.00,90.00,92.00,92.33,92.67,93.00,93.33,93.67,94.00,94.13,94.27,94.40,94.53,94.67,94.80,94.93,95.07,95.20,95.33,95.47,95.60,95.73,95.87,96.00],silt=[2.00,2.17,2.33,2.50,2.67,2.83,3.00,3.33,3.67,4.00,4.33,4.67,5.00,5.50,6.00,6.50,7.00,7.50,8.00,7.33,6.67,6.00,5.33,4.67,4.00,3.83,3.67,3.50,3.33,3.17,3.00,2.93,2.87,2.80,2.73,2.67,2.60,2.53,2.47,2.40,2.33,2.27,2.20,2.13,2.07,2.00],clay=[8.00,7.83,7.67,7.50,7.33,7.17,7.00,6.67,6.33,6.00,5.67,5.33,5.00,6.17,7.33,8.50,9.67,10.83,12.00,10.67,9.33,8.00,6.67,5.33,4.00,3.83,3.67,3.50,3.33,3.17,3.00,2.93,2.87,2.80,2.73,2.67,2.60,2.53,2.47,2.40,2.33,2.27,2.20,2.13,2.07,2.00],c_org=[76.00,74.33,72.67,71.00,69.33,67.67,66.00,57.67,49.33,41.00,32.67,24.33,16.00,14.67,13.33,12.00,10.67,9.33,8.00,6.67,5.33,4.00,2.67,1.33,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00],bedrock_K=0.01,layercount=6,layerthickness=[.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05],tracertext='')
+    #c=cmf1d(sand=[90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,88.33,86.67,85.00,83.33,81.67,80.00,82.00,84.00,86.00,88.00,90.00,92.00,92.33,92.67,93.00,93.33,93.67,94.00,94.13,94.27,94.40,94.53,94.67,94.80,94.93,95.07,95.20,95.33,95.47,95.60,95.73,95.87,96.00],silt=[2.00,2.17,2.33,2.50,2.67,2.83,3.00,3.33,3.67,4.00,4.33,4.67,5.00,5.50,6.00,6.50,7.00,7.50,8.00,7.33,6.67,6.00,5.33,4.67,4.00,3.83,3.67,3.50,3.33,3.17,3.00,2.93,2.87,2.80,2.73,2.67,2.60,2.53,2.47,2.40,2.33,2.27,2.20,2.13,2.07,2.00],clay=[8.00,7.83,7.67,7.50,7.33,7.17,7.00,6.67,6.33,6.00,5.67,5.33,5.00,6.17,7.33,8.50,9.67,10.83,12.00,10.67,9.33,8.00,6.67,5.33,4.00,3.83,3.67,3.50,3.33,3.17,3.00,2.93,2.87,2.80,2.73,2.67,2.60,2.53,2.47,2.40,2.33,2.27,2.20,2.13,2.07,2.00],c_org=[76.00,74.33,72.67,71.00,69.33,67.67,66.00,57.67,49.33,41.00,32.67,24.33,16.00,14.67,13.33,12.00,10.67,9.33,8.00,6.67,5.33,4.00,2.67,1.33,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00],bedrock_K=0.01,layercount=6,layerthickness=[.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05],tracertext='')
     #Orignal Soillayer      
-    #c=cmf1d(sand=[90.,90.,80.,92.,94.,96.],silt=[3.,5.,8.,4.,3.,2.],clay=[7.,5.,12.,4.,3.,2.],c_org=[.66,.16,.08,0.,0.,0.],bedrock_K=0.01,layercount=6,layerthickness=[.3,.3,.3,.3,.3,.75],tracertext='')
+    c=cmf1d(sand=[90.,90.,80.,92.,94.,96.],silt=[3.,5.,8.,4.,3.,2.],clay=[7.,5.,12.,4.,3.,2.],c_org=[.66,.16,.08,0.,0.,0.],bedrock_K=0.01,layercount=6,layerthickness=[.3,.3,.3,.3,.3,.75],tracertext='')
 #################################
 #################################
 
@@ -197,8 +201,8 @@ if __name__=='__main__':
     print "cmf is setup"
     #start = get_starttimeT()
     Datenstart = datetime(1992,1,1)    
-    start = datetime(1994,1,1)    
-    end = datetime(1994,12,31) 
+    start = datetime(1992,1,1)    
+    end = datetime(1993,4,21) 
    
     #end = get_endtimeT()
     #Station1_Giessen = meteo() #!!!
@@ -208,6 +212,7 @@ if __name__=='__main__':
     cmf_fp = cmf_fp_interface(c.cell)
     cmf_fp.default_Nconc = .3
     #cmf_fp.default_Nconc = .1
+    
     
     
     print "Interface to PMF"
@@ -231,11 +236,34 @@ if __name__=='__main__':
     start_time = datetime.now()
     c.t = start
     start_content = np.sum(c.cell.layers.volume)
+    Vergangene_Tage = 0
     while c.t<end:
         plant=run(c.t,res,plant)
+        Vergangene_Tage+=1
         
+    
+    water_content_0_30cm = res.porosity[Vergangene_Tage-1][0]*res.wetness[Vergangene_Tage-1][0]*100 #Porenvolumen0-30cm * Wassergehalt pro Porenvolumen0-30cm *100 (Prozentangabe fuer Endtag)
+    water_content_30_60cm = res.porosity[Vergangene_Tage-1][1]*res.wetness[Vergangene_Tage-1][1]*100 #Porenvolumen30-60cm * Wassergehalt pro Porenvolumen30-60cm *100 (Prozentangabe fuer Endtag)
+    water_content_60_90cm = res.porosity[Vergangene_Tage-1][2]*res.wetness[Vergangene_Tage-1][2]*100 #Porenvolumen60-90cm * Wassergehalt pro Porenvolumen60-90cm *100 (Prozentangabe fuer Endtag)
+    
+    print '\n############ Water_content_cmf ##############'
+    print '\nWassergehalt berechnet fuer: ' + str(end.date())
+    print 'Wassergehalt 0 bis 30 cm:' 
+    print round(water_content_0_30cm,1) 
+    print 'Wassergehalt 30 bis 60 cm:'
+    print round(water_content_30_60cm,1)
+    print 'Wassergehalt 60 bis 90 cm:'
+    print round(water_content_60_90cm,1)    
+    print '\n'
+    
+    print '######### Water_content_Kersebaum ###########'
+    c.load_water_content('Water_content_Plot1.csv')
+    
+    
 
-
+    
+    
+    
     P = np.sum(res.rain) # precipitation
     E = np.sum(res.evaporation)+np.sum(res.baresoil_evaporation) # evaporation from baresoil and covered soil
     T = np.sum(np.sum(res.water_uptake)) # actual transpiration
@@ -244,7 +272,7 @@ if __name__=='__main__':
     print '\n################################\n' + '################################\n' + 'Water balance'
     print  "%gmm (P) = %gmm (E) +  %gmm (T) + %gmm (DP) + %gmm (delta)" % (P,E,T,DP,storage)
     print  "Water content according to water balance: %gmm \nActual water content of soil: %gmm" % ((start_content + P-DP-T-E),np.sum(c.cell.layers.volume))
-    print np.max(res.storage)
+
     
     
     ######
