@@ -177,40 +177,42 @@ class cmf1d(object):
         # Use the meteorological station for each cell of the project
         self.project.use_nearest_meteo()
     
-    def load_water_content(self,Dateiname):
-        Plot=[]        
-        Datum=[]
-        Jahr=[]
-        Monat=[]
-        Tag=[]
-        Julian_Day=[]
-        water0_30=[]
-        water30_60=[]
-        water60_90=[]        
+    Plot=[]        
+    Datum=[]
+    Jahr=[]
+    Monat=[]
+    Tag=[]
+    Julian_Day=[]
+    water0_30=[]
+    water30_60=[]
+    water60_90=[] 
+    def load_water_content(self,Dateiname, Date):
+               
         water_content_file =file(Dateiname) 
         water_content_file.readline()        
         #csvfile.readline() # Read the headers, and ignore them
         for line in water_content_file:
             columns = line.split(';')
             # Get the values, but ignore the date, we have begin and steo
-            # of the data file hardcoded
+            # of the data file hardcoded          
             # If you don't get this line - it is standard Python, I would recommend the official Python.org tutorial
-            Plot.append(columns[0])            
-            Datum.append(columns[1])
-            Jahr.append(columns[2])
-            Monat.append(columns[3])
-            Tag.append(columns[4])
-            Julian_Day.append(columns[5])
-            water0_30.append(columns[6])
-            water30_60.append(columns[7])
-            water60_90.append(columns[8])
-        print '\nWassergehalt gemessen fuer: ' + Datum[0]
-        print 'Wassergehalt 0 bis 30 cm:'
-        print water0_30[0]
-        print 'Wassergehalt 30 bis 60 cm:'
-        print water30_60[0]
-        print 'Wassergehalt 60 bis 90 cm:'
-        print water60_90[0]
+            cmf1d.Plot.append(columns[0])            
+            cmf1d.Datum.append(columns[1])
+            cmf1d.Jahr.append(columns[2])
+            cmf1d.Monat.append(columns[3])
+            cmf1d.Tag.append(columns[4])
+            cmf1d.Julian_Day.append(columns[5])
+            cmf1d.water0_30.append(columns[6])
+            cmf1d.water30_60.append(columns[7])
+            cmf1d.water60_90.append(columns[8])
+        #print '# Water_content_Kersebaum #'    
+        #print '\nWassergehalt [%] gemessen fuer: ' + Datum[Date]
+        #print 'Wassergehalt 0 bis 30 cm:'
+        #print str(water0_30[Date])
+        #print 'Wassergehalt 30 bis 60 cm:'
+        #print str(water30_60[Date])
+        #print 'Wassergehalt 60 bis 90 cm:'
+        #print str(water60_90[Date])
         
                     
 if __name__=='__main__':
