@@ -406,6 +406,30 @@ if __name__=='__main__':
 
             cc_squared = stat.R_squared(Meas.Messwerte,Calc.Ergebnisse)
             
+            MSE = stat.MSE(Meas.Messwerte,Calc.Ergebnisse)
+            
+            RMSE = stat.RMSE(Meas.Messwerte,Calc.Ergebnisse)           
+            
+            MAE = stat.MAE(Meas.Messwerte, Calc.Ergebnisse)
+            
+            RRMSE = stat.RRMSE(Meas.Messwerte, Calc.Ergebnisse)
+            
+            RMAE = stat.RMAE(Meas.Messwerte, Calc.Ergebnisse)
+            
+            Agreement_index = stat.Agreement_index(Meas.Messwerte, Calc.Ergebnisse)
+            
+            Variance_Measured_Data = stat.Variance(Meas.Messwerte)
+            
+            Variance_Calculated_Data = stat.Variance(Calc.Ergebnisse)
+            
+            Covariance = stat.Covariance(Meas.Messwerte, Calc.Ergebnisse)
+                        
+            Standard_Deviation = stat.Standard_deviation(Meas.Messwerte)
+            
+            Standard_Deviation = stat.Standard_deviation(Calc.Ergebnisse)
+            
+            Decomposed_MSE = stat.Decomposed_MSE(Meas.Messwerte, Calc.Ergebnisse)
+            
             
             Values.append(Meas.Messwerte)
             Values.append(Calc.Ergebnisse)            
