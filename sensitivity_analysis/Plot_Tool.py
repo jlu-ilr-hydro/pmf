@@ -13,6 +13,7 @@ from datetime import *
 import math
 
 
+
 #class Measured(object):
 #    def __init__(self):
 #        self.Water0_30cm=[]
@@ -364,136 +365,194 @@ if __name__=='__main__':
 
     """
     Setup:
-    """    
-    Parameter = 'stem_and_leaf'
-    Parameter_unit = ' [kg/ha] '    
-    Position_Messwerte = 4
-    Position_Ergebnisse = 5
+    """
+    RUE=3
+    
+#    Parameter = 'storage_organs'
+#    Parameter_unit = ' [kg/ha] '    
+#    Position_Messwerte = 4
+#    Position_Ergebnisse = 3
+    
 
+#    Parameter = 'stem_and_leaf'
+#    Parameter_unit = ' [kg/ha] '    
+#    Position_Messwerte = 4
+#    Position_Ergebnisse = 3
+
+#    Parameter = 'Water_Content_0_30cm'
+#    Parameter_unit = ' [Vol.%] '
+#    Position_Messwerte = 4
+#    Position_Ergebnisse = 3
+
+#    Parameter = 'Water_Content_30_60cm'
+#    Parameter_unit = ' [Vol.%] '
+#    Position_Messwerte = 4
+#    Position_Ergebnisse = 3
+    
+#    Parameter = 'Water_Content_60_90cm'
+#    Parameter_unit = ' [Vol.%] '
+#    Position_Messwerte = 4
+#    Position_Ergebnisse = 3
+
+    Parameter = 'root'
+    Parameter_unit = ' [kg/ha] '
+    Position_Messwerte = 4
+    Position_Ergebnisse = 3
+    
     """
     Runtimeloop:
     """    
     Values = []
-    for RUE_Faktor in range(10):
-        RUE=RUE_Faktor+1
+    #for RUE_Faktor in range(10):
+        #RUE=RUE_Faktor+1
         
-        ax1 = plt.subplot(311)
-        ax2 = plt.subplot(312)
-        ax3 = plt.subplot(313)
-        plt.title(Parameter+Parameter_unit)
+    ax1 = plt.subplot(311)
+    ax2 = plt.subplot(312)
+    ax3 = plt.subplot(313)
+    plt.title(Parameter+Parameter_unit)
+    for Plotnumber in range(3):       
+        Plot = Plotnumber+1
+        Meas=Measured()
+        Calc=Calculated()
+        load_data(Plot,Parameter,Position_Messwerte,Position_Ergebnisse)
+        Values.append(Meas.Messwerte)
+        Values.append(Calc.Ergebnisse)
+    Biggest_value = np.max(np.max(np.max(Values)))
+
         
-        for Plotnumber in range(3):
-           
-            Plot = Plotnumber+1
-            
-           
-            Meas=Measured()
-            Calc=Calculated()
-            
-            
-            
-            load_data(Plot,Parameter,Position_Messwerte,Position_Ergebnisse)
-            
-            Datum=[]
-            for i in range(len(Calc.year)):
-                Datum.append(datetime(int(Calc.year[i]),int(Calc.month[i]),int(Calc.day[i])))
-             
-            Bias = stat.Bias(Meas.Messwerte,Calc.Ergebnisse)
-            
-            Nash_Sutcliff = stat.Nash_Sutcliff(Meas.Messwerte,Calc.Ergebnisse)
-
-            cc = stat.Corelation_Coefficient(Meas.Messwerte,Calc.Ergebnisse)
-
-            cc_squared = stat.R_squared(Meas.Messwerte,Calc.Ergebnisse)
-            
-            MSE = stat.MSE(Meas.Messwerte,Calc.Ergebnisse)
-            
-            RMSE = stat.RMSE(Meas.Messwerte,Calc.Ergebnisse)           
-            
-            MAE = stat.MAE(Meas.Messwerte, Calc.Ergebnisse)
-            
-            RRMSE = stat.RRMSE(Meas.Messwerte, Calc.Ergebnisse)
-            
-            RMAE = stat.RMAE(Meas.Messwerte, Calc.Ergebnisse)
-            
-            Agreement_index = stat.Agreement_index(Meas.Messwerte, Calc.Ergebnisse)
-            
-            Variance_Measured_Data = stat.Variance(Meas.Messwerte)
-            
-            Variance_Calculated_Data = stat.Variance(Calc.Ergebnisse)
-            
-            Covariance = stat.Covariance(Meas.Messwerte, Calc.Ergebnisse)
-                        
-            Standard_Deviation = stat.Standard_deviation(Meas.Messwerte)
-            
-            Standard_Deviation = stat.Standard_deviation(Calc.Ergebnisse)
-            
-            Decomposed_MSE = stat.Decomposed_MSE(Meas.Messwerte, Calc.Ergebnisse)
-            
-            
-            Values.append(Meas.Messwerte)
-            Values.append(Calc.Ergebnisse)            
-            
-            #Biggest_value = math.ceil(np.max(Values))
-            #print Biggest_value
-    
+    for Plotnumber in range(3):    
+        Plot = Plotnumber+1      
+        Meas=Measured()
+        Calc=Calculated()
+        load_data(Plot,Parameter,Position_Messwerte,Position_Ergebnisse)
+        
+        Datum=[]
+        for i in range(len(Calc.year)):
+            Datum.append(datetime(int(Calc.year[i]),int(Calc.month[i]),int(Calc.day[i])))
          
-            """
-            Plot:
-            """
+        Bias = stat.Bias(Meas.Messwerte,Calc.Ergebnisse)
+        
+        EF = stat.Nash_Sutcliff(Meas.Messwerte,Calc.Ergebnisse)
+
+        r = stat.Corelation_Coefficient(Meas.Messwerte,Calc.Ergebnisse)
+
+        cc_squared = stat.R_squared(Meas.Messwerte,Calc.Ergebnisse)
+        
+        MSE = stat.MSE(Meas.Messwerte,Calc.Ergebnisse)
+        
+        RMSE = stat.RMSE(Meas.Messwerte,Calc.Ergebnisse)           
+        
+        MAE = stat.MAE(Meas.Messwerte, Calc.Ergebnisse)
+        
+        RRMSE = stat.RRMSE(Meas.Messwerte, Calc.Ergebnisse)
+        
+        RMAE = stat.RMAE(Meas.Messwerte, Calc.Ergebnisse)
+        
+        Agreement_index = stat.Agreement_index(Meas.Messwerte, Calc.Ergebnisse)
+        
+        Variance_Measured_Data = stat.Variance(Meas.Messwerte)
+        
+        Variance_Calculated_Data = stat.Variance(Calc.Ergebnisse)
+        
+        Covariance = stat.Covariance(Meas.Messwerte, Calc.Ergebnisse)
+                    
+        Standard_Deviation = stat.Standard_deviation(Meas.Messwerte)
+        
+        Standard_Deviation = stat.Standard_deviation(Calc.Ergebnisse)
+        
+        Decomposed_MSE = stat.Decomposed_MSE(Meas.Messwerte, Calc.Ergebnisse)
         
         
-            
-            if Plot ==1:
-                #ax1.set_ylim(0,35,1)
-                ax1.set_xlim(datetime(1993,1,1),datetime(1999,1,1))
-                ax1.set_ylim(0,math.ceil(np.max(Values)))
-                #ax1.plot(Datum,Calc.Water0_30cm,'b--')
-                ax1.plot(Datum,Calc.Ergebnisse,'bo', ms=4,label='PMF')
-                #ax1.plot(Datum,Meas.Water0_30cm,'g--')
-                ax1.plot(Datum,Meas.Messwerte,'go', ms=4,label='Kersebaum')
-                ax1.legend(loc=2, bbox_to_anchor = (0.77, 0.4),scatterpoints=0)
-                ax1.set_title('Plot '+str(Plot)+' with r='+str(round(cc,4))+', Bias='+str(round(Bias,2))+' and EF='+str(round(Nash_Sutcliff,2)))
-                ax1.grid()    
-                ax1.set_xlabel('Date')
-                ax1.set_ylabel(Parameter+Parameter_unit)
-                ax1.fill_between(Datum,Calc.Ergebnisse,Meas.Messwerte,facecolor='red', alpha=0.5)    
+        Values.append(Meas.Messwerte)
+        Values.append(Calc.Ergebnisse)   
+        
+        #print Meas.Messwerte
+        #print Calc.Ergebnisse
+#        print '###############'
+#        for i in range(len(Values)):
+#            for j in range(len(Values[i])):            
+#                print type(Values[i][j])
+#        print np.max(np.max(Values))
+#        print '###############'
+        #print math.ceil(np.max(Meas.Messwerte))
+        #print math.ceil(np.max(Calc.Ergebnisse))
+        #print Biggest_value
+
+     
+        """
+        Plot:
+        """
     
-            if Plot ==2:
-                #ax2.set_ylim(0,35,1)
-                ax2.set_xlim(datetime(1993,1,1),datetime(1999,1,1))
-                ax2.set_ylim(0,math.ceil(np.max(Values)))
-                #ax2.plot(Datum,Calc.Water0_30cm,'b--')
-                ax2.plot(Datum,Calc.Ergebnisse,'bo', ms=4,label='PMF')
-                #ax2.plot(Datum,Meas.Water0_30cm,'g--')
-                ax2.plot(Datum,Meas.Messwerte,'go', ms=4,label='Kersebaum')
-                #ax2.legend(loc=2, bbox_to_anchor = (0.77, 0.4),scatterpoints=0)
-                ax2.set_title('Plot '+str(Plot)+' with r='+str(round(cc,4))+', Bias='+str(round(Bias,2))+' and EF='+str(round(Nash_Sutcliff,2)))
-                ax2.grid()    
-                ax2.set_xlabel('Date')
-                ax2.set_ylabel(Parameter+Parameter_unit)
-                ax2.fill_between(Datum,Calc.Ergebnisse,Meas.Messwerte,facecolor='red', alpha=0.5)   
-            if Plot ==3:
-                #ax3.set_ylim(0,35,1)
-                ax3.set_xlim(datetime(1993,1,1),datetime(1999,1,1))
-                ax3.set_ylim(0,math.ceil(np.max(Values)))
-                #ax3.plot(Datum,Calc.Water0_30cm,'b--')
-                ax3.plot(Datum,Calc.Ergebnisse,'bo', ms=4,label='PMF')
-                #ax3.plot(Datum,Meas.Water0_30cm,'g--')
-                ax3.plot(Datum,Meas.Messwerte,'go', ms=4,label='Kersebaum')
-                #ax3.legend(loc=2, bbox_to_anchor = (0.77, 0.4),scatterpoints=0)
-                ax3.set_title('Plot '+str(Plot)+' with r='+str(round(cc,4))+', Bias='+str(round(Bias,2))+' and EF='+str(round(Nash_Sutcliff,2)))
-                ax3.grid()    
-                ax3.set_xlabel('Date')
-                ax3.set_ylabel(Parameter+Parameter_unit)
-                ax3.fill_between(Datum,Calc.Ergebnisse,Meas.Messwerte,facecolor='red', alpha=0.5)   
-                
-        #legend(bbox_to_anchor=(0., 3.40, 1., 2.102), loc=0,
-        #       ncol=2, mode="expand", borderaxespad=0.)
-        plt.tight_layout()
-        plt.draw()
-        plt.savefig(Parameter+' for all plots and RUE = '+str(RUE), dpi=400)    
-        plt.close()     
+        #print type(r)
+        #print type(Bias)
+        #print type(EF)
+#        
+        if Plot ==1:
+            #ax1.set_ylim(0,35,1)
+            #Biggest_value = math.ceil(np.max(Values))
+            #print Biggest_value*1.1
+            ax1.set_xlim(datetime(1992,1,1),datetime(1999,1,1))
+            ax1.set_ylim(0,Biggest_value*1.1)
+            #ax1.plot(Datum,Calc.Water0_30cm,'b--')
+            ax1.plot(Datum,Calc.Ergebnisse,'bo', ms=4,label='PMF')
+            #ax1.plot(Datum,Meas.Water0_30cm,'g--')
+            ax1.plot(Datum,Meas.Messwerte,'gs', ms=4,label='Kersebaum') 
+            leg = ax1.legend(bbox_to_anchor=(1.05, -0.15), loc='upper_right', fancybox=True)
+            leg.get_frame().set_alpha(0.5)
+            textstr = 'r = %.4f\nBias = %.1f\nEF = %.4f'%(r, Bias, EF)
+            props = dict(boxstyle='round',facecolor='white', alpha=0.5)
+            ax1.text(0.02, 0.85, textstr, transform=ax1.transAxes, fontsize=14, verticalalignment='top', bbox=props)                       
+            #ax1.set_title('Plot '+str(Plot)+' with 'r'$r$'+'='+str(round(cc,4))+', ' r'$Bias$'+'='+str(round(Bias,2))+' and 'r'$EF$'+'='+str(round(Nash_Sutcliff,2)))
+            ax1.set_title(Parameter+Parameter_unit+'Plot '+r'$1$')           
+            ax1.grid()    
+            ax1.set_xlabel('Date '+r'$[Years]$')
+            ax1.set_ylabel(Parameter+Parameter_unit, fontsize=9)
+            ax1.fill_between(Datum,Calc.Ergebnisse,Meas.Messwerte,facecolor='red', alpha=0.5)    
+    
+        if Plot ==2:
+            #ax2.set_ylim(0,35,1)
+            #print math.ceil(np.max(Values))
+            ax2.set_xlim(datetime(1992,1,1),datetime(1999,1,1))
+            ax2.set_ylim(0,Biggest_value*1.1)
+            #ax2.plot(Datum,Calc.Water0_30cm,'b--')
+            ax2.plot(Datum,Calc.Ergebnisse,'bo', ms=4,label='PMF')
+            #ax2.plot(Datum,Meas.Water0_30cm,'g--')
+            ax2.plot(Datum,Meas.Messwerte,'gs', ms=4,label='Kersebaum')
+            textstr = 'r = %.4f\nBias = %.1f\nEF = %.4f'%(r, Bias, EF)
+            props = dict(boxstyle='round',facecolor='white', alpha=0.5)
+            ax2.text(0.02, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top', bbox=props)  
+            #ax2.legend(loc=2, bbox_to_anchor = (0.77, 0.4),scatterpoints=0)
+            #ax2.set_title('Plot '+str(Plot)+' with 'r'$r$'+'='+str(round(cc,4))+', ' r'$Bias$'+'='+str(round(Bias,2))+' and 'r'$EF$'+'='+str(round(Nash_Sutcliff,2)))
+            ax2.set_title(Parameter+Parameter_unit+'Plot '+r'$2$')             
+            ax2.grid()    
+            ax2.set_xlabel('Date '+r'$[Years]$')
+            ax2.set_ylabel(Parameter+Parameter_unit, fontsize=9)
+            ax2.fill_between(Datum,Calc.Ergebnisse,Meas.Messwerte,facecolor='red', alpha=0.5)   
+        if Plot ==3:
+            #ax3.set_ylim(0,35,1)
+            ax3.set_xlim(datetime(1992,1,1),datetime(1999,1,1))
+            ax3.set_ylim(0,Biggest_value*1.1)
+            #ax3.plot(Datum,Calc.Water0_30cm,'b--')
+            ax3.plot(Datum,Calc.Ergebnisse,'bo', ms=4,label='PMF')
+            #ax3.plot(Datum,Meas.Water0_30cm,'g--')
+            ax3.plot(Datum,Meas.Messwerte,'gs', ms=4,label='Kersebaum')
+            textstr = 'r = %.4f\nBias = %.1f\nEF = %.4f'%(r, Bias, EF)
+            props = dict(boxstyle='round',facecolor='white', alpha=0.5)
+            ax3.text(0.02, 0.85, textstr, transform=ax3.transAxes, fontsize=14, verticalalignment='top', bbox=props)  
+            #ax3.legend(loc=2, bbox_to_anchor = (0.77, 0.4),scatterpoints=0)
+            ax3.set_title(Parameter+Parameter_unit+'Plot '+r'$3$')             
+            #ax3.set_title('Plot '+str(Plot)+' with 'r'$r$'+'='+str(round(cc,4))+', ' r'$Bias$'+'='+str(round(Bias,2))+' and 'r'$EF$'+'='+str(round(Nash_Sutcliff,2)))
+            ax3.grid()    
+            ax3.set_xlabel('Date '+r'$[Years]$')
+            ax3.set_ylabel(Parameter+Parameter_unit, fontsize=9)
+            ax3.fill_between(Datum,Calc.Ergebnisse,Meas.Messwerte,facecolor='red', alpha=0.5)   
+            
+    #legend(bbox_to_anchor=(0., 3.40, 1., 2.102), loc=0,
+    #       ncol=2, mode="expand", borderaxespad=0.)
+    plt.tight_layout()
+    plt.draw()
+    plt.savefig(Parameter+' for all plots and RUE = '+str(RUE), dpi=400)    
+    #plt.close()     
 
 
 
