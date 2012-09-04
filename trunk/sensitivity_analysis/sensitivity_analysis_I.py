@@ -269,120 +269,179 @@ if __name__=='__main__':
     #Plot=1#select values 1-3 to get differnt plots in Muencheberg    
 #################################
 #################################
-    for RUE_Faktor in range(10):
-        Cropvalues = PMF.CropDatabase.CropCoefficiants()
-        Cropvalues.RUE=RUE_Faktor+1
-        for Plotnumber in range(3):
-            Plot =Plotnumber+1
-            
-            c=get_soil_data(Plot)
-            #Bodendatei=get_water_content_data(Plot)
-            print "cmf is setup"
-            Datenstart = datetime(1992,1,1)
+    #for RUE_Faktor in range(10):
+        #Cropvalues = PMF.CropDatabase.CropCoefficiants(RUE = RUE_Faktor+1)
+        #PMF.CropDatabase.RUE_CropCoefficants = RUE_Faktor+1     
+    #Cropvalues.RUE=RUE_Faktor+1
+    for Plotnumber in range(3):
+        Plot =Plotnumber+1
+        RUE = 3
+        #Parameter = 'storage_organs'
+        #Parameter = 'stem_and_leaf'
+        #Parameter = 'Water_Content'
+        Parameter = 'root'
+        #Parameter_unit = ' Vol[%] '        
+        Parameter_unit = ' [kg/ha] '            
         
-        #################################
-        #################################    
-            start = datetime(1992,1,1)    
-            #end = datetime(1992,12,31)    
-            end = datetime(1998,12,31) 
-        #################################
-        #################################
-           
-            #Station1_Giessen = meteo() #!!!
-            #Station1_Giessen.load_weather('climate_giessen.csv') #!!!
-            c.load_meteo(Datenstart,start, 'Muencheberg', rain_factor=1.)
-            print "meteo loaded"
-            cmf_fp = cmf_fp_interface(c.cell)
-            cmf_fp.default_Nconc = .3
-            #cmf_fp.default_Nconc = .1
-            
-            
-            
-            print "Interface to PMF"
-            c.cell.saturated_depth=5.
-            #Create evapotranspiration instance or bare soil conditions
-            baresoil = PMF.ProcessLibrary.ET_FAO([0.,0.,0.,0.],[0.,0.,0.,0.],kcmin = 0.)
-            
-            #set management
-            sowingdate = set(datetime(i,3,1) for i in range(1980,2100))
-            harvestdate = set(datetime(i,8,1) for i in range(1980,2100))
-            #Simulation period
-            
-            #Simulation
-            res = Res()
-            plant = None
-            print "Run ... "    
-            start_time = datetime.now()
-            c.t = start
-            start_content = np.sum(c.cell.layers.volume)
-            Vergangene_Tage = 0
-            while c.t<end:
-                print Cropvalues.RUE
-                plant=run(c.t,res,plant)       
-                Vergangene_Tage+=1
-                
-            
-            
-            
-#            P = np.sum(res.rain) # precipitation
-#            E = np.sum(res.evaporation)+np.sum(res.baresoil_evaporation) # evaporation from baresoil and covered soil
-#            T = np.sum(np.sum(res.water_uptake)) # actual transpiration
-#            DP = np.sum(res.deep_percolation) # deep percolation (groundwater losses)
-#            storage =np.sum(c.cell.layers.volume)- start_content 
-#            print '\n################################\n' + '################################\n' + 'Water balance'
-#            print  "%gmm (P) = %gmm (E) +  %gmm (T) + %gmm (DP) + %gmm (delta)" % (P,E,T,DP,storage)
-#            print  "Water content according to water balance: %gmm \nActual water content of soil: %gmm" % ((start_content + P-DP-T-E),np.sum(c.cell.layers.volume))
-#        
-            
-            
-            ######
-            # groundwater.waterbalance -> der Fluß ist nicht in flux mit drin!!!
-        ######################################
-        ######################################
-        ## Show results
-        
-        #    timeline=drange(start,end,timedelta(1))
-        #    pylab.subplot(311)
-        #    pylab.contourf(transpose([r[:20] for r in res.pF]),cmap=cm.jet,aspect='auto',interpolation='nearest',extent=[0,len(timeline),100,0],vmin=0.,vmax=6.0)#conturf statt imshow, macht das die Bodenlayer korrekt dargestellt werden. Generell mehr Bodenlayer erzeugen (per hand interpolation)
-        #    ylabel('Depth [cm]')
-        #    xlabel('Day of year')
-        #    pylab.subplot(312)
-        #    plot_date(timeline,[i[0] for i in res.stress],'b',label='Drought stress')
-        #    ylabel('Stress index [-]')
-        #    ylim(0,1)
-        #    legend(loc=0)
-        #    pylab.subplot(313)
-        #    plot_date(timeline,[-r for r in res.rooting_depth],'g',label='Actual')
-        #    plot_date(timeline,[-r for r in res.potential_depth],'k--',label='Potential')
-        #    ylabel('Rooting depth [mm]')
-        #    legend(loc=0)
-        #    show()
+        c=get_soil_data(Plot)
+        #Bodendatei=get_water_content_data(Plot)
+        print "cmf is setup"
+        Datenstart = datetime(1992,1,1)
+    
+    #################################
+    #################################    
+        start = datetime(1992,1,1)    
+        #end = datetime(1992,12,31)    
+        end = datetime(1998,12,31) 
+    #################################
+    #################################
+       
+        #Station1_Giessen = meteo() #!!!
+        #Station1_Giessen.load_weather('climate_giessen.csv') #!!!
+        c.load_meteo(Datenstart,start, 'Muencheberg', rain_factor=1.)
+        print "meteo loaded"
+        cmf_fp = cmf_fp_interface(c.cell)
+        cmf_fp.default_Nconc = .3
+        #cmf_fp.default_Nconc = .1
         
         
         
+        print "Interface to PMF"
+        c.cell.saturated_depth=5.
+        #Create evapotranspiration instance or bare soil conditions
+        baresoil = PMF.ProcessLibrary.ET_FAO([0.,0.,0.,0.],[0.,0.,0.,0.],kcmin = 0.)
         
-#            timeline=drange(start,end,timedelta(1))
-#            subplot(311)
-#            imshow(transpose([r[:20] for r in res.pF]),cmap=cm.jet,aspect='auto',interpolation='nearest',extent=[0,len(timeline),100,0],vmin=0.,vmax=6.0)#conturf statt imshow, macht das die Bodenlayer korrekt dargestellt werden. Generell mehr Bodenlayer erzeugen (per hand interpolation)
-#            ylabel('Depth [cm]')
-#            xlabel('Day of year')
-#            subplot(312)
-#            plot_date(timeline,[i[0] for i in res.stress],'b',label='Drought stress')
-#            ylabel('Stress index [-]')
-#            ylim(0,1)
-#            legend(loc=0)
-#            subplot(313)
-#            plot_date(timeline,[-r for r in res.rooting_depth],'g',label='Actual')
-#            plot_date(timeline,[-r for r in res.potential_depth],'k--',label='Potential')
-#            ylabel('Rooting depth [mm]')
-#            legend(loc=0)
-#            show()
+        #set management
+        sowingdate = set(datetime(i,3,1) for i in range(1980,2100))
+        harvestdate = set(datetime(i,8,1) for i in range(1980,2100))
+        #Simulation period
         
-#            ##Saves results only for available Measure dates=================================
-#            
-#=======================================Stem and leaf==========================================
+        #Simulation
+        res = Res()
+        plant = None
+        print "Run ... "    
+        start_time = datetime.now()
+        c.t = start
+        start_content = np.sum(c.cell.layers.volume)
+        Vergangene_Tage = 0
+        while c.t<end:
+            #print Cropvalues.RUE
+            plant=run(c.t,res,plant)       
+            Vergangene_Tage+=1
+            
+        
+        
+        
+    #            P = np.sum(res.rain) # precipitation
+    #            E = np.sum(res.evaporation)+np.sum(res.baresoil_evaporation) # evaporation from baresoil and covered soil
+    #            T = np.sum(np.sum(res.water_uptake)) # actual transpiration
+    #            DP = np.sum(res.deep_percolation) # deep percolation (groundwater losses)
+    #            storage =np.sum(c.cell.layers.volume)- start_content 
+    #            print '\n################################\n' + '################################\n' + 'Water balance'
+    #            print  "%gmm (P) = %gmm (E) +  %gmm (T) + %gmm (DP) + %gmm (delta)" % (P,E,T,DP,storage)
+    #            print  "Water content according to water balance: %gmm \nActual water content of soil: %gmm" % ((start_content + P-DP-T-E),np.sum(c.cell.layers.volume))
+    #        
+        
+        
+        ######
+        # groundwater.waterbalance -> der Fluß ist nicht in flux mit drin!!!
+    ######################################
+    ######################################
+    ## Show results
+    
+    #    timeline=drange(start,end,timedelta(1))
+    #    pylab.subplot(311)
+    #    pylab.contourf(transpose([r[:20] for r in res.pF]),cmap=cm.jet,aspect='auto',interpolation='nearest',extent=[0,len(timeline),100,0],vmin=0.,vmax=6.0)#conturf statt imshow, macht das die Bodenlayer korrekt dargestellt werden. Generell mehr Bodenlayer erzeugen (per hand interpolation)
+    #    ylabel('Depth [cm]')
+    #    xlabel('Day of year')
+    #    pylab.subplot(312)
+    #    plot_date(timeline,[i[0] for i in res.stress],'b',label='Drought stress')
+    #    ylabel('Stress index [-]')
+    #    ylim(0,1)
+    #    legend(loc=0)
+    #    pylab.subplot(313)
+    #    plot_date(timeline,[-r for r in res.rooting_depth],'g',label='Actual')
+    #    plot_date(timeline,[-r for r in res.potential_depth],'k--',label='Potential')
+    #    ylabel('Rooting depth [mm]')
+    #    legend(loc=0)
+    #    show()
+    
+    
+    
+    
+    #            timeline=drange(start,end,timedelta(1))
+    #            subplot(311)
+    #            imshow(transpose([r[:20] for r in res.pF]),cmap=cm.jet,aspect='auto',interpolation='nearest',extent=[0,len(timeline),100,0],vmin=0.,vmax=6.0)#conturf statt imshow, macht das die Bodenlayer korrekt dargestellt werden. Generell mehr Bodenlayer erzeugen (per hand interpolation)
+    #            ylabel('Depth [cm]')
+    #            xlabel('Day of year')
+    #            subplot(312)
+    #            plot_date(timeline,[i[0] for i in res.stress],'b',label='Drought stress')
+    #            ylabel('Stress index [-]')
+    #            ylim(0,1)
+    #            legend(loc=0)
+    #            subplot(313)
+    #            plot_date(timeline,[-r for r in res.rooting_depth],'g',label='Actual')
+    #            plot_date(timeline,[-r for r in res.potential_depth],'k--',label='Potential')
+    #            ylabel('Rooting depth [mm]')
+    #            legend(loc=0)
+    #            show()
+    
+    #            ##Saves results only for available Measure dates=================================
+    # 
+    
 
-            print 'Saving results Plot = '+str(Plot)+' and RUE = '+str(Cropvalues.RUE)
+    #=======================================Root================================================
+        
+        if Parameter == 'root':   
+            print 'Saving results for Paramter '+Parameter+' on Plot = '+str(Plot)+' and RUE = '+str(RUE)
+            Messung=[]
+            Messung.append(datetime(1994,3,9)-start)
+            Messung.append(datetime(1994,4,19)-start)
+            Messung.append(datetime(1994,5,26)-start)
+            Messung.append(datetime(1994,6,14)-start)
+   
+            with open('Calculated_root_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv', 'wb') as f:    
+                writer = csv.writer(f)
+                writer.writerow(['Year','Month','Day','root[dry matter(kg/ha)]'])
+                for i,days in enumerate(Messung):
+                    Messtag=start+Messung[i]
+                    writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.root_biomass[Messung[i].days]*10])
+                        
+
+    
+    #=======================================Storage================================================
+        
+        if Parameter == 'storage_organs':         
+            print 'Saving results for Paramter '+Parameter+' on Plot = '+str(Plot)+' and RUE = '+str(RUE)
+            Messung=[]
+            if Plot==1:            
+                Messung.append(datetime(1994,6,14)-start)
+                Messung.append(datetime(1994,7,26)-start)
+                Messung.append(datetime(1998,6,9)-start)
+        
+            if Plot==2:
+                Messung.append(datetime(1994,5,26)-start)
+                Messung.append(datetime(1994,6,14)-start)
+                Messung.append(datetime(1994,7,26)-start)
+                Messung.append(datetime(1998,6,9)-start)
+            
+            if Plot==3:
+                Messung.append(datetime(1994,6,14)-start)
+                Messung.append(datetime(1994,7,26)-start)
+                Messung.append(datetime(1998,6,9)-start)
+            
+            with open('Calculated_'+Parameter+'_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv', 'wb') as f:    
+                writer = csv.writer(f)
+                writer.writerow(['Year','Month','Day',Parameter+Parameter_unit])
+                for i,days in enumerate(Messung):
+                    Messtag=start+Messung[i]
+                    writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.storage[Messung[i].days]*10])
+
+       
+    #=======================================Stem and leaf==========================================
+    
+        if Parameter == 'stem_and_leaf':   
+            print 'Saving results for Paramter '+Parameter+' on Plot = '+str(Plot)+' and RUE = '+str(RUE)
             Messung=[]
             Messung.append(datetime(1994,3,9)-start)
             Messung.append(datetime(1994,4,19)-start)
@@ -391,138 +450,181 @@ if __name__=='__main__':
             Messung.append(datetime(1994,7,26)-start)
             Messung.append(datetime(1998,6,9)-start)
     
-            with open('Calculated_Stem_and_leaf_Plot = '+str(Plot)+' and RUE = '+str(Cropvalues.RUE)+'test.csv', 'wb') as f:    
+            with open('Calculated_Stem_and_leaf_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv', 'wb') as f:    
                 writer = csv.writer(f)
-                writer.writerow(['Year','Month','Day','stem [dry matter(kg/ha)]','leaf [dry matter (kg/ha)]','stem and leaf[dry matter(kg/ha)]'])
+                writer.writerow(['Year','Month','Day','stem and leaf[dry matter(kg/ha)]'])
                 for i,days in enumerate(Messung):
                     Messtag=start+Messung[i]
-                    writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.stem[Messung[i].days]*10,res.leaf[Messung[i].days]*10,res.stem[Messung[i].days]*10+res.leaf[Messung[i].days]*10])
+                    writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.stem[Messung[i].days]*10+res.leaf[Messung[i].days]*10])
                         
 
 
-#=======================================Watercontent==========================================
-#            ###########Plot1##########################
-#            
-#            
-#            if Plot==1:
-#                print 'Saving results Plot = '+str(Plot)+' and RUE = '+str(Cropvalues.RUE)
-#                Messung=[]
-#                Messung.append(datetime(1993,4,21)-start)
-#                Messung.append(datetime(1993,5,3)-start)
-#                Messung.append(datetime(1993,7,13)-start)
-#                Messung.append(datetime(1993,8,3)-start)
-#                Messung.append(datetime(1993,8,17)-start)
-#                Messung.append(datetime(1993,8,31)-start)
-#                Messung.append(datetime(1993,9,21)-start)
-#                Messung.append(datetime(1993,12,7)-start)
-#                Messung.append(datetime(1994,3,8)-start)
-#                Messung.append(datetime(1994,4,19)-start)
-#                Messung.append(datetime(1994,5,27)-start)
-#                Messung.append(datetime(1994,6,15)-start)
-#                Messung.append(datetime(1994,7,27)-start)
-#                Messung.append(datetime(1994,9,21)-start)
-#                Messung.append(datetime(1994,11,30)-start)
-#                Messung.append(datetime(1995,3,13)-start)
-#                Messung.append(datetime(1995,4,26)-start)
-#                Messung.append(datetime(1995,6,7)-start)
-#                Messung.append(datetime(1995,7,17)-start)
-#                Messung.append(datetime(1996,4,22)-start)
-#                Messung.append(datetime(1996,8,26)-start)
-#                Messung.append(datetime(1997,5,5)-start)
-#                Messung.append(datetime(1997,10,1)-start)
-#                Messung.append(datetime(1998,7,29)-start)
-#                
-#                with open('Calculated_Watercontent_Plot = '+str(Plot)+' and RUE = '+str(Cropvalues.RUE)+'.csv', 'wb') as f:    
-#                 writer = csv.writer(f)
-#                 writer.writerow(['Year','Month','Day','Watercontent0-30cm','Watercontent30-60cm','Watercontent60-90cm'])
-#                 for i,days in enumerate(Messung):
-#                     Messtag=start+Messung[i]
-#                     writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_0_30cm[Messung[i].days],res.watercontent_30_60cm[Messung[i].days],res.watercontent_60_90cm[Messung[i].days]])
-#            
-#                
-#            
-#            ###########Plot2##########################
-#            if Plot==2:
-#                print 'Saving results Plot 2'
-#                Messung=[]
-#                Messung.append(datetime(1993,4,21)-start)
-#                Messung.append(datetime(1993,5,3)-start)
-#                Messung.append(datetime(1993,6,14)-start)
-#                Messung.append(datetime(1993,6,28)-start)
-#                Messung.append(datetime(1993,7,13)-start)
-#                Messung.append(datetime(1993,8,3)-start)
-#                Messung.append(datetime(1993,8,17)-start)
-#                Messung.append(datetime(1993,8,31)-start)
-#                Messung.append(datetime(1993,9,21)-start)
-#                Messung.append(datetime(1993,12,7)-start)
-#                Messung.append(datetime(1994,3,8)-start)
-#                Messung.append(datetime(1994,4,19)-start)
-#                Messung.append(datetime(1994,5,27)-start)
-#                Messung.append(datetime(1994,6,15)-start)
-#                Messung.append(datetime(1994,7,27)-start)
-#                Messung.append(datetime(1994,9,21)-start)
-#                Messung.append(datetime(1994,11,30)-start)
-#                Messung.append(datetime(1995,3,13)-start)
-#                Messung.append(datetime(1995,4,26)-start)
-#                Messung.append(datetime(1995,6,7)-start)
-#                Messung.append(datetime(1995,7,17)-start)
-#                Messung.append(datetime(1996,4,22)-start)
-#                Messung.append(datetime(1996,8,26)-start)
-#                Messung.append(datetime(1997,5,5)-start)
-#                Messung.append(datetime(1997,10,1)-start)
-#                Messung.append(datetime(1998,7,29)-start)    
-#                with open('Calculated_Watercontent_Plot = '+str(Plot)+' and RUE = '+str(Cropvalues.RUE)+'.csv', 'wb') as f:    
-#                 writer = csv.writer(f)
-#                 writer.writerow(['Year','Month','Day','Watercontent0-30cm','Watercontent30-60cm','Watercontent60-90cm'])
-#                 for i,days in enumerate(Messung):
-#                     Messtag=start+Messung[i]
-#                     writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_0_30cm[Messung[i].days],res.watercontent_30_60cm[Messung[i].days],res.watercontent_60_90cm[Messung[i].days]])
-#            
-#            
-#            ###########Plot3##########################
-#            if Plot==3:
-#                print 'Saving results Plot3'
-#                Messung=[]
-#                Messung.append(datetime(1993,4,21)-start)
-#                Messung.append(datetime(1993,5,3)-start)
-#                Messung.append(datetime(1993,6,14)-start)
-#                Messung.append(datetime(1993,6,28)-start)
-#                Messung.append(datetime(1993,7,13)-start)
-#                Messung.append(datetime(1993,8,3)-start)
-#                Messung.append(datetime(1993,8,17)-start)
-#                Messung.append(datetime(1993,8,31)-start)
-#                Messung.append(datetime(1993,9,21)-start)
-#                Messung.append(datetime(1993,12,7)-start)
-#                Messung.append(datetime(1994,3,8)-start)
-#                Messung.append(datetime(1994,4,19)-start)
-#                Messung.append(datetime(1994,5,27)-start)
-#                Messung.append(datetime(1994,6,15)-start)
-#                Messung.append(datetime(1994,7,27)-start)
-#                Messung.append(datetime(1994,9,21)-start)
-#                Messung.append(datetime(1994,11,30)-start)
-#                Messung.append(datetime(1995,3,13)-start)
-#                Messung.append(datetime(1995,4,26)-start)
-#                Messung.append(datetime(1995,6,7)-start)
-#                Messung.append(datetime(1995,7,17)-start)
-#                Messung.append(datetime(1996,4,22)-start)
-#                Messung.append(datetime(1996,8,26)-start)
-#                Messung.append(datetime(1997,5,5)-start)
-#                Messung.append(datetime(1997,10,1)-start)
-#                Messung.append(datetime(1998,7,29)-start)    
-#                with open('Calculated_Watercontent_Plot = '+str(Plot)+' and RUE = '+str(Cropvalues.RUE)+'.csv', 'wb') as f:    
-#                 writer = csv.writer(f)
-#                 writer.writerow(['Year','Month','Day','Watercontent0-30cm','Watercontent30-60cm','Watercontent60-90cm'])
-#                 for i,days in enumerate(Messung):
-#                     Messtag=start+Messung[i]
-#                     writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_0_30cm[Messung[i].days],res.watercontent_30_60cm[Messung[i].days],res.watercontent_60_90cm[Messung[i].days]])
-#            
+    #=======================================Watercontent==========================================
+    
+        if Parameter == 'Water_Content':
+        
+            ###########Plot1##########################
+            if Plot==1:
+                print 'Saving results for Paramter '+Parameter+' on Plot = '+str(Plot)+' and RUE = '+str(RUE)
+                Messung=[]
+                Messung.append(datetime(1993,4,21)-start)
+                Messung.append(datetime(1993,5,3)-start)
+                Messung.append(datetime(1993,7,13)-start)
+                Messung.append(datetime(1993,8,3)-start)
+                Messung.append(datetime(1993,8,17)-start)
+                Messung.append(datetime(1993,8,31)-start)
+                Messung.append(datetime(1993,9,21)-start)
+                Messung.append(datetime(1993,12,7)-start)
+                Messung.append(datetime(1994,3,8)-start)
+                Messung.append(datetime(1994,4,19)-start)
+                Messung.append(datetime(1994,5,27)-start)
+                Messung.append(datetime(1994,6,15)-start)
+                Messung.append(datetime(1994,7,27)-start)
+                Messung.append(datetime(1994,9,21)-start)
+                Messung.append(datetime(1994,11,30)-start)
+                Messung.append(datetime(1995,3,13)-start)
+                Messung.append(datetime(1995,4,26)-start)
+                Messung.append(datetime(1995,6,7)-start)
+                Messung.append(datetime(1995,7,17)-start)
+                Messung.append(datetime(1996,4,22)-start)
+                Messung.append(datetime(1996,8,26)-start)
+                Messung.append(datetime(1997,5,5)-start)
+                Messung.append(datetime(1997,10,1)-start)
+                Messung.append(datetime(1998,7,29)-start)
+                
+                with open('Calculated_Water_Content_0_30cm_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv', 'wb') as f:    
+                 writer = csv.writer(f)
+                 writer.writerow(['Year','Month','Day','Watercontent0-30cm'])
+                 for i,days in enumerate(Messung):
+                     Messtag=start+Messung[i]
+                     writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_0_30cm[Messung[i].days]])
+            
+                with open('Calculated_Water_Content_30_60cm_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv', 'wb') as f:    
+                 writer = csv.writer(f)
+                 writer.writerow(['Year','Month','Day','Watercontent30-60cm'])
+                 for i,days in enumerate(Messung):
+                     Messtag=start+Messung[i]
+                     writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_30_60cm[Messung[i].days]])
+            
+                with open('Calculated_Water_Content_60_90cm_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv', 'wb') as f:    
+                 writer = csv.writer(f)
+                 writer.writerow(['Year','Month','Day','Watercontent60-90cm'])
+                 for i,days in enumerate(Messung):
+                     Messtag=start+Messung[i]
+                     writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_60_90cm[Messung[i].days]])
+
+            ###########Plot2##########################
+            if Plot==2:                
+                print 'Saving results for Paramter '+Parameter+' on Plot = '+str(Plot)+' and RUE = '+str(RUE)
+                Messung=[]
+                Messung.append(datetime(1993,4,21)-start)
+                Messung.append(datetime(1993,5,3)-start)
+                Messung.append(datetime(1993,6,14)-start)
+                Messung.append(datetime(1993,6,28)-start)
+                Messung.append(datetime(1993,7,13)-start)
+                Messung.append(datetime(1993,8,3)-start)
+                Messung.append(datetime(1993,8,17)-start)
+                Messung.append(datetime(1993,8,31)-start)
+                Messung.append(datetime(1993,9,21)-start)
+                Messung.append(datetime(1993,12,7)-start)
+                Messung.append(datetime(1994,3,8)-start)
+                Messung.append(datetime(1994,4,19)-start)
+                Messung.append(datetime(1994,5,27)-start)
+                Messung.append(datetime(1994,6,15)-start)
+                Messung.append(datetime(1994,7,27)-start)
+                Messung.append(datetime(1994,9,21)-start)
+                Messung.append(datetime(1994,11,30)-start)
+                Messung.append(datetime(1995,3,13)-start)
+                Messung.append(datetime(1995,4,26)-start)
+                Messung.append(datetime(1995,6,7)-start)
+                Messung.append(datetime(1995,7,17)-start)
+                Messung.append(datetime(1996,4,22)-start)
+                Messung.append(datetime(1996,8,26)-start)
+                Messung.append(datetime(1997,5,5)-start)
+                Messung.append(datetime(1997,10,1)-start)
+                Messung.append(datetime(1998,7,29)-start) 
+                
+                with open('Calculated_Water_Content_0_30cm_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv', 'wb') as f:    
+                 writer = csv.writer(f)
+                 writer.writerow(['Year','Month','Day','Watercontent0-30cm'])
+                 for i,days in enumerate(Messung):
+                     Messtag=start+Messung[i]
+                     writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_0_30cm[Messung[i].days]])
+            
+                with open('Calculated_Water_Content_30_60cm_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv', 'wb') as f:    
+                 writer = csv.writer(f)
+                 writer.writerow(['Year','Month','Day','Watercontent30-60cm'])
+                 for i,days in enumerate(Messung):
+                     Messtag=start+Messung[i]
+                     writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_30_60cm[Messung[i].days]])
+            
+                with open('Calculated_Water_Content_60_90cm_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv', 'wb') as f:    
+                 writer = csv.writer(f)
+                 writer.writerow(['Year','Month','Day','Watercontent60-90cm'])
+                 for i,days in enumerate(Messung):
+                     Messtag=start+Messung[i]
+                     writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_60_90cm[Messung[i].days]])
 
 
-##Saves all results============================================================== 
-#with open('CMF_PMF_results_Muencheberg_Plot1test.csv', 'wb') as f:    
-#     writer = csv.writer(f)
-#     writer.writerow(['Year','Month','Day','Rainfall','Stage','Transpiration','Evaporation','Wateruptake','Root biomass','Shoot biomass','PotentialGrowth','ActualGrowht','LAI','RootingDepth','Stress','Watercontent0-30cm','Watercontent30-60cm','Watercontent60-90cm'])
-#     for i,day in enumerate(res.time):
-#         writer.writerow([day.year,day.month,day.day,res.rain[i],res.developmentstage[i],res.transpiration[i],res.evaporation[i],sum(res.water_uptake[i]),res.root_biomass[i],res.shoot_biomass[i],res.PotentialGrowth[i],res.ActualGrowth[i],res.lai[i],res.rooting_depth[i],res.stress[i][0],res.watercontent_0_30cm[i],res.watercontent_30_60cm[i],res.watercontent_60_90cm[i]])
+            ###########Plot3##########################
+            if Plot==3:
+                print 'Saving results for Paramter '+Parameter+' on Plot = '+str(Plot)+' and RUE = '+str(RUE)
+                Messung=[]
+                Messung.append(datetime(1993,4,21)-start)
+                Messung.append(datetime(1993,5,3)-start)
+                Messung.append(datetime(1993,6,14)-start)
+                Messung.append(datetime(1993,6,28)-start)
+                Messung.append(datetime(1993,7,13)-start)
+                Messung.append(datetime(1993,8,3)-start)
+                Messung.append(datetime(1993,8,17)-start)
+                Messung.append(datetime(1993,8,31)-start)
+                Messung.append(datetime(1993,9,21)-start)
+                Messung.append(datetime(1993,12,7)-start)
+                Messung.append(datetime(1994,3,8)-start)
+                Messung.append(datetime(1994,4,19)-start)
+                Messung.append(datetime(1994,5,27)-start)
+                Messung.append(datetime(1994,6,15)-start)
+                Messung.append(datetime(1994,7,27)-start)
+                Messung.append(datetime(1994,9,21)-start)
+                Messung.append(datetime(1994,11,30)-start)
+                Messung.append(datetime(1995,3,13)-start)
+                Messung.append(datetime(1995,4,26)-start)
+                Messung.append(datetime(1995,6,7)-start)
+                Messung.append(datetime(1995,7,17)-start)
+                Messung.append(datetime(1996,4,22)-start)
+                Messung.append(datetime(1996,8,26)-start)
+                Messung.append(datetime(1997,5,5)-start)
+                Messung.append(datetime(1997,10,1)-start)
+                Messung.append(datetime(1998,7,29)-start)  
+                
+                with open('Calculated_Water_Content_0_30cm_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv', 'wb') as f:    
+                 writer = csv.writer(f)
+                 writer.writerow(['Year','Month','Day','Watercontent0-30cm'])
+                 for i,days in enumerate(Messung):
+                     Messtag=start+Messung[i]
+                     writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_0_30cm[Messung[i].days]])
+            
+                with open('Calculated_Water_Content_30_60cm_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv', 'wb') as f:    
+                 writer = csv.writer(f)
+                 writer.writerow(['Year','Month','Day','Watercontent30-60cm'])
+                 for i,days in enumerate(Messung):
+                     Messtag=start+Messung[i]
+                     writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_30_60cm[Messung[i].days]])
+            
+                with open('Calculated_Water_Content_60_90cm_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv', 'wb') as f:    
+                 writer = csv.writer(f)
+                 writer.writerow(['Year','Month','Day','Watercontent60-90cm'])
+                 for i,days in enumerate(Messung):
+                     Messtag=start+Messung[i]
+                     writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_60_90cm[Messung[i].days]])
 
-##===============================================================================
+
+    
+    ##Saves all results============================================================== 
+    #with open('CMF_PMF_results_Muencheberg_Plot1test.csv', 'wb') as f:    
+    #     writer = csv.writer(f)
+    #     writer.writerow(['Year','Month','Day','Rainfall','Stage','Transpiration','Evaporation','Wateruptake','Root biomass','Shoot biomass','PotentialGrowth','ActualGrowht','LAI','RootingDepth','Stress','Watercontent0-30cm','Watercontent30-60cm','Watercontent60-90cm'])
+    #     for i,day in enumerate(res.time):
+    #         writer.writerow([day.year,day.month,day.day,res.rain[i],res.developmentstage[i],res.transpiration[i],res.evaporation[i],sum(res.water_uptake[i]),res.root_biomass[i],res.shoot_biomass[i],res.PotentialGrowth[i],res.ActualGrowth[i],res.lai[i],res.rooting_depth[i],res.stress[i][0],res.watercontent_0_30cm[i],res.watercontent_30_60cm[i],res.watercontent_60_90cm[i]])
+    
+    ##===============================================================================
