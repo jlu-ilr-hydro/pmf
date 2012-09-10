@@ -379,10 +379,10 @@ if __name__=='__main__':
 #    Position_Messwerte = 4
 #    Position_Ergebnisse = 3
 
-#    Parameter = 'Water_Content_0_30cm'
-#    Parameter_unit = ' [Vol.%] '
-#    Position_Messwerte = 4
-#    Position_Ergebnisse = 3
+    Parameter = 'Water_Content_0_30cm'
+    Parameter_unit = ' [Vol.%] '
+    Position_Messwerte = 4
+    Position_Ergebnisse = 3
 
 #    Parameter = 'Water_Content_30_60cm'
 #    Parameter_unit = ' [Vol.%] '
@@ -394,10 +394,10 @@ if __name__=='__main__':
 #    Position_Messwerte = 4
 #    Position_Ergebnisse = 3
 
-    Parameter = 'root'
-    Parameter_unit = ' [kg/ha] '
-    Position_Messwerte = 4
-    Position_Ergebnisse = 3
+#    Parameter = 'root'
+#    Parameter_unit = ' [kg/ha] '
+#    Position_Messwerte = 4
+#    Position_Ergebnisse = 3
     
     """
     Runtimeloop:
@@ -410,7 +410,7 @@ if __name__=='__main__':
     ax2 = plt.subplot(312)
     ax3 = plt.subplot(313)
     plt.title(Parameter+Parameter_unit)
-    for Plotnumber in range(3):       
+    for Plotnumber in range(1):       
         Plot = Plotnumber+1
         Meas=Measured()
         Calc=Calculated()
@@ -420,7 +420,7 @@ if __name__=='__main__':
     Biggest_value = np.max(np.max(np.max(Values)))
 
         
-    for Plotnumber in range(3):    
+    for Plotnumber in range(1):    
         Plot = Plotnumber+1      
         Meas=Measured()
         Calc=Calculated()

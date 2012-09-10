@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 import cmf
 from cmf.soil import layer as ka4_soil
@@ -10,52 +11,48 @@ from datetime import datetime, timedelta
 
 
 class cmf1d(object):
-    def __init__(self,sand,silt,clay,c_org,bedrock_K,layercount,layerthickness,tracertext=''): #was ist mit Bulkdensity? gibt es auch in den Daten
+    def __init__(self,Ksat,porosity,alpha,n,layercount,layerthickness,tracertext=''): #was ist mit Bulkdensity? gibt es auch in den Daten
+        """Creates a Richards Equation 1D model of water fluxes with a lower constant head boundary condition
+        to the groundwater and flux (Neumann) boundary condition for each layer for ET
+        Ksat: sat. conductivity in m/day eg. 1.3
+        porosity: porevolume per soil volume in m³/m³ eg. 0.45
+        alpha: VanGenuchten alpha in 1/cm eg. 0.01
+        n: VanGenuchten n, eg. 1.9
+        bedrock_K: Conductivity of the bedrock in m/day eg. 1.3
+        layercount: Number of layers, eg. 50
+        layerthickness: sequence of layer thickness in m
+        tracertext: cmf conform string, describing the available tracers
+        """        
         self.project=cmf.project(tracertext)
         self.cell=self.project.NewCell(0,0,0,1000)
         c=self.cell      
         # Add 50 layers with 10cm thickness, and 50 Neumann boundary conditions
         self.__bc=[]
-        soil_depth=[]
+        soil_depth=0
         
-        def summe(list):
-            s = 0
-            for element in list:
-                s = s + element
-            return s
             
-    
-        for i,val in enumerate(sand):
-            Anteil_clay=clay[i]
-            Anteil_silt =silt[i]
-            Anteil_sand=sand[i]
-            Anteil_layerthickness=layerthickness[i]
-            soil_depth.append(layerthickness[i])            
-            Anteil_Corg=c_org[i]
-            KA4_soil=ka4_soil(Anteil_layerthickness,Anteil_clay,Anteil_silt,Anteil_sand,Corg=Anteil_Corg) # Berechnung von Ksat, Porositaet, etc. mit pedo-Transferfunktion nach kartieranleitung 4
-            r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) # BROOKS90, berechnung der Retentionskurve mit KA4 Werten
-            c.add_layer(summe(soil_depth),r_curve)
+        r_curve=cmf.VanGenuchtenMualem(Ksat,porosity,alpha,n)
+        for i in range(layercount):
+            # Add up layertickness to current soil depth
+            soil_depth+=layerthickness[i]
+            # add a layer to the cell            
+            c.add_layer(soil_depth,r_curve)
+            # create neumann boundary condition for ET from PMF
             nbc=cmf.NeumannBoundary.create(c.layers[-1])
-            nbc.Name="Boundary condition #%i" % (1)
-            self.__bc.append(nbc)        
-            #print KA4_soil.porosity
-#        for i in arange(0.05,2.0,layerthickness):
-#            KA4_soil=ka4_soil(0.05,clay,silt,sand,Corg=c_org)
-#            r_curve=cmf.BrooksCoreyRetentionCurve(KA4_soil.KSat , KA4_soil.porosity, KA4_soil.b, KA4_soil.fieldcap) 
-#            c.add_layer(i,r_curve)
-#            nbc=cmf.NeumannBoundary.create(c.layers[-1])
-#            nbc.Name="Boundary condition #%i" % (1)
-#            self.__bc.append(nbc)
+            nbc.Name="Boundary condition #%i" % (i)
+            self.__bc.append(nbc)  
+            
+        
+            
+        # Create a surfacewater storage            
         self.cell.surfacewater_as_storage()
             
     
-#        #Add a bedrock layer
-#       c.add_layer(7,cmf.BrooksCoreyRetentionCurve(bedrock_K,0.1,1,0.01))
-#        #Add a groundwater boundary (potential=-5.0 m)
+        # Add a groundwater boundary (potential=-5.0 m)
         self.groundwater=cmf.DirichletBoundary(self.project,-5)
-#       self.groundwater.is_source=True
-#       self.groundwater.Name="Groundwater"
-#       # Connect bedrock layer with groundwater boundary, using Richards equation
+        # self.groundwater.is_source=True
+        self.groundwater.Name="Groundwater"
+        # Connect bedrock layer with groundwater boundary, using Richards equation
         cmf.Richards(c.layers[-1],self.groundwater)
         dbc = cmf.Richards(c.layers[-1],self.groundwater)
         
