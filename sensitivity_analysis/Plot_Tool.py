@@ -2,7 +2,7 @@
 """
 Created on Thu Jul 19 11:31:36 2012
 
-@author: Pooder
+@author: Tobias
 """
 
 
@@ -324,8 +324,13 @@ import math
 
 
 def load_data(Plot,value,Position_Messwerte,Position_Ergebnisse):
-    Measured_datafile='Measured_'+value+'_Plot'+str(Plot)+'.csv'
-    Calculated_datafile='Calculated_'+value+'_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv'
+    Measured_datafile='Measured_'+value+'_Plot'+str(Plot)+'_new.csv'
+    #Calculated_datafile='Calculated_'+value+'_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv'
+    #Calculated_datafile='Calculated_'+value+'_Plot = '+str(Plot)+' and RUE = '+str(RUE)+'.csv'
+    #Calculated_datafile='Calculated_'+value+'_Plot='+str(Plot)+'with_Ksat_variation'+str(Ksat_value)+'.csv'
+    #Calculated_datafile='Calculated_'+value+'_with_Maxima_from_all_Van_Genuchten_Variations_variation1.csv'
+    Calculated_datafile='Calculated_'+value+'_with_porosity_variation0.csv'
+    
     
     measured_file=file(Measured_datafile)
     measured_file.readline()
@@ -343,6 +348,7 @@ def load_data(Plot,value,Position_Messwerte,Position_Ergebnisse):
         Calc.month.append(columns[1])
         Calc.day.append(columns[2])
         Calc.Ergebnisse.append(float(columns[Position_Ergebnisse]))
+
 
 
 
@@ -366,7 +372,7 @@ if __name__=='__main__':
     """
     Setup:
     """
-    RUE=3
+
     
 #    Parameter = 'storage_organs'
 #    Parameter_unit = ' [kg/ha] '    
@@ -388,7 +394,7 @@ if __name__=='__main__':
 #    Parameter_unit = ' [Vol.%] '
 #    Position_Messwerte = 4
 #    Position_Ergebnisse = 3
-    
+#    
 #    Parameter = 'Water_Content_60_90cm'
 #    Parameter_unit = ' [Vol.%] '
 #    Position_Messwerte = 4
@@ -403,6 +409,7 @@ if __name__=='__main__':
     Runtimeloop:
     """    
     Values = []
+    #Ksat_value=1
     #for RUE_Faktor in range(10):
         #RUE=RUE_Faktor+1
         
@@ -410,7 +417,7 @@ if __name__=='__main__':
     ax2 = plt.subplot(312)
     ax3 = plt.subplot(313)
     plt.title(Parameter+Parameter_unit)
-    for Plotnumber in range(1):       
+    for Plotnumber in range(3):       
         Plot = Plotnumber+1
         Meas=Measured()
         Calc=Calculated()
@@ -420,7 +427,7 @@ if __name__=='__main__':
     Biggest_value = np.max(np.max(np.max(Values)))
 
         
-    for Plotnumber in range(1):    
+    for Plotnumber in range(3):    
         Plot = Plotnumber+1      
         Meas=Measured()
         Calc=Calculated()
@@ -551,7 +558,7 @@ if __name__=='__main__':
     #       ncol=2, mode="expand", borderaxespad=0.)
     plt.tight_layout()
     plt.draw()
-    plt.savefig(Parameter+' for all plots and RUE = '+str(RUE), dpi=400)    
+    plt.savefig('Default_values_Van_Genuchten'+Parameter+' for all plots and RUE = '+str(RUE), dpi=400)    
     #plt.close()     
 
 
