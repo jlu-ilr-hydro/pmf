@@ -4,7 +4,7 @@ Case Study I: Water balance - Multi layer Richards approach
 The Case Study represents a summer wheat setup of PMF and with the
 Catchment Modeling Framework (CMF) in the version cmf1d:
 
-Weather     : Muenchenberg,
+Weather     : Muencheberg,
 
 Soil texture: Various Sand,
 
@@ -74,8 +74,8 @@ def run(t,res,plant):
     
     c.run(cmf.day)       
     #get status variables of cmf
-    res.waterstorage.append(c.cell.layers.volume) #water content of each layer in [mm/day] (list with 40 soil layers)
-    res.flux.append(c.flux) #water flux of each layer in [mm/day] (list with 40 soil layers)
+    #res.waterstorage.append(c.cell.layers.volume) #water content of each layer in [mm/day] (list with 40 soil layers)
+    #res.flux.append(c.flux) #water flux of each layer in [mm/day] (list with 40 soil layers)
     res.wetness.append(c.wetness) #wetness/water content of each layer in [%/day] (list with 40 soil layers)
     #res.pF.append(c.pF)
     #res.potential.append(c.potential)#!!
@@ -83,44 +83,44 @@ def run(t,res,plant):
     res.watercontent_0_30cm.append(get_watercontent_0_30cm())
     res.watercontent_30_60cm.append(get_watercontent_30_60cm())
     res.watercontent_60_90cm.append(get_watercontent_60_90cm())    
-    res.deep_percolation.append(c.groundwater.waterbalance(t)) #water flux to groundwater [mm/day]
+    #res.deep_percolation.append(c.groundwater.waterbalance(t)) #water flux to groundwater [mm/day]
     res.rain.append(c.cell.get_rainfall(t)) #rainfall in [mm/day]
     #get baresoil evaporation [mm/day]
-    res.baresoil_evaporation.append(0.0) if plant else  res.baresoil_evaporation.append(baresoil.evaporation)       
+    #res.baresoil_evaporation.append(0.0) if plant else  res.baresoil_evaporation.append(baresoil.evaporation)       
     #get status variables of pmf
     #biomass status
-    res.PotentialGrowth.append(plant.biomass.PotentialGrowth) if plant else res.PotentialGrowth.append(0) #[g/m2/day]
-    res.ActualGrowth.append(plant.biomass.ActualGrowth) if plant else res.ActualGrowth.append(0) #[g/m2/day]
-    res.biomass.append(plant.biomass.Total) if plant else res.biomass.append(0) #[g/m2]
-    res.root_biomass.append(plant.root.Wtot) if plant else res.root_biomass.append(0) #[g/m2]
-    res.shoot_biomass.append(plant.shoot.Wtot) if plant else res.shoot_biomass.append(0) #[g/m2]
-    res.leaf.append(plant.shoot.leaf.Wtot) if plant else res.leaf.append(0) #[g/m2]
-    res.stem.append(plant.shoot.stem.Wtot) if plant else res.stem.append(0) #[g/m2]
-    res.storage.append(plant.shoot.storage_organs.Wtot) if plant else res.storage.append(0) #[g/m2]   
-    res.lai.append(plant.shoot.leaf.LAI) if plant else res.lai.append(0) #[m2/m2]
+    #res.PotentialGrowth.append(plant.biomass.PotentialGrowth) if plant else res.PotentialGrowth.append(0) #[g/m2/day]
+    #res.ActualGrowth.append(plant.biomass.ActualGrowth) if plant else res.ActualGrowth.append(0) #[g/m2/day]
+    #res.biomass.append(plant.biomass.Total) if plant else res.biomass.append(0) #[g/m2]
+    #res.root_biomass.append(plant.root.Wtot) if plant else res.root_biomass.append(0) #[g/m2]
+    #res.shoot_biomass.append(plant.shoot.Wtot) if plant else res.shoot_biomass.append(0) #[g/m2]
+    #res.leaf.append(plant.shoot.leaf.Wtot) if plant else res.leaf.append(0) #[g/m2]
+    #res.stem.append(plant.shoot.stem.Wtot) if plant else res.stem.append(0) #[g/m2]
+    #res.storage.append(plant.shoot.storage_organs.Wtot) if plant else res.storage.append(0) #[g/m2]   
+    #res.lai.append(plant.shoot.leaf.LAI) if plant else res.lai.append(0) #[m2/m2]
     #development    
-    res.developmentstage.append(plant.developmentstage.Stage[0]) if plant else res.developmentstage.append("")
-    res.DAS.append(t-datetime(1980,3,1)) if plant else res.DAS.append(0)
-    if plant:       
-        if plant.developmentstage.Stage[0] != "D": 
-            res.developmentindex.append(plant.developmentstage.StageIndex) if plant else res.developmentindex.append("")
-        else:
-            res.developmentindex.append("")
-    else:
-        res.developmentindex.append("")    
+    #res.developmentstage.append(plant.developmentstage.Stage[0]) if plant else res.developmentstage.append("")
+    #res.DAS.append(t-datetime(1980,3,1)) if plant else res.DAS.append(0)
+    #if plant:       
+    #    if plant.developmentstage.Stage[0] != "D": 
+    #        res.developmentindex.append(plant.developmentstage.StageIndex) if plant else res.developmentindex.append("")
+    #    else:
+    #        res.developmentindex.append("")
+    #else:
+    #    res.developmentindex.append("")    
     #plant water balance [mm/day]
-    res.ETo.append(plant.et.Reference) if plant else res.ETo.append(0)
-    res.ETc.append(plant.et.Cropspecific) if plant else res.ETc.append(0)
+    #res.ETo.append(plant.et.Reference) if plant else res.ETo.append(0)
+    #res.ETc.append(plant.et.Cropspecific) if plant else res.ETc.append(0)
     #transpiration is not equal to water uptake! transpiration is calculated without stress and wateruptake with stress!!!
-    res.transpiration.append(plant.et.transpiration) if plant else res.transpiration.append(0) 
-    res.evaporation.append(plant.et.evaporation) if plant else  res.evaporation.append(0)
-    res.water_uptake.append(plant.Wateruptake) if plant else res.water_uptake.append(zeros(c.cell.layer_count())) #(list with 40 layers)    
-    res.stress.append((plant.water_stress, plant.nutrition_stress) if plant else (0,0)) # dimensionsless stress index (0-->no stress; 1-->full stress)    
+    #res.transpiration.append(plant.et.transpiration) if plant else res.transpiration.append(0) 
+    #res.evaporation.append(plant.et.evaporation) if plant else  res.evaporation.append(0)
+    #res.water_uptake.append(plant.Wateruptake) if plant else res.water_uptake.append(zeros(c.cell.layer_count())) #(list with 40 layers)    
+    #res.stress.append((plant.water_stress, plant.nutrition_stress) if plant else (0,0)) # dimensionsless stress index (0-->no stress; 1-->full stress)    
     #root growth
-    res.potential_depth.append(plant.root.potential_depth) if plant else res.potential_depth.append(0) #[cm]
-    res.rooting_depth.append(plant.root.depth) if plant else res.rooting_depth.append(0) #[cm]
-    res.branching.append(plant.root.branching) if plant else res.branching.append(zeros(c.cell.layer_count())) # growth RATE in each layer per day [g/day](list with 40 layers)
-    res.root_growth.append(plant.root.actual_distribution) if plant else  res.root_growth.append(zeros(c.cell.layer_count())) # total root biomass in each layer [g/layer]
+    #res.potential_depth.append(plant.root.potential_depth) if plant else res.potential_depth.append(0) #[cm]
+    #res.rooting_depth.append(plant.root.depth) if plant else res.rooting_depth.append(0) #[cm]
+    #res.branching.append(plant.root.branching) if plant else res.branching.append(zeros(c.cell.layer_count())) # growth RATE in each layer per day [g/day](list with 40 layers)
+    #res.root_growth.append(plant.root.actual_distribution) if plant else  res.root_growth.append(zeros(c.cell.layer_count())) # total root biomass in each layer [g/layer]
     res.time.append(t)
     return plant
 
@@ -320,39 +320,39 @@ def load_random_Parameter(Parameter):
 
 class Res(object):
     def __init__(self):
-        self.flux=[]
-        self.water_uptake = []
-        self.branching = []
-        self.transpiration = []
-        self.evaporation = []
-        self.biomass = []
-        self.root_biomass = []
-        self.shoot_biomass = []
-        self.lai = []
-        self.root_growth = []
-        self.ETo = []
-        self.ETc = []
+#        self.flux=[]
+#        self.water_uptake = []
+#        self.branching = []
+#        self.transpiration = []
+#        self.evaporation = []
+#        self.biomass = []
+#        self.root_biomass = []
+#        self.shoot_biomass = []
+#        self.lai = []
+#        self.root_growth = []
+#        self.ETo = []
+#        self.ETc = []
         self.wetness = []
         #self.pF=[]
         #self.potential=[]#!!
         self.porosity=[]#!!
         self.rain = []
-        self.temperature = []
-        self.DAS = []
-        self.stress = []
-        self.leaf=[]
-        self.stem=[]
-        self.storage=[]
-        self.potential_depth=[]
-        self.rooting_depth=[]
+#        self.temperature = []
+#        self.DAS = []
+#        self.stress = []
+#        self.leaf=[]
+#        self.stem=[]
+#        self.storage=[]
+#        self.potential_depth=[]
+#        self.rooting_depth=[]
         self.time = []
-        self.developmentstage = []
-        self.PotentialGrowth = []
-        self.ActualGrowth = []
-        self.developmentindex=[]
-        self.deep_percolation=[]
-        self.baresoil_evaporation=[]
-        self.waterstorage=[]
+#        self.developmentstage = []
+#        self.PotentialGrowth = []
+#        self.ActualGrowth = []
+#        self.developmentindex=[]
+#        self.deep_percolation=[]
+#        self.baresoil_evaporation=[]
+#        self.waterstorage=[]
         self.watercontent_0_30cm=[]
         self.watercontent_30_60cm=[]
         self.watercontent_60_90cm=[]
@@ -378,7 +378,7 @@ if __name__=='__main__':
     #Cropvalues.RUE=RUE_Faktor+1
         
         
-        Van_Genuchten_Parameter='porosity' # Takes: alpha,n,ksat,porosity as a string
+        Van_Genuchten_Parameter='all_random' # Takes: alpha,n,ksat,porosity as a string
         
         Parameter = 'Water_Content'
         Parameter_unit = ' [kg/ha] '
@@ -389,10 +389,10 @@ if __name__=='__main__':
         #for Plotnumber in range(3):
         Failed_Van_Genuchten_Parameter=[]
         Fehler=0
-        for Random_Van_Genuchten_Parameter_values in range(1):
+        for Random_Van_Genuchten_Parameter_values in range(5652):
             try:
-                Random_Van_Genuchten_Parameter=np.random.uniform(load_Parameter_settings(Van_Genuchten_Parameter)[0], load_Parameter_settings(Van_Genuchten_Parameter)[1])
-                Van_Genuchten_Parameter_runtime=Random_Van_Genuchten_Parameter_values
+                #Random_Van_Genuchten_Parameter=np.random.uniform(load_Parameter_settings(Van_Genuchten_Parameter)[0], load_Parameter_settings(Van_Genuchten_Parameter)[1])
+                #Van_Genuchten_Parameter_runtime=Random_Van_Genuchten_Parameter_values
                 #Plot =Plotnumber+1
                 #Parameter = 'storage_organs'
                 #Parameter = 'stem_and_leaf'
@@ -421,16 +421,37 @@ if __name__=='__main__':
                 #n = 2.8
                 #porosity = 0.43
                 
-                #Default Values
-                ksat=12.5  
-                alpha=0.05
-                n=2.0
-                porosity=0.4
-                                          
+#                Default Values
+#                ksat=12.5  
+#                alpha=0.05
+#                n=2.0
+#                porosity=0.4
+                
+                #Create Random Parameterset for all Parameter
+                #ksat     =load_Parameter_settings(ksat,Random_Van_Genuchten_Parameter1)[5]
+                #alpha    =load_Parameter_settings(alpha,Random_Van_Genuchten_Parameter2)[2]
+                #n        =load_Parameter_settings(n,Random_Van_Genuchten_Parameter3)[3]
+                #porosity =load_Parameter_settings(porosity,Random_Van_Genuchten_Parameter4)[4]
+                 
+                #Best with all random values
+                alpha=0.0153
+                ksat=22.431
+                n=1.3743
+                porosity=0.3326
+#===============================================================================
+#                 Random_Van_Genuchten_Parameter1=np.random.uniform(load_Parameter_settings('ksat')[0], load_Parameter_settings('ksat')[1])
+#                 Random_Van_Genuchten_Parameter2=np.random.uniform(load_Parameter_settings('alpha')[0], load_Parameter_settings('alpha')[1])
+#                 Random_Van_Genuchten_Parameter3=np.random.uniform(load_Parameter_settings('n')[0], load_Parameter_settings('n')[1])
+#                 Random_Van_Genuchten_Parameter4=np.random.uniform(load_Parameter_settings('porosity')[0], load_Parameter_settings('porosity')[1])
+#                 
+#             
+#===============================================================================
+                Van_Genuchten_Parameter_runtime=Random_Van_Genuchten_Parameter_values+15538
                 
                 #print ksat,alpha,n,porosity
                 
-                c=get_soil_data(ksat,porosity,alpha,n)
+                #c=get_soil_data(ksat,porosity,alpha,n)
+                c=get_soil_data(Random_Van_Genuchten_Parameter1,Random_Van_Genuchten_Parameter4,Random_Van_Genuchten_Parameter2,Random_Van_Genuchten_Parameter3)
                 #Bodendatei=get_water_content_data(Plot)
                 #print "cmf is setup"
                 Datenstart = datetime(1992,1,1)
@@ -646,38 +667,60 @@ if __name__=='__main__':
 #                            Messung.append(datetime(1998,7,29)-start)  
 #                            
         
+#                    with open('Calculated_Water_Content_0_30cm_with_'+str(Van_Genuchten_Parameter)+'_variation'+str(Van_Genuchten_Parameter_runtime)+'.csv', 'wb') as f:    
+#                     writer = csv.writer(f)
+#                     writer.writerow(['Year','Month','Day','Watercontent0-30cm','Van_Genuchten_Parameter'])
+#                     for i,days in enumerate(Messung):
+#                         Messtag=start+Messung[i]
+#                         writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_0_30cm[Messung[i].days],Random_Van_Genuchten_Parameter])
+#                
+#                    with open('Calculated_Water_Content_30_60cm_with_'+str(Van_Genuchten_Parameter)+'_variation'+str(Van_Genuchten_Parameter_runtime)+'.csv', 'wb') as f:    
+#                     writer = csv.writer(f)
+#                     writer.writerow(['Year','Month','Day','Watercontent30-60cm','Van_Genuchten_Parameter'])
+#                     for i,days in enumerate(Messung):
+#                         Messtag=start+Messung[i]
+#                         writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_30_60cm[Messung[i].days],Random_Van_Genuchten_Parameter])
+#                
+#                    with open('Calculated_Water_Content_60_90cm_with_'+str(Van_Genuchten_Parameter)+'_variation'+str(Van_Genuchten_Parameter_runtime)+'.csv', 'wb') as f:    
+#                     writer = csv.writer(f)
+#                     writer.writerow(['Year','Month','Day','Watercontent60-90cm','Van_Genuchten_Parameter'])
+#                     for i,days in enumerate(Messung):
+#                         Messtag=start+Messung[i]
+#                         writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_60_90cm[Messung[i].days],Random_Van_Genuchten_Parameter])
+#        
                     with open('Calculated_Water_Content_0_30cm_with_'+str(Van_Genuchten_Parameter)+'_variation'+str(Van_Genuchten_Parameter_runtime)+'.csv', 'wb') as f:    
                      writer = csv.writer(f)
-                     writer.writerow(['Year','Month','Day','Watercontent0-30cm','Van_Genuchten_Parameter'])
+                     writer.writerow(['Year','Month','Day','Watercontent0-30cm','ksat','alpha','n','porosity'])
                      for i,days in enumerate(Messung):
                          Messtag=start+Messung[i]
-                         writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_0_30cm[Messung[i].days],Random_Van_Genuchten_Parameter])
+                         writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_0_30cm[Messung[i].days],Random_Van_Genuchten_Parameter1,Random_Van_Genuchten_Parameter2,Random_Van_Genuchten_Parameter3,Random_Van_Genuchten_Parameter4])
                 
                     with open('Calculated_Water_Content_30_60cm_with_'+str(Van_Genuchten_Parameter)+'_variation'+str(Van_Genuchten_Parameter_runtime)+'.csv', 'wb') as f:    
                      writer = csv.writer(f)
-                     writer.writerow(['Year','Month','Day','Watercontent30-60cm','Van_Genuchten_Parameter'])
+                     writer.writerow(['Year','Month','Day','Watercontent30-60cm','ksat','alpha','n','porosity'])
                      for i,days in enumerate(Messung):
                          Messtag=start+Messung[i]
-                         writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_30_60cm[Messung[i].days],Random_Van_Genuchten_Parameter])
+                         writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_30_60cm[Messung[i].days],Random_Van_Genuchten_Parameter1,Random_Van_Genuchten_Parameter2,Random_Van_Genuchten_Parameter3,Random_Van_Genuchten_Parameter4])
                 
                     with open('Calculated_Water_Content_60_90cm_with_'+str(Van_Genuchten_Parameter)+'_variation'+str(Van_Genuchten_Parameter_runtime)+'.csv', 'wb') as f:    
                      writer = csv.writer(f)
-                     writer.writerow(['Year','Month','Day','Watercontent60-90cm','Van_Genuchten_Parameter'])
+                     writer.writerow(['Year','Month','Day','Watercontent60-90cm','ksat','alpha','n','porosity'])
                      for i,days in enumerate(Messung):
                          Messtag=start+Messung[i]
-                         writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_60_90cm[Messung[i].days],Random_Van_Genuchten_Parameter])
+                         writer.writerow([Messtag.year,Messtag.month,Messtag.day,res.watercontent_60_90cm[Messung[i].days],Random_Van_Genuchten_Parameter1,Random_Van_Genuchten_Parameter2,Random_Van_Genuchten_Parameter3,Random_Van_Genuchten_Parameter4])
         
-            except RuntimeError:
+            #except RuntimeError:
+            except:
                 Fehler+=1
-                Failed_Van_Genuchten_Parameter.append(Random_Van_Genuchten_Parameter)
-                print '#####RuntimeError Nr '+str(Fehler)+'####### for '+str(Van_Genuchten_Parameter)+'='+str(Random_Van_Genuchten_Parameter)
+                Failed_Van_Genuchten_Parameter.append(Random_Van_Genuchten_Parameter1)
+                #print '#####RuntimeError Nr '+str(Fehler)+'####### for '+str(Van_Genuchten_Parameter)+'='+str(Random_Van_Genuchten_Parameter)
                                 
-        with open('Failed_'+str(Van_Genuchten_Parameter)+'_values.csv', 'wb') as f:
-            writer = csv.writer(f)
-            writer.writerow(['Failed_'+str(Van_Genuchten_Parameter)+'_values'])
-            for i in range(len(Failed_Van_Genuchten_Parameter)):
-                writer.writerow([Failed_Van_Genuchten_Parameter[i]])
-    
+#        with open('Failed_'+str(Van_Genuchten_Parameter)+'_values.csv', 'wb') as f:
+#            writer = csv.writer(f)
+#            writer.writerow(['Failed_'+str(Van_Genuchten_Parameter)+'_values'])
+#            for i in range(len(Failed_Van_Genuchten_Parameter)):
+#                writer.writerow([Failed_Van_Genuchten_Parameter[i]])
+#    
     
 
 
