@@ -712,7 +712,7 @@ if __name__=='__main__':
             #except RuntimeError:
             except:
                 Fehler+=1
-                Failed_Van_Genuchten_Parameter.append(Random_Van_Genuchten_Parameter1)
+                #Failed_Van_Genuchten_Parameter.append(Random_Van_Genuchten_Parameter1)
                 #print '#####RuntimeError Nr '+str(Fehler)+'####### for '+str(Van_Genuchten_Parameter)+'='+str(Random_Van_Genuchten_Parameter)
                                 
 #        with open('Failed_'+str(Van_Genuchten_Parameter)+'_values.csv', 'wb') as f:
