@@ -133,9 +133,12 @@ class cmf1d(object):
         Differenz = start-Datenstart
         Sprung = Differenz.days +1
         rain = cmf.timeseries(begin = begin, step = timedelta(days=1))
+        
+        Split_stationname =stationname.split('.')
+        
     
         # Create a meteo station
-        meteo=self.project.meteo_stations.add_station(stationname,position = (0,0,0))
+        meteo=self.project.meteo_stations.add_station(Split_stationname[0],position = (0,0,0))
     
         # Meteorological timeseries, if you prefer the beginning of the timeseries
         # read in from file, just go ahead, it is only a bit of Python programming
@@ -152,7 +155,7 @@ class cmf1d(object):
               
         # Load climate data from csv file
         # could be simplified with numpy's 
-        csvfile =file('ClimateMuencheberg.csv') 
+        csvfile =file(stationname) 
         for i in range(Sprung):
             csvfile.readline()        
         #csvfile.readline() # Read the headers, and ignore them
