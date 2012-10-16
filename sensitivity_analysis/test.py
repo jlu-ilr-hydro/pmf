@@ -7,7 +7,8 @@ Created on Thu Sep 06 13:41:23 2012
 
 import numpy as np
 from datetime import *
-
+import csv
+import os
 
 
 #Start = datetime(1992,1,1)
@@ -42,11 +43,38 @@ from datetime import *
 #print myFile['Biomasse'][0][0]
 #
 
-Result_Parameter_List = np.zeros((3),dtype=[('Result_Parameter', 'f8',(2,5)),('Year', 'int16'),('Month','int16'),('Day','int16')])
+with open('Test.csv', 'wb') as f:    
+    writer = csv.writer(f)
+    writer.writerow(['hello'])
+    writer.writerow([''])
+    writer.writerow(['Year','Month','Day'])
+    for i in range(5):
+        writer.writerow([1,2,3])
 
-Result_Parameter_List['Result_Parameter'][0][]=[1,2,3,4,5]        
+os.remove('Test.csv')
 
-print Result_Parameter_List
+open('Test.csv')
+
+
+
+#Result_Parameter_List = np.zeros((3),dtype=[('Result_Parameter', 'f8',(2,5)),('Year', 'int16'),('Month','int16'),('Day','int16')])
+#
+#Result_Parameter_List['Result_Parameter'][0][0]=[1,2,3,4,5]        
+#
+#Start=datetime(1999,12,31)
+#End=datetime(2000,1,31)
+#
+#duration=End-Start
+#
+#Result_Parameter_List = np.zeros((duration.days),dtype=[('Result_Parameter', '|S20'),('Year', 'int16'),('Month','int16'),('Day','int16')])
+#
+#for i in range(int(duration.days)):
+#    Day=Start+timedelta(days=i)
+#    Result_Parameter_List['Result_Parameter'][i]=str(Day.date())
+#    
+#
+#
+#print Result_Parameter_List['Result_Parameter']
 #Res = np.zeros([1],dtype=[('flux','f8',(5)),('water_uptake','f8',(5)),('branching','f8',(5)),
 #    ('transpiration','f8'),('evaporation','f8'),('biomass','f8'),('root_biomass','f8'),
 #    ('shoot_biomass','f8'),('lai','f8'),('root_growth','f8',(5)),('ETo','f8'),
