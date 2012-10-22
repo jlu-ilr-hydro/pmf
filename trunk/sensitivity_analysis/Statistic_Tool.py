@@ -22,13 +22,22 @@ def Bias(Gemessen,Berechnet):
     if len(Gemessen)==len(Berechnet):
     
         Bias_values=[]
-                
-        for i in range(len(Gemessen)):
-            Bias_values.append(float(Berechnet[i]) - float(Gemessen[i]))
-                
-        Bias_sum = np.sum(Bias_values[0:len(Gemessen)])
         
-        Bias = Bias_sum/len(Gemessen)
+        for i in range(len(Gemessen)):
+            if Gemessen[i] == -99999:
+                '''
+                Cleans out No Data values
+                '''
+                print 'Wrong Results! Clean out No Data Values'                 
+                pass
+             
+            else:            
+                Bias_values.append(float(Berechnet[i]) - float(Gemessen[i]))
+        
+              
+        Bias_sum = np.sum(Bias_values[0:len(Bias_values)])
+        
+        Bias = Bias_sum/len(Bias_values)
         
         return Bias
     
@@ -50,8 +59,6 @@ def Nash_Sutcliff(Gemessen,Berechnet):
         Messwerte_umgeformt=[]        
         for i in range(len(Gemessen)):
             Messwerte_umgeformt.append(float(Gemessen[i]))            
-                
-        for i in range(len(Gemessen)):
             Nash_Sutcliff_Zaehler.append((float(Gemessen[i])-float(Berechnet[i]))**2)
             Nash_Sutcliff_Nenner.append((float(Gemessen[i])-np.mean(Messwerte_umgeformt))**2) 
         
@@ -67,11 +74,23 @@ def Corelation_Coefficient(Gemessen,Berechnet):
     """
     Corelation Coefficient
     
-    r= Sum[N/i=1](  Measured_i-mean(Measured) * Calculated_i-mean(Calculated)  )  /  
+    r= Sum[N/i=1](  (Measured_i-mean(Measured)) * (Calculated_i-mean(Calculated))  )  /  
        sqrt(  Sum[N/i=1](   Measured_i - mean(Measured)²  )  *  Sum[N/i=1](   Calculated_i-mean(Calculated)²   )  )
     """
     if len(Gemessen)==len(Berechnet):
         Corelation_Coefficient = np.corrcoef(Gemessen,Berechnet)[0,1]
+#        This Calculation has a mistake
+#        r_Zaehler_values=[]
+#        r_Nenner_part1_values=[]
+#        r_Nenner_part2_values=[]        
+#        for i in range(len(Gemessen)):
+#            r_Zaehler_values.append((Gemessen[i]-np.mean(Gemessen))*(Berechnet[i]-np.mean(Berechnet)))
+#            r_Nenner_part1_values.append((Gemessen[i]-np.mean(Gemessen))**2)
+#            r_Nenner_part2_values.append((Berechnet[i]-np.mean(Berechnet))**2)
+#        r_Zaehler = np.sum(r_Zaehler_values)
+#        r_Nenner = np.sqrt((np.sum(r_Nenner_part1_values))*(np.sum(r_Nenner_part2_values)))
+#        
+#        r=r_Zaehler/r_Nenner
         return Corelation_Coefficient
     else:
         return "Error: Gemessene und Berechnete Wertelisten sind nicht gleichlang."

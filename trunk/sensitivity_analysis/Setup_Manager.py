@@ -66,24 +66,55 @@ def getDataend(ClimateDatafile):
 '''
 Load Data for Sensitivity Analysis
 '''
-def load_Measured_Data(SetupFile,Plot):  
-    fdtype=[('PLOT', '|S10'), ('Year', 'int16'), ('Month', 'int16'), ('Day', 'int16'), ('Data_for_Sensitivity_Analysis_0', 'f8'),('Data_for_Sensitivity_Analysis_1', 'f8'),('Data_for_Sensitivity_Analysis_2', 'f8')]
+def load_Measured_Data(SetupFile,Plot):
+    if SetupFile['Program_for_SA'][1]=='PMF':
+        fdtype=[('PLOT', '|S10'), ('Year', 'int16'), ('Month', 'int16'), ('Day', 'int16'), ('Data_for_Sensitivity_Analysis_0', 'f8'),('Data_for_Sensitivity_Analysis_1', 'f8'),('Data_for_Sensitivity_Analysis_2', 'f8'),('Data_for_Sensitivity_Analysis_3', 'f8'),('Data_for_Sensitivity_Analysis_4', 'f8'),('Data_for_Sensitivity_Analysis_5', 'f8')]
+        Sensitivity = SetupFile['Data_for_Sensitivity_Analysis'][1].split('.')    
+        Sensitivity_File_name = Sensitivity[0]+'_Plot'+str(Plot)+'.'+Sensitivity[1]
+        print Sensitivity_File_name    
+        SensitivityFile = np.genfromtxt(Sensitivity_File_name,delimiter=';', dtype=fdtype)
+        return SensitivityFile
+    
+    if SetupFile['Program_for_SA'][1]=='CMF':
+        #fdtype=[('PLOT', '|S10'), ('Year', 'int16'), ('Month', 'int16'), ('Day', 'int16'), ('Data_for_Sensitivity_Analysis_0', 'f8'),('Data_for_Sensitivity_Analysis_1', 'f8'),('Data_for_Sensitivity_Analysis_2', 'f8'),('Data_for_Sensitivity_Analysis_3', 'f8'),('Data_for_Sensitivity_Analysis_4', 'f8'),('Data_for_Sensitivity_Analysis_5', 'f8')]
+        Sensitivity = SetupFile['Data_for_Sensitivity_Analysis'][1].split('.')    
+        Sensitivity_File_name = Sensitivity[0]+'_Plot'+str(Plot)+'.'+Sensitivity[1]   
+        SensitivityFile = np.genfromtxt(Sensitivity_File_name,delimiter=';',names=True)
+        return SensitivityFile
+
+def load_headers(SetupFile,Plot):
+    '''
+    Loads Headers of Measured File
+    expects 4 columns with for example 'Plot,Year,Month,Day' and reads all Headers after that    
+    returns a List
+    '''
     Sensitivity = SetupFile['Data_for_Sensitivity_Analysis'][1].split('.')    
     Sensitivity_File_name = Sensitivity[0]+'_Plot'+str(Plot)+'.'+Sensitivity[1]    
-    SensitivityFile = np.genfromtxt(Sensitivity_File_name,delimiter=';', dtype=fdtype)
-    return SensitivityFile
+    HeaderFile =file(Sensitivity_File_name)     
+    #Headers=HeaderFile.readline().split(';')[4:]
+    Headers=HeaderFile.readline()[20:]    
+    return Headers
 
-def getMeasuredDays(SensitivityFile):
+def getMeasuredDays(SensitivityFile,SetupFile):
     Measured_Days= []
-    for i in range(len(SensitivityFile['Year'])-1):
-        Measured_Days.append(datetime(SensitivityFile['Year'][i+1],SensitivityFile['Month'][i+1],SensitivityFile['Day'][i+1]))
-    return Measured_Days
+    if SetupFile['Program_for_SA'][1]=='PMF':
+        for i in range(len(SensitivityFile['Year'])-1):
+            Measured_Days.append(datetime(SensitivityFile['Year'][i+1],SensitivityFile['Month'][i+1],SensitivityFile['Day'][i+1]))
+        return Measured_Days
+    if SetupFile['Program_for_SA'][1]=='CMF':
+        for i in range(len(SensitivityFile['Year'])):
+            Measured_Days.append(datetime(int(SensitivityFile['Year'][int(i)]),int(SensitivityFile['Month'][int(i)]),int(SensitivityFile['Day'][int(i)])))
+        return Measured_Days
 
 '''
 Get command for Analysed Parameter
 '''
 def get_Result_Parameter(Analysed_Parameter):  
+    '''
     
+    Sets the command for the runtime in Run_CMF_PMF_Tool
+    This command will be called and the result saved for every day
+    '''
     Space_for_Result_Table = 1
     
     if Analysed_Parameter == 'waterstorage':    
@@ -143,8 +174,9 @@ def get_Result_Parameter(Analysed_Parameter):
         Result_Parameter_plant='plant.root.branching'
     if Analysed_Parameter == 'root_growth':        
         Result_Parameter_plant='plant.root.actual_distribution'
-    
-
+    if Analysed_Parameter == 'Kersebaum_yield':
+        Result_Parameter_plant='[plant.RootCarbon*10, plant.root.Wtot*10, plant.StemCarbon*10+plant.LeafCarbon*10, plant.shoot.leaf.Wtot*10+plant.shoot.stem.Wtot*10, plant.StorageCarbon*10, plant.shoot.storage_organs.Wtot*10]'
+        Space_for_Result_Table = 6
     if Result_Parameter_plant=='':
         return Result_Parameter,Space_for_Result_Table
     else:
@@ -162,119 +194,164 @@ def create_Result_Parameter_List(Duration,Result_Parameter,Space_for_Result_Tabl
     return Result_Parameter_List
 
 
-def load_soil_Parameterset(SetupFile):
-    if SetupFile['Program_for_SA'][1]=='PMF':
-        alpha=0.0138
-        ksat=22.1844
-        n=1.5631
-        porosity=0.4513
-        c=cmf1d(ksat,porosity,alpha,n,layercount=50,layerthickness=[0.05]*50)
-        return c
-    if SetupFile['Program_for_SA'][1]=='CMF':
-        for i in range(SetupFile['Number_of_Paramaters_for_Sensitivity_Analysis'][1]):
-            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'ksat': 
-                ksat = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])
-            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'porosity': 
-                porosity = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])
-            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'alpha': 
-                alpha = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])
-            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'n': 
-                n = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])
-        
-        c=cmf1d(ksat,porosity,alpha,n,layercount=50,layerthickness=[0.05]*50)
-        return c,ksat,porosity,alpha,n 
+def load_soil_Parameterset(Setupfile):
+    #old
+#    alpha=0.0138
+#    ksat=22.1844
+#    n=1.5631
+#    porosity=0.4513
+    alpha=0.0153
+    ksat=22.431
+    n=1.3743
+    porosity=0.3326
+
+    c=cmf1d(ksat,porosity,alpha,n,layercount=50,layerthickness=[0.05]*50)
+    #c=cmf1d(sand=[90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,90.00,88.33,86.67,85.00,83.33,81.67,80.00,82.00,84.00,86.00,88.00,90.00,92.00,92.33,92.67,93.00,93.33,93.67,94.00,94.13,94.27,94.40,94.53,94.67,94.80,94.93,95.07,95.20,95.33,95.47,95.60,95.73,95.87,96.00],silt=[2.00,2.17,2.33,2.50,2.67,2.83,3.00,3.33,3.67,4.00,4.33,4.67,5.00,5.50,6.00,6.50,7.00,7.50,8.00,7.33,6.67,6.00,5.33,4.67,4.00,3.83,3.67,3.50,3.33,3.17,3.00,2.93,2.87,2.80,2.73,2.67,2.60,2.53,2.47,2.40,2.33,2.27,2.20,2.13,2.07,2.00],clay=[8.00,7.83,7.67,7.50,7.33,7.17,7.00,6.67,6.33,6.00,5.67,5.33,5.00,6.17,7.33,8.50,9.67,10.83,12.00,10.67,9.33,8.00,6.67,5.33,4.00,3.83,3.67,3.50,3.33,3.17,3.00,2.93,2.87,2.80,2.73,2.67,2.60,2.53,2.47,2.40,2.33,2.27,2.20,2.13,2.07,2.00],c_org=[76.00,74.33,72.67,71.00,69.33,67.67,66.00,57.67,49.33,41.00,32.67,24.33,16.00,14.67,13.33,12.00,10.67,9.33,8.00,6.67,5.33,4.00,2.67,1.33,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00],bedrock_K=0.01,layercount=6,layerthickness=[.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05],tracertext='')
+    return c,ksat,porosity,alpha,n 
+    
+#def load_soil_Parameterset(SetupFile):
+#    if SetupFile['Program_for_SA'][1]=='PMF':
+#        alpha=0.0138
+#        ksat=22.1844
+#        n=1.5631
+#        porosity=0.4513
+#        c=cmf1d(ksat,porosity,alpha,n,layercount=50,layerthickness=[0.05]*50)
+#        return c,ksat,porosity,alpha,n
+#    if SetupFile['Program_for_SA'][1]=='CMF':
+##        for i in range(SetupFile['Number_of_Paramaters_for_Sensitivity_Analysis'][1]):
+##            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'ksat': 
+##                ksat = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])
+##            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'porosity': 
+##                porosity = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])
+##            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'alpha': 
+##                alpha = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])
+##            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'n': 
+##                n = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])
+#        #alpha=0.0138
+#        #ksat=22.1844
+#        #n=1.5631
+#        #porosity=0.4513     
+#        alpha=0.0153
+#        ksat=22.431
+#        n=1.3743
+#        porosity=0.3326
+#        c=cmf1d(ksat,porosity,alpha,n,layercount=50,layerthickness=[0.05]*50)
+#        return c,ksat,porosity,alpha,n 
 
 
 def load_random_CropCoefficiants(SetupFile):
-    if SetupFile['Program_for_SA'][1]=='PMF':  
-        
-        for i in range(SetupFile['Number_of_Paramaters_for_Sensitivity_Analysis'][1]):
-            
-            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'tbase': 
-                tbase = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(1)][1])#Default: 0
-            
-            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'Stage':           
-                min_values_raw  = SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1].strip('[]')
-                min_values = min_values_raw.split(',')
-                max_values_raw  = SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1].strip('[]')
-                max_values = max_values_raw.split(',')              
-                          
-                stage = [['Emergence',np.random.uniform(float(min_values[0]),float(max_values[0]))],#160
-                         ['Leaf development',np.random.uniform(float(min_values[1]),float(max_values[1]))],#208
-                         ['Tillering',np.random.uniform(float(min_values[2]),float(max_values[2]))],#421
-                         ['Stem elongation',np.random.uniform(float(min_values[3]),float(max_values[3]))],#659
-                         ['Anthesis',np.random.uniform(float(min_values[4]),float(max_values[4]))],#901
-                         ['Seed fill',np.random.uniform(float(min_values[5]),float(max_values[5]))],#1174
-                         ['Dough stage',np.random.uniform(float(min_values[6]),float(max_values[6]))],#1556
-                         ['Maturity',np.random.uniform(float(min_values[7]),float(max_values[7]))]]#1665
-            
-            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'RUE': 
-                RUE=np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])#Default: 5.
-        
-            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'k': 
-                k=np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])#Default: .6
-    
-            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'kcb':           
-                min_values_raw  = SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1].strip('[]')
-                min_values = min_values_raw.split(',')
-                max_values_raw  = SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1].strip('[]')
-                max_values = max_values_raw.split(',') 
-                
-                kcb =[np.random.uniform(float(min_values[0]),float(max_values[0])),
-                      np.random.uniform(float(min_values[1]),float(max_values[1])),
-                      np.random.uniform(float(min_values[2]),float(max_values[2])), 
-                      np.random.uniform(float(min_values[3]),float(max_values[3]))]#Default:[0.15,1.1,0.15]
-          
-            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'leaf_specific_weight': 
-                leaf_specific_weight = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(1)][1])#Default: 40
-        
-            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'root_growth': 
-                root_growth = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(1)][1])#Default: 1.5
-            
-            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'max_height': 
-                max_height = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(1)][1])#Default: 1
-         
-            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'carbonfraction': 
-                carbonfraction = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(1)][1])#Default: .4
-        
-            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'max_depth': 
-                max_depth = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(1)][1])#Default: 150.
-    
-    if SetupFile['Program_for_SA'][1] == 'CMF':
-        tbase = 0
-        stage = [['Emergence',160.],#!!
-                 ['Leaf development',208.], 
-                 ['Tillering',421.],
-                 ['Stem elongation',659.],
-                 ['Anthesis',901.],
-                 ['Seed fill',1174.],
-                 ['Dough stage',1556.],
-                 ['Maturity',1665.]]
-        RUE=5.
-        k=.4
-        kcb =[0.15,1.1,0.15]
-        leaf_specific_weight=40.
-        root_growth=1.5
-        max_height=1.
-        carbonfraction=.4
-        max_depth=150.
-
-    seasons           =[160.0, 499.0, 897.0, 1006.0]    
-    shoot_percent     =[.0,.5,.5,.9,.95,1.,1.,1.]
-    root_percent      =[.0,.5,.5,.1,.05,.0,.0,.0]
-    leaf_percent      =[.0,.5,.5,.5,.0,.0,.0,.0]
-    stem_percent      =[.0,.5,.5,.5,.5,.0,.0,.0]
-    storage_percent   =[.0,.0,.0,.0,.5,1.,1.,1.]
-    pressure_threshold=[0.,1.,500.,16000.]
-    plantN            =[[160.,0.043],[1200.,0.016]]
-    stress_adaption   =1
-    
-    random_plant_coeff = PMF.CropCoefficiants(tbase,stage,RUE,k,seasons,kcb,shoot_percent,root_percent,
-                             leaf_percent,stem_percent,storage_percent,pressure_threshold, 
-                             plantN,leaf_specific_weight,root_growth,max_height,
-                             stress_adaption,carbonfraction,max_depth)
-
+#    if SetupFile['Program_for_SA'][1]=='PMF':  
+#        
+#        for i in range(SetupFile['Number_of_Paramaters_for_Sensitivity_Analysis'][1]):
+#            
+#            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'tbase': 
+#                tbase = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])#Default: 0
+#            #else:
+#            #    tbase=0
+#            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'Stage':           
+#                min_values_raw  = SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1].strip('[]')
+#                min_values = min_values_raw.split(',')
+#                max_values_raw  = SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1].strip('[]')
+#                max_values = max_values_raw.split(',')              
+#                          
+#                stage = [['Emergence',np.random.uniform(float(min_values[0]),float(max_values[0]))],#160
+#                         ['Leaf development',np.random.uniform(float(min_values[1]),float(max_values[1]))],#208
+#                         ['Tillering',np.random.uniform(float(min_values[2]),float(max_values[2]))],#421
+#                         ['Stem elongation',np.random.uniform(float(min_values[3]),float(max_values[3]))],#659
+#                         ['Anthesis',np.random.uniform(float(min_values[4]),float(max_values[4]))],#901
+#                         ['Seed fill',np.random.uniform(float(min_values[5]),float(max_values[5]))],#1174
+#                         ['Dough stage',np.random.uniform(float(min_values[6]),float(max_values[6]))],#1556
+#                         ['Maturity',np.random.uniform(float(min_values[7]),float(max_values[7]))]]#1665
+#            
+##            else:
+##                stage=[['Emergence',160.],#!!
+##                 ['Leaf development',208.], 
+##                 ['Tillering',421.],
+##                 ['Stem elongation',659.],
+##                 ['Anthesis',901.],
+##                 ['Seed fill',1174.],
+##                 ['Dough stage',1556.],
+##                 ['Maturity',1665.]]
+#            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'RUE': 
+#                RUE=np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])#Default: 5.
+##            else:
+##                RUE=5
+#            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'k': 
+#                k=np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])#Default: .6
+##            else:
+##                k=.4
+#            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'kcb':           
+#                min_values_raw  = SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1].strip('[]')
+#                min_values = min_values_raw.split(',')
+#                max_values_raw  = SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1].strip('[]')
+#                max_values = max_values_raw.split(',') 
+#                
+#                kcb =[np.random.uniform(float(min_values[0]),float(max_values[0])),
+#                      np.random.uniform(float(min_values[1]),float(max_values[1])),
+#                      np.random.uniform(float(min_values[2]),float(max_values[2])), 
+#                      np.random.uniform(float(min_values[3]),float(max_values[3]))]#Default:[0.15,1.1,0.15]
+##            else:
+##                kcb=[0.15,1.1,0.15]
+#            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'leaf_specific_weight': 
+#                leaf_specific_weight = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])#Default: 40
+##            else:
+##                leaf_specific_weight=40
+#            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'root_growth': 
+#                root_growth = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])#Default: 1.5
+##            else:
+##                root_growth=1.5
+#            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'max_height': 
+#                max_height = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])#Default: 1
+##            else:
+##                max_height=1.
+#            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'carbonfraction': 
+#                carbonfraction = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])#Default: .4
+##            else:
+##                carbonfraction = .4
+#            if SetupFile['Parameter'+str(i+1)+'_for_Sensitivity_Analysis'][1] == 'max_depth': 
+#                max_depth = np.random.uniform(SetupFile['Min_Rangevalue_of_Parameter'+str(i+1)][1],SetupFile['Max_Rangevalue_of_Parameter'+str(i+1)][1])#Default: 150.
+##            else:
+##                max_depth = 150.
+#    if SetupFile['Program_for_SA'][1] == 'CMF':
+#        tbase = 0
+#        stage = [['Emergence',160.],#!!
+#                 ['Leaf development',208.], 
+#                 ['Tillering',421.],
+#                 ['Stem elongation',659.],
+#                 ['Anthesis',901.],
+#                 ['Seed fill',1174.],
+#                 ['Dough stage',1556.],
+#                 ['Maturity',1665.]]
+#        RUE=5.
+#        k=.4
+#        kcb =[0.15,1.1,0.15]
+#        leaf_specific_weight=40.
+#        root_growth=1.5
+#        max_height=1.
+#        carbonfraction=.4
+#        max_depth=150.
+#
+#    seasons           =[160.0, 499.0, 897.0, 1006.0]    
+#    shoot_percent     =[.0,.5,.5,.9,.95,1.,1.,1.]
+#    root_percent      =[.0,.5,.5,.1,.05,.0,.0,.0]
+#    leaf_percent      =[.0,.5,.5,.5,.0,.0,.0,.0]
+#    stem_percent      =[.0,.5,.5,.5,.5,.0,.0,.0]
+#    storage_percent   =[.0,.0,.0,.0,.5,1.,1.,1.]
+#    pressure_threshold=[0.,1.,500.,16000.]
+#    plantN            =[[160.,0.043],[1200.,0.016]]
+#    stress_adaption   =1
+#    random_plant_coeff_new =PMF.CropCoefficiants(
+##    random_plant_coeff = PMF.CropCoefficiants(tbase,stage,RUE,k,seasons,kcb,shoot_percent,root_percent,
+##                             leaf_percent,stem_percent,storage_percent,pressure_threshold, 
+##                             plantN,leaf_specific_weight,root_growth,max_height,
+##                             stress_adaption,carbonfraction,max_depth)
+#    random_plant_coeff = PMF.CropCoefficiants()
+    random_plant_coeff = PMF.CropCoefficiants()     
     return random_plant_coeff
+
+
+
+
 
 
 
@@ -297,7 +374,6 @@ if __name__=='__main__':
         print 'PMF will be analysed'
     
     
-    
     ClimateDatafile            = load_ClimateDatafile(SetupFile)
     DataStart                  = getDatastart(ClimateDatafile)
     DataEnd                    = getDataend(ClimateDatafile) 
@@ -307,87 +383,249 @@ if __name__=='__main__':
     Result_Parameter           = Result_Parameter_Raw[0]
     Space_for_Result_Table     = Result_Parameter_Raw[1]
     Result_Parameter_List      = create_Result_Parameter_List(Duration,Result_Parameter,Space_for_Result_Table)
-    baresoil                   = PMF.ProcessLibrary.ET_FAO([0.,0.,0.,0.],[0.,0.,0.,0.],kcmin = 0.)
     Repetitions                = SetupFile['Repetitions_of_Sensitivity_Analysis'][1]
     Plots                      = SetupFile['Number_of_Plots'][1]
-    
     Errors=0
+    baresoil = PMF.ProcessLibrary.ET_FAO([0.,0.,0.,0.],[0.,0.,0.,0.],kcmin = 0.)
+    
     for Repeat in range(Repetitions):
-        c_Raw                  = load_soil_Parameterset(SetupFile)
-        c                      = c_Raw[0]    
-        random_plant_coeff = load_random_CropCoefficiants(SetupFile)
+        c_Settings                  = load_soil_Parameterset(SetupFile)
+        c                           = c_Settings[0]    
+        random_plant_coeff               = load_random_CropCoefficiants(SetupFile)
         c.load_meteo(DataStart,DataStart, SetupFile['ClimateData'][1], rain_factor=1.)
         print 'Load Data '+str(Repeat+1)+' of '+str(Repetitions)
-        if SetupFile['Program_for_SA'][1] == 'CMF': 
-            try:            
-                Results            = run.run_CMF_with_PMF_for_one_Simulationperiod(c,random_plant_coeff,DataStart,DataEnd,Result_Parameter,Result_Parameter_List)
+         
+        try:            
+            Results            = run.run_CMF_with_PMF_for_one_Simulationperiod(c,DataStart,DataEnd,Result_Parameter,Result_Parameter_List,random_plant_coeff)
+            
+            
+            with open('Results'+str(Repeat+1)+'.csv', 'wb') as f:    
+                writer = csv.writer(f)
+                #######
+                #Write Header with Settings
+                if SetupFile['Program_for_SA'][1] == 'CMF':
+                    writer.writerow(['Settings:'])
+                    writer.writerow(['ksat='+str(c_Settings[1])+';'+
+                                     'porosity='+str(c_Settings[2])+';'+
+                                     'alpha='+str(c_Settings[3])+';'+ 
+                                     'n='+str(c_Settings[4])])
+                                                
+                if SetupFile['Program_for_SA'][1] == 'PMF':    
+                    writer.writerow(['Settings:'])
+                    writer.writerow(['tbase'+';'+'stage1'+';'+'stage2'+';'+'stage3'+';'+'stage4'+';'+'stage5'+';'+'stage6'+';'+'stage7'+';'+'stage8'
+                                    +';'+'RUE'+';'+'k'+';'+'seasons1'+';'+'seasons2'+';'+'seasons3'+';'+'seasons4'
+                                    +';'+'kcb1'+';'+'kcb2'+';'+'kcb3'+';'+'leaf_specific_weight'+';'+'root_growth'
+                                    +';'+'max_height'+';'+'carbonfraction'+';'+'max_depth'])
+                    writer.writerow([str(random_plant_coeff.tbase)           +' ; '+str(random_plant_coeff.stage[0][0])+'_'+str(random_plant_coeff.stage[0][1])+' ; '+str(random_plant_coeff.stage[1][0])+'_'+str(random_plant_coeff.stage[1][1])+' ; '+str(random_plant_coeff.stage[2][0])+'_'+str(random_plant_coeff.stage[2][1])+' ; '+str(random_plant_coeff.stage[3][0])+'_'+str(random_plant_coeff.stage[3][1])+' ; '+str(random_plant_coeff.stage[4][0])+'_'+str(random_plant_coeff.stage[4][1])+' ; '+str(random_plant_coeff.stage[5][0])+'_'+str(random_plant_coeff.stage[5][1])+' ; '+str(random_plant_coeff.stage[6][0])+'_'+str(random_plant_coeff.stage[6][1])+' ; '+str(random_plant_coeff.stage[7][0])+'_'+str(random_plant_coeff.stage[7][1])
+                                +' ; '+str(random_plant_coeff.RUE)           +' ; '+str(random_plant_coeff.k)
+                                +' ; '+str(random_plant_coeff.seasons[0])    +' ; '+str(random_plant_coeff.seasons[1])
+                                +' ; '+str(random_plant_coeff.seasons[2])    +' ; '+str(random_plant_coeff.seasons[3])
+                                +' ; '+str(random_plant_coeff.kcb[0])        +' ; '+str(random_plant_coeff.kcb[1])+' ; '+str(random_plant_coeff.kcb[2])           +' ; '+str(random_plant_coeff.leaf_specific_weight) 
+                                +' ; '+str(random_plant_coeff.root_growth)   +' ; '+str(random_plant_coeff.max_height)
+                                +' ; '+str(random_plant_coeff.carbonfraction)+' ; '+str(random_plant_coeff.max_depth)])      
+#                    writer.writerow(['tbase='+str(random_plant_coeff.tbase)+' ; '+
+#                                     'stage='+str(random_plant_coeff.stage)+' ; '+
+#                                     'RUE='+str(random_plant_coeff.RUE)+' ; '+
+#                                     'k='+str(random_plant_coeff.k)+' ; '+
+#                                     'seasons='+str(random_plant_coeff.seasons)+' ; '+
+#                                     'kcb='+str(random_plant_coeff.kcb)+' ; '+
+#                                     'leaf_specific_weight='+str(random_plant_coeff.leaf_specific_weight)+' ; '+
+#                                     'root_growth='+str(random_plant_coeff.root_growth)+' ; '+
+#                                     'max_height='+str(random_plant_coeff.max_height)+' ; '+
+#                                     'carbonfraction='+str(random_plant_coeff.carbonfraction)+' ; '+
+#                                     'max_depth='+str(random_plant_coeff.max_depth)])                        
                 
-                with open('Results'+str(Repeat+1)+'.csv', 'wb') as f:    
-                    writer = csv.writer(f)
-                    writer.writerow(['Settings: ksat='+str(c_Raw[1]),
-                                                'porosity='+str(c_Raw[2]),
-                                                'alpha='+str(c_Raw[3]), 
-                                                'n='+str(c_Raw[4])])
-                    for Plot in range(Plots):
-                        SensitivityFile            = load_Measured_Data(SetupFile,Plot+1)
-                        Measured_Days              = getMeasuredDays(SensitivityFile)
-                        writer.writerow([''])
-                        writer.writerow(['Values for Plot '+str(Plot+1)])
-                        writer.writerow(['Year','Month','Day',Analysed_Parameter])
-                        Calculated_Data=[]                        
-                        for i in range(len(Measured_Days)):
-                            Saving_Day = Measured_Days[i]-DataStart
-                            writer.writerow([Measured_Days[i].year, Measured_Days[i].month,Measured_Days[i].day,Results[Result_Parameter][Saving_Day.days]])
-                            Calculated_Data.append(Results[Result_Parameter][Saving_Day.days])
+                ######
+                #Write Results
+                for Plot in range(Plots):
+                    #Headers                    = load_headers(SetupFile,Plot+1)
+                    #Headers_String=''
+                    #for i in range(len(Headers)):
+                    #    if i ==len(Headers)-1:
+                    #        Headers_String+=str(Headers[i])
+                    #    else:
+                    #        Headers_String+=str(Headers[i])+' ; '
+                    SensitivityFile            = load_Measured_Data(SetupFile,Plot+1)
+                    Measured_Days              = getMeasuredDays(SensitivityFile,SetupFile)
+                    writer.writerow([''])
+                    writer.writerow(['Values for Plot '+str(Plot+1)])
+                    #writer.writerow([Headers_String])#+'; '+'Year'+' ; '+'Month'+' ; '+'Day'])
+                    #writer.writerow([Headers])
+                    if SetupFile['Program_for_SA'][1] == 'PMF':
+                        writer.writerow([';Calc_Root_kgC;Meas_Root_kgC;;Calc_Root_kgha;Meas_Root_kgha;;Calc_StemLeaves_kgC;Meas_StemLeaves_kgC;;Calc_StemLeaves_kgha;Meas_StemLeaves_kgha;;Calc_StorageOrgans_kgC;Meas_StorageOrgans_kgC;;Calc_StorageOrgans_kgha;Meas_StorageOrgans_kgha;;Year;Month;Day'])
+                    if SetupFile['Program_for_SA'][1] == 'CMF':
+                        writer.writerow([';Calc_Water030cm;Meas__Water030cm;;Calc_Water3060cm;Meas__Water3060cm;;Calc_Water60_90cm;Meas_Water60_90cm'])
+                    Calculated_Data=[]
+                    for i in range(len(Measured_Days)):
+                        Saving_Day = Measured_Days[i]-DataStart
+                        if SetupFile['Program_for_SA'][1] == 'PMF':                         
+                            writer.writerow([';'+str(Results[Result_Parameter][Saving_Day.days][0])+';'+str(SensitivityFile[i+1][4])+';;'+str(Results[Result_Parameter][Saving_Day.days][1])+';'+str(SensitivityFile[i+1][5])+';;'+str(Results[Result_Parameter][Saving_Day.days][2])+';'+str(SensitivityFile[i+1][6])+';;'+str(Results[Result_Parameter][Saving_Day.days][3])+';'+str(SensitivityFile[i+1][7])+';;'+str(Results[Result_Parameter][Saving_Day.days][4])+';'+str(SensitivityFile[i+1][8])+';;'+str(Results[Result_Parameter][Saving_Day.days][5])+';'+str(SensitivityFile[i+1][9])+';;'+str(Measured_Days[i].year)+';'+str(Measured_Days[i].month)+';'+str(Measured_Days[i].day)])                        
+                        if SetupFile['Program_for_SA'][1] == 'CMF':
+                            writer.writerow([';'+str(Results[Result_Parameter][Saving_Day.days][0])+';'+str(SensitivityFile[i][4])+';;'+str(Results[Result_Parameter][Saving_Day.days][1])+';'+str(SensitivityFile[i][5])+';;'+str(Results[Result_Parameter][Saving_Day.days][2])+';'+str(SensitivityFile[i][6])+';;'+str(Measured_Days[i].year)+';'+str(Measured_Days[i].month)+';'+str(Measured_Days[i].day)])
+                        #Row = str(Results[Result_Parameter][Saving_Day.days])+';'+str(Measured_Days[i].year)+';'+str(Measured_Days[i].month)+';'+str(Measured_Days[i].day)
+                        #Result = Row.split(' ; ')[0].strip(']').strip('[').split('   ')
                         
-                        '''
-                        convert Calculated Data into list
-                        '''
-                        EF_List=[]
-                        Bias_List=[]
-                        R_squared_List=[]
+                        #Result_String=''
+                        #for i in range(len(Result)):
+                        #    if i ==len(Result)-1:
+                        #        Result_String+=str(Result[i])
+                        #    else:
+                        #        Result_String+=str(Result[i])+';'
+                        #writer.writerow([Row[0],Row[1],Row[2],Result_String])
+                        Calculated_Data.append(Results[Result_Parameter][Saving_Day.days])
+
+                    
+                    #########
+                    #Make Statistik
+                    EF_List=[]
+                    Bias_List=[]
+                    R_squared_List=[]  
+                    if SetupFile['Program_for_SA'][1] == 'PMF': 
                         for i in range(len(Calculated_Data[0])):
                             Calc_List=[]                            
                             for j in range(len(Calculated_Data)):
                                 Calc_List.append(Calculated_Data[j][i])   
                             Call_String='Data_for_Sensitivity_Analysis_'+str(i)
                             Meas_List=SensitivityFile[Call_String][1:len(SensitivityFile[Call_String])]
-                            EF_List.append(stat.Nash_Sutcliff(Meas_List,Calc_List))
-                            Bias_List.append(stat.Bias(Meas_List,Calc_List))
-                            R_squared_List.append(stat.R_squared(Meas_List,Calc_List))                       
-                        writer.writerow(['EF','Bias','R_squared'])
-                        for i in range(len(EF_List)):                        
-                            writer.writerow([EF_List[i],Bias_List[i],R_squared_List[i]])
+                                                    
+                            for i in range(len(Meas_List)):
+                                if Meas_List[i] == -99999:
+                                    Calc_List[i]=-99999
+                            
+                            
+                            Meas_List_for_stat=[]
+                            Calc_List_for_stat=[]
+                            
+                            for i in range(len(Meas_List)):
+                                Meas_List_for_stat.append(Meas_List[i])
+                                Calc_List_for_stat.append(Calc_List[i])
+                                                    
+                            k=0                                
+                            for i in range(len(Meas_List)):
+                                if Meas_List[i] ==-99999:
+                                    '''
+                                    Cleans out all no data values for Statistik
+                                    '''
+                                    Calc_List_for_stat.pop(i-k)
+                                    Meas_List_for_stat.pop(i-k)
+                                    k+=1
+                            EF_List.append(stat.Nash_Sutcliff(Meas_List_for_stat,Calc_List_for_stat))
+                            Bias_List.append(stat.Bias(Meas_List_for_stat,Calc_List_for_stat))
+                            R_squared_List.append(stat.R_squared(Meas_List_for_stat,Calc_List_for_stat))
                         
-            except RuntimeError:
-                Errors+=1
-                print 'An Error has accourd ('+str(Errors)+' in '+str(Repeat+1)+' runs)'                
-                #os.remove('Results'+str(Repeat+1)+'.csv')                
-                #print 'Results'+str(Repeat+1)+'.csv has been delted'
-    
-        if SetupFile['Program_for_SA'][1] == 'PMF': 
-            Results            = run.run_CMF_with_PMF_for_one_Simulationperiod(c,random_plant_coeff,DataStart,DataEnd,Result_Parameter,Result_Parameter_List)
+                        writer.writerow([''])
+                        writer.writerow(['EF'+';'+str(EF_List[0])+';;;'+str(EF_List[1])+';;;'+str(EF_List[2])+';;;'+str(EF_List[3])+';;;'+str(EF_List[4])+';;;'+str(EF_List[5])])
+                        writer.writerow(['Bias'+';'+str(Bias_List[0])+';;;'+str(Bias_List[1])+';;;'+str(Bias_List[2])+';;;'+str(Bias_List[3])+';;;'+str(Bias_List[4])+';;;'+str(Bias_List[5])])
+                        writer.writerow(['R_squared'+';'+str(R_squared_List[0])+';;;'+str(R_squared_List[1])+';;;'+str(R_squared_List[2])+';;;'+str(R_squared_List[3])+';;;'+str(R_squared_List[4])+';;;'+str(R_squared_List[5])])
 
-            with open('Results'+str(Repeat+1)+'.csv', 'wb') as f:    
-                writer = csv.writer(f)
-                writer.writerow(['Settings: tbase='+str(random_plant_coeff.tbase),
-                                         'stage='+str(random_plant_coeff.stage),
-                                         'RUE='+str(random_plant_coeff.RUE),
-                                         'k='+str(random_plant_coeff.k),
-                                         'seasons='+str(random_plant_coeff.seasons),
-                                         'kcb='+str(random_plant_coeff.kcb),
-                                         'leaf_specific_weight='+str(random_plant_coeff.leaf_specific_weight),
-                                         'root_growth='+str(random_plant_coeff.root_growth),
-                                         'max_height='+str(random_plant_coeff.max_height),
-                                         'carbonfraction='+str(random_plant_coeff.carbonfraction),
-                                         'max_depth='+str(random_plant_coeff.max_depth)])
-                writer.writerow([''])
-                writer.writerow(['Year','Month','Day',Analysed_Parameter])
-                for i in range(len(Measured_Days)):
-                    Saving_Day = Measured_Days[i]-DataStart
-                    writer.writerow([Measured_Days[i].year, Measured_Days[i].month,Measured_Days[i].day,Results[Result_Parameter][Saving_Day.days]])
-    
-    
+                    if SetupFile['Program_for_SA'][1] == 'CMF':
+                        Meas_List=[]
+                        for i in range(len(SensitivityFile)):
+                                Meas_List.append([SensitivityFile['WATER_0_30_CM_VOL_PROZ'][i], SensitivityFile['WATER_30_60_CM_VOL_PROZ'][i], SensitivityFile['WATER_60_90_CM_VOL_PROZ'][i]])
+                        for i in range(len(Calculated_Data[0])):
+                            Calc_List_for_stat=[]
+                            Meas_List_for_stat=[]                            
+                            for j in range(len(Calculated_Data)):
+                                Calc_List_for_stat.append(Calculated_Data[j][i])  
+                                Meas_List_for_stat.append(Meas_List[j][i])
+                            EF_List.append(stat.Nash_Sutcliff(Meas_List_for_stat,Calc_List_for_stat))
+                            Bias_List.append(stat.Bias(Meas_List_for_stat,Calc_List_for_stat))
+                            R_squared_List.append(stat.R_squared(Meas_List_for_stat,Calc_List_for_stat)) 
+                        writer.writerow([''])
+                        writer.writerow(['EF'+';'+str(EF_List[0])+';;;'+str(EF_List[1])+';;;'+str(EF_List[2])])
+                        writer.writerow(['Bias'+';'+str(Bias_List[0])+';;;'+str(Bias_List[1])+';;;'+str(Bias_List[2])])
+                        writer.writerow(['R_squared'+';'+str(R_squared_List[0])+';;;'+str(R_squared_List[1])+';;;'+str(R_squared_List[2])])
+                                       
+        except RuntimeError:
+            Errors+=1
+            print 'An Error has accourd ('+str(Errors)+' in '+str(Repeat+1)+' runs)'  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+              
+            #os.remove('Results'+str(Repeat+1)+'.csv')                
+            #print 'Results'+str(Repeat+1)+'.csv has been delted'
+#    
+#        if SetupFile['Program_for_SA'][1] == 'PMF': 
+#            Results            = run.run_CMF_with_PMF_for_one_Simulationperiod(c,random_plant_coeff,DataStart,DataEnd,Result_Parameter,Result_Parameter_List)
+#
+#            with open('Results'+str(Repeat+1)+'.csv', 'wb') as f:    
+#                writer = csv.writer(f)
+#                writer.writerow(['Settings: tbase='+str(random_plant_coeff.tbase),
+#                                         'stage='+str(random_plant_coeff.stage),
+#                                         'RUE='+str(random_plant_coeff.RUE),
+#                                         'k='+str(random_plant_coeff.k),
+#                                         'seasons='+str(random_plant_coeff.seasons),
+#                                         'kcb='+str(random_plant_coeff.kcb),
+#                                         'leaf_specific_weight='+str(random_plant_coeff.leaf_specific_weight),
+#                                         'root_growth='+str(random_plant_coeff.root_growth),
+#                                         'max_height='+str(random_plant_coeff.max_height),
+#                                         'carbonfraction='+str(random_plant_coeff.carbonfraction),
+#                                         'max_depth='+str(random_plant_coeff.max_depth)])
+#                for Plot in range(Plots):
+#                        Headers                    = load_headers(SetupFile,Plot+1)
+#                        SensitivityFile            = load_Measured_Data(SetupFile,Plot+1)
+#                        Measured_Days              = getMeasuredDays(SensitivityFile)
+#                        writer.writerow([''])
+#                        writer.writerow(['Values for Plot '+str(Plot+1)])
+#                        writer.writerow(['Year','Month','Day',Analysed_Parameter,Headers])
+#                        Calculated_Data=[]                        
+#                        for i in range(len(Measured_Days)):
+#                            Saving_Day = Measured_Days[i]-DataStart
+#                            writer.writerow([Measured_Days[i].year, Measured_Days[i].month,Measured_Days[i].day,Results[Result_Parameter][Saving_Day.days]])
+#                            Calculated_Data.append(Results[Result_Parameter][Saving_Day.days])
+#                        
+#                        '''
+#                        convert Calculated Data into list
+#                        '''
+#                        EF_List=[]
+#                        Bias_List=[]
+#                        R_squared_List=[]
+#                        for i in range(len(Calculated_Data[0])):
+#                            Calc_List=[]                            
+#                            for j in range(len(Calculated_Data)):
+#                                Calc_List.append(Calculated_Data[j][i])   
+#                            Call_String='Data_for_Sensitivity_Analysis_'+str(i)
+#                            Meas_List=SensitivityFile[Call_String][1:len(SensitivityFile[Call_String])]
+#                            EF_List.append(stat.Nash_Sutcliff(Meas_List,Calc_List))
+#                            Bias_List.append(stat.Bias(Meas_List,Calc_List))
+#                            R_squared_List.append(stat.R_squared(Meas_List,Calc_List))                       
+#                        writer.writerow(['EF','Bias','R_squared'])
+#                        for i in range(len(EF_List)):                        
+#                            writer.writerow([EF_List[i],Bias_List[i],R_squared_List[i]])
+#                    
+
+#                writer.writerow([''])
+#                writer.writerow(['Year','Month','Day',Analysed_Parameter])
+#                for i in range(len(Measured_Days)):
+#                    Saving_Day = Measured_Days[i]-DataStart
+#                    writer.writerow([Measured_Days[i].year, Measured_Days[i].month,Measured_Days[i].day,Results[Result_Parameter][Saving_Day.days]])
+#    
+#    
 
 
 
