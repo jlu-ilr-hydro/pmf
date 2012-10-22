@@ -1,13 +1,14 @@
 InputData;ClimateData;Program_for_SA;Res_Name_for_Sensitivty_Analysis;Number_of_Plots;Data_for_Sensitivity_Analysis;Repetitions_of_Sensitivity_Analysis;Number_of_Paramaters_for_Sensitivity_Analysis;Parameter1_for_Sensitivity_Analysis;Min_Rangevalue_of_Parameter1;Max_Rangevalue_of_Parameter1;Parameter2_for_Sensitivity_Analysis;Min_Rangevalue_of_Parameter2;Max_Rangevalue_of_Parameter2;Parameter3_for_Sensitivity_Analysis;Min_Rangevalue_of_Parameter3;Max_Rangevalue_of_Parameter3;Parameter4_for_Sensitivity_Analysis;Min_Rangevalue_of_Parameter4;Max_Rangevalue_of_Parameter4;Parameter5_for_Sensitivity_Analysis;Min_Rangevalue_of_Parameter5;Max_Rangevalue_of_Parameter5;Parameter6_for_Sensitivity_Analysis;Min_Rangevalue_of_Parameter6;Max_Rangevalue_of_Parameter6;Parameter7_for_Sensitivity_Analysis;Min_Rangevalue_of_Parameter7;Max_Rangevalue_of_Parameter7;Parameter8_for_Sensitivity_Analysis;Min_Rangevalue_of_Parameter8;Max_Rangevalue_of_Parameter8;Parameter9_for_Sensitivity_Analysis;Min_Rangevalue_of_Parameter9;Max_Rangevalue_of_Parameter9;Parameter10_for_Sensitivity_Analysis;Min_Rangevalue_of_Parameter10;Max_Rangevalue_of_Parameter10
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-Default_Set;ClimateMuencheberg.csv;CMF;watercontent_30_60_90cm;3;Measured_Water_Content_30_60_90cm.csv;2;4;ksat;0.1;25;alpha;0.001;0.1;n;1;4;porosity;0.3;0.7;root_growth;0.1;3;max_height;0.1;2;carbonfraction;0.2;0.8;max_depth;50;200;Stage;[144,187,379,593,810,1057,1440,1498];[176,229,463,725,991,1291,1672,1832];kcb;[0.075,0.5,0.5,0.075];[0.225,1.5,1.5,0.225]
+Default_Set;ClimateMuencheberg.csv;PMF;Kersebaum_yield;3;Measured_yield_Kersebaum.csv;2;10;RUE;0;15;k;0.2;0.8;tbase;-1;5;leaf_specific_weight;20;60;root_growth;0.1;3;max_height;0.1;2;carbonfraction;0.2;0.8;max_depth;50;200;Stage;[144,187,379,593,810,1057,1440,1498];[176,229,463,725,991,1291,1672,1832];kcb;[0.075,0.5,0.5,0.075];[0.225,1.5,1.5,0.225]
 ;;;0:30_30:60;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 Posibilties;2;2;7;1;7;inifinit;2;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;PMF;watercontent_30_60_90cm;;Measured_Water_Content_30_60_90cm.csv;;10;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;CMF;root_biomass;;Measured_root.csv;;4;RUE;0;15;k;0.2;0.8;tbase;0;10;leaf_specific_weight;20;60;;;;;;;;;;;;;;;;;;
-;;;storage;;Measured_storage_organs.csv;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;storage;;Measured_storage_organs.csv;;;ksat;0.1;25;alpha;0.001;0.1;n;1;4;porosity;0.3;0.7;;;;;;;;;;;;;;;;;;
 ;;;stem_and_leaf;;Measured_stem_and_leaf.csv;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;root_biomass_kg_C_HA;;Measured_root_kg_C_HA.csv;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;storage_kg_C_HA;;Measured_storage_organs_kg_C_HA.csv;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;stem_and_leaf_kg_C_HA;;Measured_stem_and_leaf_kg_C_HA.csv;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;Kersebaum_yield;;Measured_yield_Kersebaum.csv;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

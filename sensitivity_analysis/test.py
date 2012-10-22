@@ -9,6 +9,11 @@ import numpy as np
 from datetime import *
 import csv
 import os
+import Statistic_Tool as stat
+
+R=stat.R_squared([627,3548],[10.5437244,542.714621])
+r =np.corrcoef([627,3548],[10.5437244,542.714621])
+print r
 
 
 #Start = datetime(1992,1,1)
@@ -42,19 +47,72 @@ import os
 #
 #print myFile['Biomasse'][0][0]
 #
+#csvfile =file('Measured_yield_Kersebaum_Plot1.csv') 
+#Headers=csvfile.readline().split(';')[4:]
+#Headers_new=Headers.strip('\n')
+#String=csvfile.readline()
+#Plot=[]
+#for line in csvfile:
+#    columns = line.split(';')
+#    Plot.append(columns[0])
+#    
+#print Plot[0]
 
-with open('Test.csv', 'wb') as f:    
-    writer = csv.writer(f)
-    writer.writerow(['hello'])
-    writer.writerow([''])
-    writer.writerow(['Year','Month','Day'])
-    for i in range(5):
-        writer.writerow([1,2,3])
+#Result=[]
+#
+#Result.append('String;String2;String3')
+#Result.append(str(1)+';'+str(2)+';'+str(3))
+#
+#with open('Test_Data.csv', 'wb') as f:    
+#    writer = csv.writer(f)
+#    writer.writerow(['Settings:'+';'+'Plot'+';'+'Hallo'])
+#    for i in range(len(Result)):    
+#        writer.writerow([Result[i]])
 
-os.remove('Test.csv')
 
-open('Test.csv')
+#String =str('Apfel')+';'+str('Brine')
+#
+#print String.split(';')[0]
 
+#Liste=[-99999,1,2,3,-99999,3]
+#
+#Liste_calc=[555,555,555,555,555,555]
+#
+##Copy_Liste=[]
+##for i in range(len(Liste)):
+##    Copy_Liste.append(Liste[i])
+#k=0
+#for i in range(len(Liste)):
+#    if Liste[i] ==-99999:
+#        Liste_calc[i]=-99999        
+#        #Copy_Liste.pop(i-k)
+#        #k+=1      
+#
+##for i in range(len(i_Liste)):
+#print Liste
+#print Liste_calc
+
+#l = [('a', 1), ('b', 2), ('c', 3)]
+#k = 1
+#
+#l_without_num = l[:k] + l[(k + 1):]    
+            
+
+
+            
+#            
+#with open('Test.csv', 'wb') as f:    
+#    writer = csv.writer(f)
+#    writer.writerow(['hello'])
+#    writer.writerow([''])
+#    writer.writerow(['Year','Month','Day'])
+#    for i in range(5):
+#        writer.writerow([1,2,3])
+#
+#os.remove('Test.csv')
+#
+#open('Test.csv')
+#
 
 
 #Result_Parameter_List = np.zeros((3),dtype=[('Result_Parameter', 'f8',(2,5)),('Year', 'int16'),('Month','int16'),('Day','int16')])
