@@ -8,6 +8,7 @@ import numpy as np
 from datetime import *
 import matplotlib.pyplot as plt
 import math
+import os
 
 def load_Settings_for_all_files(Runs, Setting_Parameter):
     if Setting_Parameter == 'tbase':
@@ -59,6 +60,54 @@ def load_Settings_for_all_files(Runs, Setting_Parameter):
             Settings_List.append(Settings.split(';')[Step])
         except: IOError
     return Settings_List
+
+
+
+
+def load_Settings_for_one_file(Resultfile):
+    Resultfile=file(Resultfile)
+    Setting_List=[]   
+    Resultfile.readline()#Setting:
+    Resultfile.readline()#tbase,stage, etc.
+    Setting = Resultfile.readline()
+    Setting_List.append(Setting.split(';'))
+    
+    Setting_Names=['tbase','Emergence','LeafDevelopment','Tillering','StemElongation','Anthesis',
+    'SeedFill','DoughStage','Maturity','RUE','k','kcb1','kcb2','kcb3',
+    'leaf_specific_weight','root_growth','max_height','carbonfraction','max_depth']
+    Setting_String=''
+    
+
+    for i in range(len(Setting_Names)):
+        if i==0:
+            Setting_String+=Setting_Names[i]+'='+str(round(float(Setting_List[0][i+1]),2))+', '
+        if i==1:
+            Setting_String+='Stage=['+str(int(round(float(Setting_List[0][1+1]),0)))+', '+str(int(round(float(Setting_List[0][2+1]),0)))+', '+str(int(round(float(Setting_List[0][3+1]),0)))+', '+str(int(round(float(Setting_List[0][4+1]),0)))+', '+str(int(round(float(Setting_List[0][5+1]),0)))+', '+str(int(round(float(Setting_List[0][6+1]),0)))+', '+str(int(round(float(Setting_List[0][7+1]),0)))+', '+str(int(round(float(Setting_List[0][8+1]),0)))+'], '
+        if i==9:
+            Setting_String+=Setting_Names[i]+'='+str(round(float(Setting_List[0][i+1]),2))+', '             
+        if i==10:
+            Setting_String+=Setting_Names[i]+'='+str(round(float(Setting_List[0][i+1]),2))+', '            
+        if i==11:
+            Setting_String+='kcb=['+str(round(float(Setting_List[0][11+1]),2))+', '+str(round(float(Setting_List[0][12+1]),2))+', '+str(round(float(Setting_List[0][13+1]),2))+'],\n'        
+        if i==14:
+            Setting_String+=Setting_Names[i]+'='+str(round(float(Setting_List[0][i+1]),2))+', '        
+        if i==15:
+            Setting_String+=Setting_Names[i]+'='+str(round(float(Setting_List[0][i+1]),2))+', '        
+        if i==16:
+            Setting_String+=Setting_Names[i]+'='+str(round(float(Setting_List[0][i+1]),2))+', '        
+        if i==17:
+            Setting_String+=Setting_Names[i]+'='+str(round(float(Setting_List[0][i+1]),2))+', '
+        if i ==18:
+            Setting_String+=Setting_Names[i]+'='+str(round(float(Setting_List[0][i+1]),2))
+
+        
+        
+        
+        
+    return Setting_String
+
+
+
     
 def Overview(Runs,Min_EF,Min_Bias,Max_Bias,Min_R_Squared):       
     Good_runs_Plot1=0
@@ -75,11 +124,10 @@ def Overview(Runs,Min_EF,Min_Bias,Max_Bias,Min_R_Squared):
     Failed_for_R_Squared=0
     #Good_Setting_Files_Plot[='String'
 
-    
     for Number in range(Runs):
         try:
             Resultfile = file('Results'+str(Number)+'Kersebaum_yield.csv')
-            Statistik = load_Result_Table(Resultfile)   
+            Statistik = load_Result_Table('Results'+str(Number)+'Kersebaum_yield.csv')   
             EF        = Statistik[0]
             Bias      = Statistik[1]
             R_Squared = Statistik[2]
@@ -203,8 +251,7 @@ def load_Statistik_for_all_files(Runs,Statistik_Parameter,Analysed_Parameter, Pl
     Statistik_Parameter_List=[]
     for Number in range(Runs):
         try:
-            Resultfile = file('Results'+str(Number)+'Kersebaum_yield.csv')
-            Statistik = load_Result_Table(Resultfile)
+            Statistik = load_Result_Table('Results'+str(Number)+'Kersebaum_yield.csv')
             Statistik_Parameter_List.append(Statistik[Statistik_Parameter_Value][Analysed_Parameter][Plot])
         except: IOError        
     return Statistik_Parameter_List
@@ -359,11 +406,13 @@ def Plot_Good_Run(Results, Datum, Result_Parameter, Resultfile, Plot):
             #plt.savefig('Default_values_Van_Genuchten'+Parameter+' for all plots and RUE = '+str(RUE), dpi=400)    
             #plt.close()  
 
-def Plot_all_results_for_Good_run(Results,Resultfile,Plot):
+def Plot_all_results_for_Good_run(Resultfile,Plot):
+    Default_PMF_Results=load_Good_run('Default_Results_Kersebaum_yield.csv')
+    Results = load_Good_run(Resultfile)    
     EF_List        =load_Result_Table(Resultfile)[0][Plot-1]
     Bias_List      =load_Result_Table(Resultfile)[1][Plot-1]      
     R_Squared_List =load_Result_Table(Resultfile)[2][Plot-1]
-    
+    Setting_String = load_Settings_for_one_file(Resultfile)    
     Result_Parameter_List=['Root_C','Root_drymatter','StemLeaves_C','StemLeaves_drymatter',
     'Storage_C','Storage_drymatter']
     ax_Number=0
@@ -377,15 +426,20 @@ def Plot_all_results_for_Good_run(Results,Resultfile,Plot):
             #ax5 = plt.subplot(622)#Storage_C
             #ax6 = plt.subplot(623)#Storage_drymatter
 
-            Biggest_value = np.max(Results[Result_Parameter_List[ax_Number-1]][Plot-1]) 
+            Biggest_value1 = np.max(Results[Result_Parameter_List[ax_Number-1]][Plot-1])
+            Biggest_value2 =np.max(Default_PMF_Results[Result_Parameter_List[ax_Number-1]][Plot-1])         
+            Biggest_value= np.max([Biggest_value1, Biggest_value2])
             Datum   = load_Datetimes(Results, Result_Parameter_List[ax_Number-1])
             ax1.set_xlim(datetime(1994,1,1),datetime(1999,1,1))
             ax1.set_ylim(0,Biggest_value*1.1)
             ax1.plot(Datum,Results[Result_Parameter_List[ax_Number-1]][Plot-1][0],'bo', ms=4,label='PMF')
-            ax1.plot(Datum,Results[Result_Parameter_List[ax_Number-1]][Plot-1][1],'gs', ms=4,label='Kersebaum') 
+            ax1.plot(Datum,Results[Result_Parameter_List[ax_Number-1]][Plot-1][1],'gs', ms=4,label='Kersebaum')
+            ax1.plot(Datum,Default_PMF_Results[Result_Parameter_List[ax_Number-1]][Plot-1][0],'k.', ms=8,label='Default_PMF')
             if ax_Number==1:            
-                leg = ax1.legend(bbox_to_anchor=(1.34, -0.15), loc='best', fancybox=True)
+                leg = ax1.legend(bbox_to_anchor=(1.34, -2.1), loc='best', fancybox=True)
                 leg.get_frame().set_alpha(0.5)
+                props = dict(boxstyle='round',facecolor='white', alpha=0.5)
+                ax1.text(0.56,-0.39,Setting_String, transform=ax1.transAxes, fontsize=10, verticalalignment='top', bbox=props)
             textstr = 'EF = %.4f\nBias = %.1f\nR = %.4f'%(EF_List[ax_Number-1], Bias_List[ax_Number-1], R_Squared_List[ax_Number-1])
             props = dict(boxstyle='round',facecolor='white', alpha=0.5)
             ax1.text(0.83, 0.925, textstr, transform=ax1.transAxes, fontsize=10, verticalalignment='top', bbox=props)
@@ -395,9 +449,35 @@ def Plot_all_results_for_Good_run(Results,Resultfile,Plot):
             ax1.grid()    
             ax1.set_xlabel('Date '+r'$[Years]$')
             ax1.set_ylabel(str(Result_Parameter_List[ax_Number-1]), fontsize=9)
-            ax1.fill_between(Datum,Results[Result_Parameter_List[ax_Number-1]][Plot-1][0],Results[Result_Parameter_List[ax_Number-1]][Plot-1][1],facecolor='red', alpha=0.5)    
+            ax1.fill_between(Datum,Default_PMF_Results[Result_Parameter_List[ax_Number-1]][Plot-1][0],Results[Result_Parameter_List[ax_Number-1]][Plot-1][1],facecolor='green',alpha=0.4)            
+            ax1.fill_between(Datum,Results[Result_Parameter_List[ax_Number-1]][Plot-1][0],Results[Result_Parameter_List[ax_Number-1]][Plot-1][1],facecolor='red')#, alpha=0.5)    
             
         
+    plt.tight_layout()
+    plt.draw()
+    plt.show()
+    plt.savefig('Picture_'+Resultfile+'_on_Plot'+str(Plot)+'.png', dpi=500)
+
+
+
+def Plot_Statistik(Runs, Plot, Statistik_Parameter, Analysed_Setting):
+
+    Analysed_Parameter_List=['Root_C','Root_drymatter','StemLeaves_C','StemLeaves_drymatter',
+    'Storage_C','Storage_drymatter']
+    
+    
+    ax_Number=0#Start of Plot
+    Setting_List  = load_Settings_for_all_files(Runs, Analysed_Setting) 
+    for Analysed_Parameter in range(len(Analysed_Parameter_List)):#6
+        Statistik = load_Statistik_for_all_files(Runs,Statistik_Parameter,Analysed_Parameter_List[Analysed_Parameter], Plot)      
+        ax_Number+=1
+        ax1 = plt.subplot(3,2,ax_Number)
+        ax1.set_ylim(0,1)
+        ax1.plot(Setting_List,Statistik,'bo',ms=2)
+        ax1.set_title(Statistik_Parameter+' for '+Analysed_Parameter_List[Analysed_Parameter]+' on Plot'+str(Plot), fontsize=12)
+        ax1.set_xlabel(Analysed_Setting, fontsize=9)
+        ax1.set_ylabel(str(Statistik_Parameter), fontsize=9)
+    
     plt.tight_layout()
     plt.draw()
     plt.show()
@@ -420,46 +500,108 @@ if __name__=='__main__':
     Statistik[EF,Bias,R_Squared][Runs]['Name'][Plot]    
     '''
     
+    #Dynamic change of working directory to data folder for uncertainty analysis
+    working_directory = os.getcwd()
+    os.chdir(working_directory+'\\Results_PMF_Calibration')
+    
+    
+    
     Min_EF        = 0.4
-    Min_Bias      = -5000
-    Max_Bias      =  5000
+    Min_Bias      = -500
+    Max_Bias      =  500
     Min_R_Squared =  0.8
     
-    Runs          = 8197
+    Runs          = 40589
+       
     
+
     
+    Statistik_Parameter   = 'R_Squared'    
+    Plot                  = 3  
+    Analysed_Parameter    = 'Storage_C'    
+    Analysed_Setting      = 'max_depth'
+    #Resultfile            = 'Results23534Kersebaum_yield.csv' # for Plot1 ('Results33722Kersebaum_yield.csv')
+    #Resultfile            = 'Results15468Kersebaum_yield.csv' # for Plot2
+    Resultfile            = 'Results2414Kersebaum_yield.csv'  # for Plot3 ('Results2414Kersebaum_yield.csv', 'Results7453Kersebaum_yield.csv', 'Results15169Kersebaum_yield.csv', 'Results16915Kersebaum_yield.csv', 'Results23534Kersebaum_yield.csv', 'Results36324Kersebaum_yield.csv', 'Results36399Kersebaum_yield.csv', 'Results37785Kersebaum_yield.csv')
     
+    '''
+    Searches through runs to find a fitting set
+    '''   
     #Good_Setting_Files = Overview(Runs,Min_EF,Min_Bias,Max_Bias,Min_R_Squared)
     #print Good_Setting_Files
+   
+    '''
+    Plots Statitik for one Analysed Setting over all runs
+    '''  
+    #Plot_Statistik(Runs, Plot, Statistik_Parameter, Analysed_Setting)
+    '''
+    Plots Results for one good run on one Plot
+    '''    
+    Plot_all_results_for_Good_run(Resultfile,Plot)
     
-    Statistik_Parameter   = 'EF'    
-    Plot                  = 3    
-    Analysed_Parameter    = 'Storage_C'    
-    Analysed_Setting      = 'tbase'
-    Resultfile            = 'Results7453Kersebaum_yield.csv'
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+   
+ 
 
+
+
+
+
+
+
+
+   
+#    Statistik_Parameter_List=['EF','Bias','R_Squared']
+#    for Plot_Number in range(3):#3
+#        for Statistik_Parameter in range(len(Statistik_Parameter_List)):#3
+#            for Analysed_Setting in range(len(Analysed_Setting_List)):#19
+#                ax_Number=0#Start of Plot
+#                for Analysed_Parameter in range(len(Analysed_Parameter_List)):#6
+#                    Statistik = load_Statistik_for_all_files(Runs,Statistik_Parameter_List[Statistik_Parameter],Analysed_Parameter_List[Analysed_Parameter], Plot_Number+1)
+#                    Setting_List  = load_Settings_for_all_files(Runs, Analysed_Setting_List[Analysed_Setting])
+#                    ax_Number+=1
+#                    ax1 = plt.subplot(3,2,ax_Number)
+#                    if Statistik_Parameter==0:  #EF                  
+#                        ax1.set_ylim(0,1)
+#                    if Statistik_Parameter==1:  #Bias                  
+#                        ax1.set_ylim(-100,100)
+#                    if Statistik_Parameter==2:  #R_Squared                  
+#                        ax1.set_ylim(0,1)
+#                    
+#                    ax1.plot(Setting_List,Statistik,'bo',ms=2)
+#                    ax1.set_title(Statistik_Parameter_List[Statistik_Parameter]+' for '+Analysed_Setting_List[Analysed_Setting]+' on Plot'+str(Plot_Number))
+#                    ax1.grid()
+#                    ax1.set_xlabel(Analysed_Setting_List[Analysed_Setting])
+#                    ax1.set_ylabel(str(Statistik_Parameter_List[Statistik_Parameter]), fontsize=9)
 #    
-#    
-    Statistik = load_Statistik_for_all_files(Runs,Statistik_Parameter,Analysed_Parameter, Plot)
-    Setting_List  = load_Settings_for_all_files(Runs, Analysed_Setting)    
-
-#    plt.plot(Setting_List,Statistik,'go')
-#    plt.ylim(0,1)    
-#    plt.show()
+#                plt.tight_layout()
+#                plt.draw()
+#                plt.show()
+#                plt.savefig(str(Plot_Number)+str(Statistik_Parameter)+str(Analysed_Setting)+'.png', dpi=500)
+##    plt.ylim(0,1)    
+##    plt.show()
     
 
     
     
-    Results = load_Good_run(Resultfile)
-    Datum   = load_Datetimes(Results, Analysed_Parameter)
-    print load_Result_Table(Resultfile)[0][Plot-1]
-    #print load_Result_Table(Resultfile) 
+    
+
     #Plot_Good_Run(Results, Datum, Analysed_Parameter, Resultfile, Plot)
-
     
     
     
-    Plot_all_results_for_Good_run(Results,Resultfile,Plot)
     
 
     
