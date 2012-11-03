@@ -1,4 +1,11 @@
+#!/home/gh1961/local/bin/python2.7
+#$ -S /home/gh1961/local/bin/python2.7
+#$ -l h_rt=12::
+#$ -N magim-sensi
+#$ -V
+#$ -cwd
 # -*- coding: utf-8 -*-
+
 """
 Created on Thu Sep 20 12:42:57 2012
 
@@ -68,7 +75,7 @@ Load Data for Sensitivity Analysis
 '''
 def load_Measured_Data(SetupFile,Plot):
     if SetupFile['Program_for_SA'][1]=='PMF':
-        fdtype=[('PLOT', '|S10'), ('Year', 'int16'), ('Month', 'int16'), ('Day', 'int16'), ('Data_for_Sensitivity_Analysis_0', 'f8'),('Data_for_Sensitivity_Analysis_1', 'f8'),('Data_for_Sensitivity_Analysis_2', 'f8'),('Data_for_Sensitivity_Analysis_3', 'f8'),('Data_for_Sensitivity_Analysis_4', 'f8'),('Data_for_Sensitivity_Analysis_5', 'f8')]
+        fdtype=[('PLOT', '|S10'), ('Year', 'int16'), ('Month', 'int16'), ('Day', 'int16'), ('Data_for_Sensitivity_Analysis_0', 'f8'),('Data_for_Sensitivity_Analysis_1', 'f8'),('Data_for_Sensitivity_Analysis_2', 'f8')]
         Sensitivity = SetupFile['Data_for_Sensitivity_Analysis'][1].split('.')    
         Sensitivity_File_name = Sensitivity[0]+'_Plot'+str(Plot)+'.'+Sensitivity[1] 
         SensitivityFile = np.genfromtxt(Sensitivity_File_name,delimiter=';', dtype=fdtype)
@@ -174,8 +181,8 @@ def get_Result_Parameter(Analysed_Parameter):
     if Analysed_Parameter == 'root_growth':        
         Result_Parameter_plant='plant.root.actual_distribution'
     if Analysed_Parameter == 'Kersebaum_yield':
-        Result_Parameter_plant='[plant.RootCarbon*10, plant.root.Wtot*10, plant.StemCarbon*10+plant.LeafCarbon*10, plant.shoot.leaf.Wtot*10+plant.shoot.stem.Wtot*10, plant.StorageCarbon*10, plant.shoot.storage_organs.Wtot*10]'
-        Space_for_Result_Table = 6
+        Result_Parameter_plant='[plant.root.Wtot*10,plant.shoot.leaf.Wtot*10+plant.shoot.stem.Wtot*10, plant.shoot.storage_organs.Wtot*10]'
+        Space_for_Result_Table = 3
     if Result_Parameter_plant=='':
         return Result_Parameter,Space_for_Result_Table
     else:
@@ -319,7 +326,7 @@ def load_random_CropCoefficiants(SetupFile):
     random_plant_coeff = PMF.CropCoefficiants()
     if SetupFile['Program_for_SA'][1]=='PMF':
         random_plant_coeff.tbase                 = tbase
-        random_plant_coeff.stage                 = [['Emergence', 135], ['Leaf development', 558],['S',600],['T',700], ['Anthesis', 1267],['R',1300],['U',1400], ['Maturity', 1592]]  #stage
+        random_plant_coeff.stage                 = stage
         random_plant_coeff.RUE                   = RUE                 
         random_plant_coeff.k                     = k
         random_plant_coeff.kcb                   = kcb
@@ -328,11 +335,10 @@ def load_random_CropCoefficiants(SetupFile):
         #random_plant_coeff.max_height            = max_height
         #random_plant_coeff.carbonfraction        = carbonfraction
         #random_plant_coeff.max_depth             = max_depth
-        #random_plant_coeff = PMF.CropCoefficiants() # entfernen für zufällige Verteilung!!!
+
         
 #        ['Emergence', 54], ['Leaf development', 403], ['Anthesis'], ['Maturity', 1826]
       
-        print random_plant_coeff.stage
     return random_plant_coeff
 
 
@@ -342,6 +348,11 @@ def load_random_CropCoefficiants(SetupFile):
 
 
 if __name__=='__main__':
+    
+    
+    Index_Jump=0    
+    
+    
     
     Name_of_SetupFile = 'Setup_file.csv'
     SetupFile = load_Setup_csv_File(Name_of_SetupFile) 
@@ -385,7 +396,7 @@ if __name__=='__main__':
             Results            = run.run_CMF_with_PMF_for_one_Simulationperiod(c,DataStart,DataEnd,Result_Parameter,Result_Parameter_List,random_plant_coeff)
             
             
-            with open('Results'+str(Repeat+1)+Analysed_Parameter+'_test.csv', 'wb') as f:    
+            with open('Results'+str(Repeat+1+Index_Jump)+Analysed_Parameter+'_test.csv', 'wb') as f:    
                 writer = csv.writer(f)
                 #######
                 #Write Header with Settings
@@ -398,16 +409,14 @@ if __name__=='__main__':
                                                 
                 if SetupFile['Program_for_SA'][1] == 'PMF':    
                     writer.writerow(['Settings:'])
-                    writer.writerow(['CropCoeff:'+';'+'tbase'+';'+'stage1_Emergence'+';'+'stage2_LeafDevelopment'+';'+'stage3_Tillering'+';'+'stage4_TemElongation'+';'+'stage5_Anthesis'+';'+'stage6_SeedFill'+';'+'stage7_DoughStage'+';'+'stage8_Maturity'
+                    writer.writerow(['CropCoeff:'+';'+'tbase'+';'+'stage1_Emergence'+';'+'stage2_LeafDevelopment'+';'+'stage5_Anthesis'+';'+'stage8_Maturity'
                                     +';'+'RUE'+';'+'k'
-                                    +';'+'kcb1'+';'+'kcb2'+';'+'kcb3'+';'+'leaf_specific_weight'+';'+'root_growth'
-                                    +';'+'max_height'+';'+'carbonfraction'+';'+'max_depth'])
-                    writer.writerow(['RandomValue'+ ' ; '+str(random_plant_coeff.tbase)  +';'+str(random_plant_coeff.stage[0][1])+';'+str(random_plant_coeff.stage[1][1])+';'+str(random_plant_coeff.stage[2][1])+';'+str(random_plant_coeff.stage[3][1])+';'+str(random_plant_coeff.stage[4][1])+';'+str(random_plant_coeff.stage[5][1])+';'+str(random_plant_coeff.stage[6][1])+';'+str(random_plant_coeff.stage[7][1])
+                                    +';'+'kcb1'+';'+'kcb2'+';'+'kcb3'+';'+'root_growth'])
+                    writer.writerow(['RandomValue'+ ' ; '+str(random_plant_coeff.tbase)  +';'+str(random_plant_coeff.stage[0][1])+';'+str(random_plant_coeff.stage[1][1])+';'+str(random_plant_coeff.stage[2][1])+';'+str(random_plant_coeff.stage[3][1])
                                 +';'+str(random_plant_coeff.RUE)           +';'+str(random_plant_coeff.k)
-                                +';'+str(random_plant_coeff.kcb[0])        +';'+str(random_plant_coeff.kcb[1])+';'+str(random_plant_coeff.kcb[2])           +';'+str(random_plant_coeff.leaf_specific_weight) 
-                                +';'+str(random_plant_coeff.root_growth)   +';'+str(random_plant_coeff.max_height)
-                                +';'+str(random_plant_coeff.carbonfraction)+';'+str(random_plant_coeff.max_depth)])      
-                    writer.writerow(['Default:;0;160;208;421;659;901;1174;1556;1665;3;0.4;0.15;1.1;0.15;40;1.5;1;0.4;150'])                 
+                                +';'+str(random_plant_coeff.kcb[0])        +';'+str(random_plant_coeff.kcb[1])+';'+str(random_plant_coeff.kcb[2])
+                                +';'+str(random_plant_coeff.root_growth)])      
+                    writer.writerow(['Default:;0;160;208;901;1665;3;0.4;0.15;1.1;0.15;1.5'])                 
 #                    writer.writerow(['tbase='+str(random_plant_coeff.tbase)+' ; '+
 #                                     'stage='+str(random_plant_coeff.stage)+' ; '+
 #                                     'RUE='+str(random_plant_coeff.RUE)+' ; '+
@@ -437,14 +446,15 @@ if __name__=='__main__':
                     #writer.writerow([Headers_String])#+'; '+'Year'+' ; '+'Month'+' ; '+'Day'])
                     #writer.writerow([Headers])
                     if SetupFile['Program_for_SA'][1] == 'PMF':
-                        writer.writerow([';Calc_Root_kgC;Meas_Root_kgC;;Calc_Root_kgha;Meas_Root_kgha;;Calc_StemLeaves_kgC;Meas_StemLeaves_kgC;;Calc_StemLeaves_kgha;Meas_StemLeaves_kgha;;Calc_StorageOrgans_kgC;Meas_StorageOrgans_kgC;;Calc_StorageOrgans_kgha;Meas_StorageOrgans_kgha;;Year;Month;Day'])
+                        writer.writerow([';Calc_Root_kgha;Meas_Root_kgha;;Calc_StemLeaves_kgha;Meas_StemLeaves_kgha;;Calc_StorageOrgans_kgha;Meas_StorageOrgans_kgha;;Year;Month;Day'])
                     if SetupFile['Program_for_SA'][1] == 'CMF':
                         writer.writerow([';Calc_Water030cm;Meas__Water030cm;;Calc_Water3060cm;Meas__Water3060cm;;Calc_Water60_90cm;Meas_Water60_90cm'])
                     Calculated_Data=[]
                     for i in range(len(Measured_Days)):
                         Saving_Day = Measured_Days[i]-DataStart
                         if SetupFile['Program_for_SA'][1] == 'PMF':                         
-                            writer.writerow([';'+str(Results[Result_Parameter][Saving_Day.days][0])+';'+str(SensitivityFile[i+1][4])+';;'+str(Results[Result_Parameter][Saving_Day.days][1])+';'+str(SensitivityFile[i+1][5])+';;'+str(Results[Result_Parameter][Saving_Day.days][2])+';'+str(SensitivityFile[i+1][6])+';;'+str(Results[Result_Parameter][Saving_Day.days][3])+';'+str(SensitivityFile[i+1][7])+';;'+str(Results[Result_Parameter][Saving_Day.days][4])+';'+str(SensitivityFile[i+1][8])+';;'+str(Results[Result_Parameter][Saving_Day.days][5])+';'+str(SensitivityFile[i+1][9])+';;'+str(Measured_Days[i].year)+';'+str(Measured_Days[i].month)+';'+str(Measured_Days[i].day)])                        
+                            writer.writerow([';'+str(Results[Result_Parameter][Saving_Day.days][0])+';'+str(SensitivityFile[i+1][4])+';;'+str(Results[Result_Parameter][Saving_Day.days][1])+';'+str(SensitivityFile[i+1][5])+';;'+str(Results[Result_Parameter][Saving_Day.days][2])+';'+str(SensitivityFile[i+1][6])+';;'+str(Measured_Days[i].year)+';'+str(Measured_Days[i].month)+';'+str(Measured_Days[i].day)])                                                    
+                            #writer.writerow([';'+str(Results[Result_Parameter][Saving_Day.days][0])+';'+str(SensitivityFile[i+1][4])+';;'+str(Results[Result_Parameter][Saving_Day.days][1])+';'+str(SensitivityFile[i+1][5])+';;'+str(Results[Result_Parameter][Saving_Day.days][2])+';'+str(SensitivityFile[i+1][6])+';;'+str(Results[Result_Parameter][Saving_Day.days][3])+';'+str(SensitivityFile[i+1][7])+';;'+str(Results[Result_Parameter][Saving_Day.days][4])+';'+str(SensitivityFile[i+1][8])+';;'+str(Results[Result_Parameter][Saving_Day.days][5])+';'+str(SensitivityFile[i+1][9])+';;'+str(Measured_Days[i].year)+';'+str(Measured_Days[i].month)+';'+str(Measured_Days[i].day)])                        
                         if SetupFile['Program_for_SA'][1] == 'CMF':
                             writer.writerow([';'+str(Results[Result_Parameter][Saving_Day.days][0])+';'+str(SensitivityFile[i][4])+';;'+str(Results[Result_Parameter][Saving_Day.days][1])+';'+str(SensitivityFile[i][5])+';;'+str(Results[Result_Parameter][Saving_Day.days][2])+';'+str(SensitivityFile[i][6])+';;'+str(Measured_Days[i].year)+';'+str(Measured_Days[i].month)+';'+str(Measured_Days[i].day)])
                         #Row = str(Results[Result_Parameter][Saving_Day.days])+';'+str(Measured_Days[i].year)+';'+str(Measured_Days[i].month)+';'+str(Measured_Days[i].day)
@@ -499,9 +509,9 @@ if __name__=='__main__':
                             R_squared_List.append(stat.R_squared(Meas_List_for_stat,Calc_List_for_stat))
                         
                         writer.writerow([''])
-                        writer.writerow(['EF'+';'+str(EF_List[0])+';;;'+str(EF_List[1])+';;;'+str(EF_List[2])+';;;'+str(EF_List[3])+';;;'+str(EF_List[4])+';;;'+str(EF_List[5])])
-                        writer.writerow(['Bias'+';'+str(Bias_List[0])+';;;'+str(Bias_List[1])+';;;'+str(Bias_List[2])+';;;'+str(Bias_List[3])+';;;'+str(Bias_List[4])+';;;'+str(Bias_List[5])])
-                        writer.writerow(['R_squared'+';'+str(R_squared_List[0])+';;;'+str(R_squared_List[1])+';;;'+str(R_squared_List[2])+';;;'+str(R_squared_List[3])+';;;'+str(R_squared_List[4])+';;;'+str(R_squared_List[5])])
+                        writer.writerow(['EF'+';'+str(EF_List[0])+';;;'+str(EF_List[1])+';;;'+str(EF_List[2])])
+                        writer.writerow(['Bias'+';'+str(Bias_List[0])+';;;'+str(Bias_List[1])+';;;'+str(Bias_List[2])])
+                        writer.writerow(['R_squared'+';'+str(R_squared_List[0])+';;;'+str(R_squared_List[1])+';;;'+str(R_squared_List[2])])
 
                     if SetupFile['Program_for_SA'][1] == 'CMF':
                         Meas_List=[]
