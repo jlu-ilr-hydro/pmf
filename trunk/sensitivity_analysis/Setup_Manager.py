@@ -504,10 +504,12 @@ if __name__=='__main__':
                                     Calc_List_for_stat.pop(i-k)
                                     Meas_List_for_stat.pop(i-k)
                                     k+=1
+                            
+
                             EF_List.append(stat.Nash_Sutcliff(Meas_List_for_stat,Calc_List_for_stat))
                             Bias_List.append(stat.Bias(Meas_List_for_stat,Calc_List_for_stat))
                             R_squared_List.append(stat.R_squared(Meas_List_for_stat,Calc_List_for_stat))
-                        
+
                         writer.writerow([''])
                         writer.writerow(['EF'+';'+str(EF_List[0])+';;;'+str(EF_List[1])+';;;'+str(EF_List[2])])
                         writer.writerow(['Bias'+';'+str(Bias_List[0])+';;;'+str(Bias_List[1])+';;;'+str(Bias_List[2])])

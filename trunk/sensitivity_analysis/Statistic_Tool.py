@@ -297,3 +297,4 @@ def Default(Gemessen,Berechnet):
         return "Error: Gemessene und Berechnete Wertelisten sind nicht gleichlang."    
     
 
+
