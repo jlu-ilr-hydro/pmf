@@ -474,7 +474,14 @@ if __name__=='__main__':
                     #Make Statistik
                     EF_List=[]
                     Bias_List=[]
-                    R_squared_List=[]  
+                    R_squared_List=[]
+                    MSE_List=[]
+                    RMSE_List=[]
+                    MAE_List=[]
+                    RRMSE_List=[]
+                    RMAE_List=[]
+                    Agreement_index_List=[]                    
+                    
                     if SetupFile['Program_for_SA'][1] == 'PMF': 
                         for i in range(len(Calculated_Data[0])):
                             Calc_List=[]                            
@@ -509,11 +516,24 @@ if __name__=='__main__':
                             EF_List.append(stat.Nash_Sutcliff(Meas_List_for_stat,Calc_List_for_stat))
                             Bias_List.append(stat.Bias(Meas_List_for_stat,Calc_List_for_stat))
                             R_squared_List.append(stat.R_squared(Meas_List_for_stat,Calc_List_for_stat))
+                            MSE_List.append(stat.MSE(Meas_List_for_stat,Calc_List_for_stat))
+                            RMSE_List.append(stat.RMSE(Meas_List_for_stat,Calc_List_for_stat))
+                            MAE_List.append(stat.MAE(Meas_List_for_stat,Calc_List_for_stat))
+                            RRMSE_List.append(stat.RRMSE(Meas_List_for_stat,Calc_List_for_stat))
+                            RMAE_List.append(stat.RMAE(Meas_List_for_stat,Calc_List_for_stat))
+                            Agreement_index_List.append(stat.Agreement_index(Meas_List_for_stat,Calc_List_for_stat))
+                            
 
                         writer.writerow([''])
                         writer.writerow(['EF'+';'+str(EF_List[0])+';;;'+str(EF_List[1])+';;;'+str(EF_List[2])])
                         writer.writerow(['Bias'+';'+str(Bias_List[0])+';;;'+str(Bias_List[1])+';;;'+str(Bias_List[2])])
                         writer.writerow(['R_squared'+';'+str(R_squared_List[0])+';;;'+str(R_squared_List[1])+';;;'+str(R_squared_List[2])])
+                        writer.writerow(['MSE'+';'+str(MSE_List[0])+';;;'+str(MSE_List[1])+';;;'+str(MSE_List[2])])
+                        writer.writerow(['RMSE'+';'+str(RMSE_List[0])+';;;'+str(RMSE_List[1])+';;;'+str(RMSE_List[2])])
+                        writer.writerow(['MAE'+';'+str(MAE_List[0])+';;;'+str(MAE_List[1])+';;;'+str(MAE_List[2])])
+                        writer.writerow(['RRMSE'+';'+str(RRMSE_List[0])+';;;'+str(RRMSE_List[1])+';;;'+str(RRMSE_List[2])])
+                        writer.writerow(['RMAE'+';'+str(RMAE_List[0])+';;;'+str(RMAE_List[1])+';;;'+str(RMAE_List[2])])                        
+                        writer.writerow(['Agreement_index'+';'+str(Agreement_index_List[0])+';;;'+str(Agreement_index_List[1])+';;;'+str(Agreement_index_List[2])])
 
                     if SetupFile['Program_for_SA'][1] == 'CMF':
                         Meas_List=[]
