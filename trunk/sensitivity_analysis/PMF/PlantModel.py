@@ -169,24 +169,8 @@ class Plant:
        
         #Implementation of root and shoot class
         self.root=Root(self,root_percent,root_growth,max_depth,layer)
-        
-        
-        
-        self.thermaltime_anthesis=0.0
-        thermaltime_elongationEnd=0.0
-        
-        
-        
-        for stage in self.developmentstage:
-            if stage[0] == 'Anthesis':
-                self.thermaltime_anthesis=stage[1]
-                thermaltime_elongationEnd=stage[1]
-                
-        self.shoot=Shoot(self,leaf_specific_weight,self.thermaltime_anthesis,shoot_percent,leaf_percent,stem_percent,storage_percent,
-                    max_height,elongation_end=thermaltime_elongationEnd)
-                
-#        self.shoot=Shoot(self,leaf_specific_weight,self.developmentstage[4][1],shoot_percent,leaf_percent,stem_percent,storage_percent,
-#                         max_height,elongation_end=self.developmentstage[3][1])
+        self.shoot=Shoot(self,leaf_specific_weight,self.developmentstage[4][1],shoot_percent,leaf_percent,stem_percent,storage_percent,
+                         max_height,elongation_end=self.developmentstage[3][1])
         
         
         #State variables
@@ -389,10 +373,7 @@ class Plant:
             #Calls biomass interface for the calculation of the actual biomass
             self.biomass(time_step,self.stress,self.biomass.atmosphere_values(self.atmosphere,time_act),self.shoot.leaf.LAI)
             #Root partitining
-            
-            
-            if self.developmentstage.Thermaltime <= self.thermaltime_anthesis:
-#            if self.developmentstage.Thermaltime <= self.developmentstage[4][1]:
+            if self.developmentstage.Thermaltime <= self.developmentstage[4][1]:
                                 
                 physical_constraints = self.water([self.root.depth])[0]
                 
@@ -413,6 +394,8 @@ class Plant:
                        (self.shoot.stem.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        (self.shoot.storage_organs.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        self.developmentstage.Thermaltime)
+        else: self.biomass.growthrate = 0.0
+             
     def get_fgi(self,Sh,Tpot,Ra,Rp,NO3dis,H2Odis):
         """
         Returns the FellingGoodIndex (fgi) for given distribtuion of water
