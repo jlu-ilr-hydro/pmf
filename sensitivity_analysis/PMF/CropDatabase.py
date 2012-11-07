@@ -26,11 +26,11 @@ class CropCoefficiants:
                  tbase = 0.,#!!
                  stage = [['Emergence',160.],#!!
                           ['Leaf development',208.],
-                          #['Tillering',421.],
-                          #['Stem elongation',659.],
+                          ['Tillering',421.],
+                          ['Stem elongation',659.],
                           ['Anthesis',901.],
-                          #['Seed fill',1174.],
-                          #['Dough stage',1556.],
+                          ['Seed fill',1174.],
+                          ['Dough stage',1556.],
                           ['Maturity',1665.]],
 #                 stage = [['Emergence',160.],#!!
 #                          ['Leaf development',208.],
@@ -40,16 +40,16 @@ class CropCoefficiants:
                  k=.4,#!!                 
                  kcb =[0.15,1.1,0.15],#!!                 
                  RUE=3.,#!!
-                 #shoot_percent=[.0,.5,.5,.9,.95,1.,1.,1.],
-                 shoot_percent=[.0,.5,.95,1.],
-                 #root_percent=[.0,.5,.5,.1,.05,.0,.0,.0],                 
-                 root_percent=[.0,.5,.05,.0],
-                 #leaf_percent=[.0,.5,.5,.5,.0,.0,.0,.0],
-                 leaf_percent=[.0,.5,.0,.0],
-                 #stem_percent=[.0,.5,.5,.5,.5,.0,.0,.0],
-                 stem_percent=[.0,.5,.5,.0],
-                 #storage_percent=[.0,.0,.0,.0,.5,1.,1.,1.],                 
-                 storage_percent=[.0,.0,.5,1.],                 
+                 shoot_percent=[.0,.5,.5,.9,.95,1.,1.,1.],
+                 #shoot_percent=[.0,.5,.95,1.],
+                 root_percent=[.0,.5,.5,.1,.05,.0,.0,.0],                 
+                 #root_percent=[.0,.5,.05,.0],
+                 leaf_percent=[.0,.5,.5,.5,.0,.0,.0,.0],
+                 #leaf_percent=[.0,.5,.0,.0],
+                 stem_percent=[.0,.5,.5,.5,.5,.0,.0,.0],
+                 #stem_percent=[.0,.5,.5,.0],
+                 storage_percent=[.0,.0,.0,.0,.5,1.,1.,1.],                 
+                 #storage_percent=[.0,.0,.5,1.],                 
                  
                  pressure_threshold=[0.,1.,500.,16000.],
                  plantN=[[160.,0.043],[1200.,0.016]],
