@@ -403,8 +403,8 @@ if __name__=='__main__':
         try:            
             Results            = run.run_CMF_with_PMF_for_one_Simulationperiod(c,DataStart,DataEnd,Result_Parameter,Result_Parameter_List,random_plant_coeff)
             
-            
-            with open(os.path.join(outdir,'Results%05i.csv' % (Repeat+1+Index_Jump)), 'wb') as f:    
+            #with open(os.path.join(outdir,'Results%05i.csv' % (Repeat+1+Index_Jump)), 'wb') as f:    
+            with open(os.path.join(outdir,'Results%05i.csv' % (Index_Jump)),'ab') as f:
                 writer = csv.writer(f)
                 #######
                 #Write Header with Settings
@@ -443,7 +443,10 @@ if __name__=='__main__':
                     #Make Statistik
                     EF_List=[]
                     Bias_List=[]
-                    R_squared_List=[]  
+                    R_squared_List=[]
+                    Agreement_index_List=[]
+                    RMSE_List=[]
+                    
                     if SetupFile['Program_for_SA'][1] == 'PMF': 
                         for i in range(len(Calculated_Data[0])):
                             Calc_List=[]                            
@@ -478,13 +481,19 @@ if __name__=='__main__':
                             EF_List.append(stat.Nash_Sutcliff(Meas_List_for_stat,Calc_List_for_stat))
                             Bias_List.append(stat.Bias(Meas_List_for_stat,Calc_List_for_stat))
                             R_squared_List.append(stat.R_squared(Meas_List_for_stat,Calc_List_for_stat))
-
+                            Agreement_index_List.append(stat.Agreement_index(Meas_List_for_stat,Calc_List_for_stat))
+                            RMSE_List.append(stat.RMSE(Meas_List_for_stat,Calc_List_for_stat))
                         writer.writerow([''])
                         writer.writerow(['EF'+';'+str(EF_List[0])+';;;'+str(EF_List[1])+';;;'+str(EF_List[2])])
                         writer.writerow(['Bias'+';'+str(Bias_List[0])+';;;'+str(Bias_List[1])+';;;'+str(Bias_List[2])])
                         writer.writerow(['R_squared'+';'+str(R_squared_List[0])+';;;'+str(R_squared_List[1])+';;;'+str(R_squared_List[2])])
-
-
+                        writer.writerow(['Agreement_index'+';'+str(Agreement_index_List[0])+';;;'+str(Agreement_index_List[1])+';;;'+str(Agreement_index_List[2])])
+                        writer.writerow(['RMSE'+';'+str(RMSE_List[0])+';;;'+str(RMSE_List[1])+';;;'+str(RMSE_List[2])])
+                        writer.writerow([''])
+                        writer.writerow(['Run: '+str(Repeat+1)])                        
+                        writer.writerow([''])
+                        
+                        
             f.close()                           
         except RuntimeError:
             Errors+=1
