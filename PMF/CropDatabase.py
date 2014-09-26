@@ -18,7 +18,7 @@ the requirements of the classes in the Process Library
  Public License along  with this program;
  if not, see <http://www.gnu.org/licenses/>.
 """
-class CropCoefficiants:
+class CropCoefficiants_wheat:
     """
     Holds crop specific parameters.
     """
@@ -32,17 +32,95 @@ class CropCoefficiants:
                           ['Seed fill',1174.],
                           ['Dough stage',1556.],
                           ['Maturity',1665.]],
-                 RUE=3.,
+                 RUE=3.,    #Stockle 1992 Table1  #RUE=2.2source : Soltani & Sinclair (2012), p.3#RUE at reference CO2 concentration
+                 C_0=350., #ppm reference atmospheric CO2 concentration
                  k=.4,
-                 seasons =[160.0, 499.0, 897.0, 1006.0],
-                 kcb =[0.15,1.1,0.15] ):
+                 seasons = [160.0, 499.0, 897.0, 1006.0],  #für baresoi,[0,0,0,0], 
+                 kcb = [0.15,1,1,0.15],  #  für baresoil [0,0,0,0],  # für fullcover [1,1,1,1], #
+                 FRDR = 0.5,
+                 Cr = 0.5,          #  extinction coefﬁcient of the vegetation for net radiation
+                 albedo_m = 0.23): #albedo for closed canopy of grass
         self.tbase = tbase
         self.stage=stage
         self.seasons = seasons
         self.k=k
         self.kcb=kcb
         self.RUE=RUE
+        self.C_0=C_0
+        self.FRDR = FRDR
+        self.Cr = Cr
+        self.albedo_m = albedo_m
+               
+        
+class CropCoefficiants_grass_C4:
+    """
+    Holds crop specific parameters.
+    """        
+    def __init__(self,
+                 tbase = 0.,
+                 stage = [['Emergence',160.],
+                          ['Leaf development',208.],
+                          ['Tillering',421.],
+                          ['Stem elongation',659.],
+                          ['Anthesis',901.],
+                          ['Seed fill',1174.],
+                          ['Dough stage',1556.],
+                          ['Maturity',1665.]],
+                 RUE=3.6, #RUE at reference CO2 concentration
+                 C_0=350, #ppm reference atmospheric CO2 concentration
+                 k=.4,
+                 seasons = [160.0, 499.0, 897.0, 1006.0],  #für baresoi,[0,0,0,0], 
+                 kcb = [0.15,1,1,0.15],  
+                 FRDR = 0.5,
+                 Cr = 0.5,          #extinction coefﬁcient of the vegetation for net radiation
+                 albedo_m = 0.23):   #albedo for closed canopy of grass
+        self.tbase = tbase
+        self.stage=stage
+        self.seasons = seasons
+        self.k=k
+        self.kcb=kcb
+        self.RUE=RUE
+        self.C_0=C_0
+        self.FRDR = FRDR
+        self.Cr = Cr
+        self.albedo_m = albedo_m
+
+
+
+class CropCoefficiants_grass_C3:
+    """
+    Holds crop specific parameters.
+    """        
+    def __init__(self,
+                 tbase = 0.,
+                 stage = [['Emergence',160.],
+                          ['Leaf development',208.],
+                          ['Tillering',421.],
+                          ['Stem elongation',659.],
+                          ['Anthesis',901.],
+                          ['Seed fill',1174.],
+                          ['Dough stage',1556.],
+                          ['Maturity',1665.]],
+                 RUE=2.6,#RUE at reference CO2 concentration
+                 C_0=350, #ppm reference atmospheric CO2 concentration
+                 k=.4,
+                 seasons = [160.0, 499.0, 897.0, 1006.0],  #für baresoi,[0,0,0,0], 
+                 kcb = [0.15,1,1,0.15],  
+                 FRDR = 0.5,
+                 Cr = 0.5,          #extinction coefﬁcient of the vegetation for net radiation
+                 albedo_m = 0.23):   #albedo for closed canopy of grass
+        self.tbase = tbase
+        self.stage=stage
+        self.seasons = seasons
+        self.k=k
+        self.kcb=kcb
+        self.RUE=RUE
+        self.C_0=C_0
+        self.FRDR = FRDR
+        self.Cr = Cr
+        self.albedo_m = albedo_m
+
         
 
 stage = [['sftgs',343.],[],[]]
-WW = CropCoefficiants(stage=stage)
+WW = CropCoefficiants_wheat(stage=stage)
