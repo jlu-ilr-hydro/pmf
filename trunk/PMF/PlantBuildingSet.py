@@ -97,9 +97,11 @@ def connect(plant,soil,atmosphere,**args):
         return 'Error: No plant instance'
 
 
-wheat=CropDatabase.CropCoefficiants()
+wheat=CropDatabase.CropCoefficiants_wheat()
+grass_C3=CropDatabase.CropCoefficiants_grass_C3()
+grass_C4=CropDatabase.CropCoefficiants_grass_C4()
 
-def createPlant_CMF(**args):
+def createPlant_CMF(**args):                                                    # daylength,
     """
     Implements a specific plant setup with summer wheat values.
     """
@@ -107,22 +109,22 @@ def createPlant_CMF(**args):
     print 'Evapotranspiration: FAO - Penman-Monteith'
     biomass = PMF.Biomass_LUE(wheat.RUE,wheat.k)
     print 'Biomass: Light-use-efficiency concept' 
-    development = PMF.Development(stage = wheat.stage)
+    development = PMF.Development(stage = wheat.stage)                          # daylength,
     nitrogen = PMF.Nitrogen()
     water = PMF.Waterstress_Feddes()
     print 'Waterstress: Feddes'
     layer = PMF.SoilLayer()
     return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)
 
-def createPlant_SWC(**args):
-    """
+def createPlant_SWC(**args):                                                    # daylength,
+    """             
     Implements a specific plant setup with summer wheat values.
     """
     et = PMF.ET_FAO(kcb_values = wheat.kcb,seasons = wheat.seasons)
     print 'Evapotranspiration: FAO - Penman-Monteith'
     biomass = PMF.Biomass_LUE(wheat.RUE,wheat.k)
     print 'Biomass: Light-use-efficiency concept' 
-    development = PMF.Development(stage = wheat.stage)
+    development = PMF.Development(stage = wheat.stage)                          # daylength,
     nitrogen = PMF.Nitrogen()
     print 'No nitrogen uptake'
     water = PMF.Waterstress_FAO()
@@ -131,8 +133,41 @@ def createPlant_SWC(**args):
     return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)
 
 
+def createPlant_SWC_Soltani(**args):                                                    # daylength,
+    """             
+    Implements a specific plant setup with summer wheat values.
+    """
+    et = PMF.ET_FAO(kcb_values = wheat.kcb,seasons = wheat.seasons)
+    print 'Evapotranspiration: FAO - Penman-Monteith'
+    biomass = PMF.Biomass_LUE_CO2_Soltani(wheat.RUE,wheat.k)
+    print 'Biomass: Light-use-efficiency concept with CO2 response according to Soltani and Sinclair 2012' 
+    development = PMF.Development(stage = wheat.stage)                          # daylength,
+    nitrogen = PMF.Nitrogen()
+    print 'No nitrogen uptake'
+    water = PMF.Waterstress_FAO()
+    print 'Waterstress: FAO'
+    layer = PMF.SoilLayer()
+    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)
 
-
+def createPlant_SWC_Soltani_Shuttleworth(**args):                                                    # daylength,
+    """             
+    Implements a specific plant setup with C4 values.
+    """
+    et = PMF.ET_ShuttleworthWallace()
+    print 'Evapotranspiration: Shuttleworth-Wallace'
+    biomass = PMF.Biomass_LUE_CO2_Soltani(grass_C4.RUE,grass_C4.C_0,grass_C4.k)
+    print 'Biomass: Light-use-efficiency concept with CO2 response according to Soltani and Sinclair 2012' 
+    development = PMF.Development(stage = grass_C4.stage)                          # daylength,
+    nitrogen = PMF.Nitrogen()
+    print 'No nitrogen uptake'
+    net_radiation = PMF.Net_Radiation(grass_C4.albedo_m,grass_C4.Cr)
+    print 'Net Radiation varying with LAI'
+    water = PMF.Waterstress_FAO()
+    print 'Waterstress: FAO'
+    layer = PMF.SoilLayer()
+    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,net_radiation=net_radiation,water=water,layer=layer,**args)
+    
+    
 def createPlant_fromCoefficiant(CropCoefficiant,**args):
     """
     Implements a specific plant setup with the values from the crop coefficant class.
