@@ -65,7 +65,8 @@ class ET_ShuttleworthWallace:
         @type kappa: double
         @param kappa: von Karman's constant [-]
         @rtype r_st_min: double
-        @return r_st_min: Minimal stomatal resistance of individual leaves und er optimal conditions [s m-1]                
+        @return r_st_min: Minimal stomatal resistance of individual leaves under optimal conditions [s m-1] 
+                          extracted from Zhou et al. (2006) for grasslands               
         """
 
         #Constant variables
@@ -189,13 +190,13 @@ class ET_ShuttleworthWallace:
         lambda1 = self.calc_lambda(T)   
         
         #Calculates stress functions for stomatal resistance (r_c_s)
-        CO2_stress = self.calc_CO2_stress(CO2_measured)
-        VPD_stress = self.calc_VPD_stress(e_s,e_a)
-        Temp_stress = self.calc_Temp_stress(T)
+        CO2_response = self.calc_CO2_response_stomata(CO2_measured)
+        VPD_response = self.calc_VPD_response_stomata(e_s,e_a)
+        Temp_response = self.calc_Temp_response_stomata(T)
     
         #Calculates the different resistances
         r_b = self.calc_r_b(self.w_leafwidth,u_h,n_eddy)    
-        r_c_s = self.calc_r_c_s(LAI_e,self.r_st_min,CO2_stress,VPD_stress,Temp_stress)
+        r_c_s = self.calc_r_c_s(LAI_e,self.r_st_min,CO2_response,VPD_response,Temp_response)
         r_c_a = self.calc_r_c_a(LAI,r_b)
         r_a_a = self.calc_r_a_a(vegH,self.kappa,u_stern,z_a,d_0,n_eddy,k_h,Z_0,d_p)
         r_s_a = self.calc_r_s_a(vegH,n_eddy,k_h,self.z_0g,Z_0,d_p)    
@@ -244,8 +245,6 @@ class ET_ShuttleworthWallace:
         """
         
         delta1 = 4098.*(0.6108*math.exp(17.27*T/(T + 237.3)))/((T + 237.3)**2.)  # slope of saturation vapour pressure curve [kPa °C-1]
-#        if daily:   G=0   # soil heat flux
-#        else : G=(0.5-math.greater(Rn,0)*0.4)*Rn
         G =0.  #soil heat flux
         timeconverter = 24.*3600.
         R=0.287 # specific gas constant [kJ kg-1 K-1]
@@ -288,8 +287,6 @@ class ET_ShuttleworthWallace:
         """
         
         delta1 = 4098.*(0.6108*math.exp(17.27*T/(T + 237.3)))/((T + 237.3)**2.)   # slope of saturation vapour pressure curve [kPa °C-1]
-#        if daily:   G=0   # soil heat flux
-#        else : G=(0.5-math.greater(Rn,0)*0.4)*Rn
         G =0.
         timeconverter = 24.*3600.
         R=0.287 # specific gas constant [kJ kg-1 K-1]
@@ -535,14 +532,20 @@ class ET_ShuttleworthWallace:
         return r_b * 0.5/LAI
         
         
-    def calc_r_c_s(self,LAI_e,r_st_min,CO2_stress, VPD_stress, Temp_stress):
+    def calc_r_c_s(self,LAI_e,r_st_min,CO2_response, VPD_response, Temp_response):
         """
         Calculates the bulk stomatal resistance of canopy.
+        
+        In case, that one or more of the stress or response function is zero, 
+        the stomatal resistance of the canopy is limited to 50000 [s/m], because 
+        of the molecular diffusivity of water vapour through leaf cuticula. 
+        This limit is also extracted from Zhou et al. (2006) and based on Tourula and 
+        Heikinheimo (1998).
 
         @type LAI_e: double
         @param LAI_e: Effective leaf area index [m2 m-2]
         @type r_st_min: double
-        @param r_st_min: Minimal stomatal resistance of individual leaves und er optimal conditions [s m-1]        
+        @param r_st_min: Minimal stomatal resistance of individual leaves under optimal conditions [s m-1]        
         @type CO2_stress: double
         @param CO2_stress: Stomatal stress due to atmospheric CO2 [-]
         @type VPD_stress: double
@@ -553,43 +556,39 @@ class ET_ShuttleworthWallace:
         @return: Bulk stomatal resistance of canopy [m s-1].
         """
         
-        return r_st_min/(LAI_e*(CO2_stress * VPD_stress * Temp_stress))  
-#        calc_r_c_s(self,LAI):
-#        @type LAI: double
-#        @param LAI: Leaf area index [m2 m-2]
-#        r_st = 400. #[s m-1]  mean stomatal resistance
-#        return (r_st / (2 * LAI))
+        return max(50000. , r_st_min/(LAI_e*(CO2_response * VPD_response * Temp_response)))  
         
-###### stress functions for stomatal resistance ############################################################################
         
-######### CO2 stress function
-    def calc_CO2_stress(self, CO2_measured):
+    def calc_CO2_response_stomata(self, CO2_measured):
         """
-        Calculates the stress function due to atmospheric CO2.
+        Calculates the response of stomata to atmospheric CO2.
         
         The function returns a value between 0 and 1, where 0 = stomatal closure (conductance=0)
         and 1 = stomata are completely opened (resistance=0).
-        The function = 1 under 330 ppm and reduces linearly to 0 1150 ppm.
+        The function = 1 at 330 ppm and reduces linearly to 0 1150 ppm.
         But, the function is only valid in the range of 330-660 ppm.   
-        At 660 ppm co2_stress = 0.6 [-]
+        At 660 ppm calc_CO2_response_stomata = 0.6 [-]
+        --> with increasing CO2 the stomata close linearly.
         
         This approach was taken based on Stockle 1992, p.233.
         
         @type CO2_measured: double
         @param CO2_measured: atmospheric CO2 concentration in rings [ppm].
         @rtype: double
-        @return: Stomatal stress due to atmospheric CO2 [-].          
+        @return: Stomatal response to atmospheric CO2 [-].          
         """        
     
         return 1.4 - 0.4*(CO2_measured/330.) 
-        
-######### vapor deficit stress function
-    def calc_VPD_stress(self, e_s, e_a):
+
+
+    def calc_VPD_response_stomata(self, e_s, e_a):
         """
-        Calculates the stress function due to vapor pressure deficit (VPD).
+        Calculates the response of stomata to vapor pressure deficit (VPD).
         
         The function returns a value between 0 and 1, where 0 = stomatal closure (conductance=0)
         and 1 = stomata are completely opened (resistance=0).
+        With increasing vapor pressure deficit the stomata close.  
+        
         This approach was taken from Zhou et al. 2006, p.155.
         
         @type e_s: double
@@ -597,16 +596,16 @@ class ET_ShuttleworthWallace:
         @type e_a: double
         @param e_a: Actual vapour pressure [kPa] 
         @rtype: double
-        @return: Stomatal stress due to vapor pressure deficit [-].          
+        @return: Stomatal response to vapor pressure deficit [-].          
         """
         vapor = e_s - e_a
-        vpd_stress = 1. - 0.409 * vapor
-        return vpd_stress
+        vpd_response = 1. - 0.409 * vapor
+        return vpd_response
 
-######### temperature stress function
-    def calc_Temp_stress(self,T):
+
+    def calc_Temp_response_stomata(self,T):
         """
-        Calculates stress function due to temperature.
+        Calculates the response of stomata to temperature.
         
         The function returns a value between 0 and 1, where 0 = stomatal closure (conductance=0)
         and 1 = stomata are completely opened (resistance=0).
@@ -617,17 +616,16 @@ class ET_ShuttleworthWallace:
         @type T: double
         @param T: Daily mean air temperature [°C] 
         @rtype: double
-        @return: Stomatal stress due to temperature [-].         
+        @return: Stomatal response to temperature [-].         
         """
         T_kelvin = T + 273.16
         
-        if T_kelvin >= 298.: temp_stress = 1.
-        elif T_kelvin <= 273.: temp_stress = 0.
-        else: temp_stress = 1. - 1.6 * 10.**(-3.) * (298. - T_kelvin)**2.   # linear opening of stomata with increasing temperature    
+        if T_kelvin >= 298.: temp_response = 1.
+        elif T_kelvin <= 273.: temp_response = 0.
+        else: temp_response = 1. - 1.6 * 10.**(-3.) * (298. - T_kelvin)**2.   # linear opening of stomata with increasing temperature    
         
-        return temp_stress
+        return temp_response
 
-#############################################################################################################################
 
     def calc_r_s_a(self,vegH,n_eddy,k_h,z_0g,Z_0,d_p):
         """
