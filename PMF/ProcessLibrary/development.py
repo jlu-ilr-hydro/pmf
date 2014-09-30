@@ -4,8 +4,7 @@ Created on 25 sep 2014
 
 @author: kellner-j
 '''
-import math
-import pylab as pylab
+
 class Development:
     """
     Calculates the developmentstage of plant with the thermaltime concept.
@@ -24,7 +23,7 @@ class Development:
     ==============
     Call development calculates thermaltime.
     """
-    def __init__(self, stage, Rp=3., Rv=1.5):                                                    #Rp daylength,
+    def __init__(self, stage, Rp=3., Rv=1.5):                                                 
         """
         Returns a development instance.
         
@@ -71,7 +70,7 @@ class Development:
         self.verna_sum = 0.
         self.verna_factor = 1.
         self.tt = 0.                                                       
-        self.rate = 0.                                                                     #dailyrate
+        self.rate = 0.                                                                     
         for s in stage:
             self.__setitem__(s)
             
@@ -138,7 +137,7 @@ class Development:
             yield s
             
  
-    def __call__(self,step,tmin,tmax,tbase,daylength,tmean):          #ttanthesis,
+    def __call__(self,step,tmin,tmax,tbase,daylength,tmean):       
         """
         Calculates thermaltime.
         
@@ -153,11 +152,7 @@ class Development:
         can occur in [°C].
         @type daylength: double
         @param daylength: daylight [h], calculated according to FAO irrigationa and drainage paper pp.48
-        """
-
-
-########### N E W ################ N E W ############ N E W ################# vernalization function
-        
+        """       
         
         
         if self.tt < self.stages[0][1] or self.tt > self.stages[self.index_anthesis][1]:
@@ -169,22 +164,9 @@ class Development:
             self.verna_sum = self.verna_sum + (self.vernalization_rate(tmin, tmax,tmean) - self.devernalization(self.verna_sum, tmax))
             self.verna_factor = max(0, 1 - (0.0054545 * self.Rv + 0.0003)*(50 - self.verna_sum))
             self.photo = max(0, self.photoperiod(daylength, self.Rp))
-            self.rate = self.rate * min(self.photo, self.verna_factor)          #entweder angepasst durch den größeren Einflussfaktor (photoperiod oder durch vernalization)
+            self.rate = self.rate * min(self.photo, self.verna_factor)          
             self.tt = self.tt + self.rate        
         
-#        
-#        self.rate = self.develop(tmin, tmax, tbase) * step                                  #dailyrate 
-#        self.tt = self.tt + self.rate 
-####### N E W ############N E W ################### photoperiodic factor nur zwischen emergence (tt=160) und floral initiation (tt=901)
-##        if self.tt >= 160 and self.tt <= 901:                                                  # and thermaltime <= ttanthesis
-##            self.photo = self.photoperiod(daylength, self.Rp)
-##        else:
-##            self.photo = 1.
-############ N E W ############################### N E W ################################# N E W ####################        
-##        self.rate = self.rate * self.photo              ### N E W ###  #photoperiod adjusts every degree day
-##        self.tt = self.tt + self.rate 
-#
-########### N E W ################ N E W ############ N E W ################# photoperiod function
         
     def photoperiod(self, daylength, Rp):
         """ Calculates a photoperiod factor [-].
@@ -203,10 +185,6 @@ class Development:
         return 1.-0.002*Rp*(20. - daylength)**2.
                  
         
-##########################################################################
-        
-########### N E W ################ N E W ############ N E W ################# vernalization function
-            
     def vernalization_rate(self,tmin,tmax,temp_crown):
         """ Calculates the daily rate of vernalizationr [-].
         
@@ -252,8 +230,7 @@ class Development:
             devernali = 0.
         
         return devernali 
-        
-##########################################################################                                                
+                                                    
                                 
     def develop(self,tmin,tmax,tbase):
         """

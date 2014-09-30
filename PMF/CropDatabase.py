@@ -20,7 +20,7 @@ the requirements of the classes in the Process Library
 """
 class CropCoefficiants_wheat:
     """
-    Holds crop specific parameters.
+    Holds crop specific parameters for summer wheat.
     """
     def __init__(self,
                  tbase = 0.,
@@ -52,9 +52,9 @@ class CropCoefficiants_wheat:
         self.albedo_m = albedo_m
                
         
-class CropCoefficiants_grass_C4:
+class CropCoefficiants_c4grass:
     """
-    Holds crop specific parameters.
+    Holds crop specific parameters for C4 grass..
     """        
     def __init__(self,
                  tbase = 0.,
@@ -87,9 +87,9 @@ class CropCoefficiants_grass_C4:
 
 
 
-class CropCoefficiants_grass_C3:
+class CropCoefficiants_c3grass:
     """
-    Holds crop specific parameters.
+    Holds crop specific parameters for C3 grass.
     """        
     def __init__(self,
                  tbase = 0.,

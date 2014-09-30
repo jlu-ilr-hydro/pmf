@@ -4,7 +4,6 @@ Created on 25 sep 2014
 
 @author: kellner-j
 '''
-import math
 import pylab as pylab
 class ET_FAO:
     """

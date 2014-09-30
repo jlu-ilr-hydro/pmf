@@ -5,7 +5,6 @@ Created on 25 sep 2014
 @author: kellner-j
 '''
 import math
-import pylab as pylab
 
 class Biomass_LUE_CO2_Soltani:
     """
@@ -100,13 +99,17 @@ class Biomass_LUE_CO2_Soltani:
         """
         
         self.stress = stress
-        self.growthrate = self.PAR_a(Rs, interception)* self.rue_x(self.rue_0,self.C_0,self.factor_b,CO2_measured)   ################ N E W #############
+        self.growthrate = self.PAR_a(Rs, interception)* self.rue_soltani(self.rue_0,self.C_0,self.factor_b,CO2_measured)   ################ N E W #############
         self.total = self.total - senesced_leaf + self.growthrate * (1-self.stress) * step         
         self.pot_total = self.pot_total + self.growthrate
+
     
-    def rue_x(self,rue_0,C_0,factor_b,C_measured):
+    def rue_soltani(self,rue_0,C_0,factor_b,C_measured):
         """
         Returns radiation use efficiency affected by CO2 concentration [g/MJ]
+        
+        This approach is taken from Soltani and Sinclair (2012) and based on 
+        Penning de Vries 1989.
         
         @type rue_0: double
         @param rue_0: radiation use efficiency at the reference CO2 concentration (350 µmol/mol) [g/MJ]
@@ -118,13 +121,24 @@ class Biomass_LUE_CO2_Soltani:
         @param C_measured: target CO2 concentration [µmol/mol] 
         """
         return rue_0*(1+factor_b*math.log(C_measured/C_0)) 
+        
     
-#    def rue_CO2_VPD(e_s,e_a,rue_x):
-#        vapor = (e_s - e_a) # [kPa] 
-#        RUEsensitivity = 7. # [g MJ-1 kPa-1]
-#        if vapor <= 1.:  rue_CO2_VPD = rue_x
-#        else: rue_x - RUEsensitivity * (vapor -1.)
-#        return rue_CO2_VPD
+    def rue_stockle(self, C_measured, b_1 = 7784., b_2 = 0.00107):
+        """
+        Returns radiation use efficiency affected by CO2 concentration [g/MJ] according to Stockle et al. 1992
+        
+        This apporach is extracted from Stockle et al. 1992 to adapt the EPIC model to changing CO2 concentrations.
+        In this paper b1 = 7784 and b2 = 0.00107 to reach RUE = 3 at 350 ppm and RUE = 3.9 at 600 ppm.
+        
+        @type C_measured: double
+        @param C_measured: target CO2 concentration [µmol/mol]
+        @type b_1: double
+        @param b_1: parameter to adapt RUE for any value of CO2 concentration.
+        @type b_2: double
+        @param b_2: parameter to adapt RUE for any value of CO2 concentration.
+        """
+        return 100 * C_measured / (C_measured + b_1 *math.exp(- b_2 * C_measured))          
+    
 
     def PAR_a(self,Rs,interception):
         """ 
@@ -148,22 +162,8 @@ class Biomass_LUE_CO2_Soltani:
         @return: Photosynthetically active absorbed radiation in [MJ m-2 day-1].
         """
         return Rs*0.5*0.9*(1-interception)
-#    def intercept(self,LAI,k):
-#        """
-#        Returns crop interception.
-#        
-#        Canopy extinction coefficient in wheat crops ranges
-#        from 0.3 to 0.7 and is highly dependent on leaf angle
-#        (low K for erect leaves). From equation 3, it can be calculated that
-#        95 percent PAR interception requires a LAI as high as 7.5 for erect 
-#        leaves but a LAI of only about 4.0 for more horizontal leaves
-#        
-#        @type LAI: double
-#        @param LAI: Leaf area index of the plant in [m2 m-2].
-#        @type k: double
-#        @param k: Canopy extinction coefficient in [-].
-#        """
-#        return pylab.exp(-k*LAI)
+
+
     def atmosphere_values(self,atmosphere,time_act):
         """
         Returns a method to interfere with the atmosphere interface over the 
@@ -178,7 +178,6 @@ class Biomass_LUE_CO2_Soltani:
         """
         return atmosphere.get_Rs(time_act)
         
-######################## N E W ######################### N E W ##########################
 
     def measured_CO2(self,atmosphere,time_act):
         """
@@ -193,4 +192,3 @@ class Biomass_LUE_CO2_Soltani:
         @return: Function for getting elevated CO2 concentration
         """
         return atmosphere.get_CO2_measured(time_act)
-######################## N E W ######################### N E W ##########################
