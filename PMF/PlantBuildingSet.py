@@ -20,11 +20,11 @@ Holds functions for plant implementation
     - connect(wheat_instance,Loess,Meteo_Giessen)
     - connect(wheat_classobj,Loess,Meteo_Giessen,et=et,biomass=biomass,development=development,layer=layer,nitrogen=nitrogen,water=water)
 
-@author: Sebastian Multsch
+:author: Sebastian Multsch
 
-@version: 0.1 (26.10.2010)
+:version: 0.1 (26.10.2010)
 
-@copyright: 
+:copyright: 
  This program is free software; you can redistribute it and/or modify it under  
  the terms of the GNU General Public License as published by the Free Software  
  Foundation; either version 3 of the License, or (at your option) any later 
@@ -46,20 +46,20 @@ def clone(plant):
     Constructs a new compound object and then, recursively, 
     inserts copies into it of the objects found in the original.
     
-    @rtype: PMF.Plant
-    @return: New plant instance with same values.
-    @see: [http://docs.python.org/library/copy.html, 11.11.2009]
+    :rtype: PMF.Plant
+    :return: New plant instance with same values.
+    :see: [http://docs.python.org/library/copy.html, 11.11.2009]
     """
     return copy.deepcopy(plant)
 def setProcess(p,**args):
     """
     Returns a process with the given paramter.
     
-    @param p: Process class from PMF.ProcessLibrary.py
-    @type p: process class
+    :param p: Process class from PMF.ProcessLibrary.py
+    :type p: process class
     
-    @rtype: process class
-    @return: Paramterised process class.
+    :rtype: process class
+    :return: Paramterised process class.
     """
     return p(**args)
 
@@ -67,11 +67,11 @@ def makePlant(plant,**args):
     """
     Returns a plant wit hthe given arguments.
     
-    @param plant: plant
-    @type plant: Plant instance from PMF.PlantModel.Plant.py.
+    :param plant: plant
+    :type plant: Plant instance from PMF.PlantModel.Plant.py.
     
-    @rtype: plant
-    @return: Plant instance
+    :rtype: plant
+    :return: Plant instance
     """
     return plant(**args)
 
@@ -79,15 +79,15 @@ def connect(plant,soil,atmosphere,**args):
     """
     Connects a plant with environmental interfaces.
     
-    @param plant: plant
-    @type plant: Plant instance from PMF.PlantModel.Plant.py.
-    @type  soil: soil
-    @param soil: Interface to water balance data.
-    @type  atmosphere: atmosphere
-    @param atmosphere: Interface to meteorological data.
+    :param plant: plant
+    :type plant: Plant instance from PMF.PlantModel.Plant.py.
+    :type  soil: soil
+    :param soil: Interface to water balance data.
+    :type  atmosphere: atmosphere
+    :param atmosphere: Interface to meteorological data.
     
-    @rtype: plant
-    @return: Plant instance
+    :rtype: plant
+    :return: Plant instance
     """
     if isinstance(plant,PMF.Plant):
         plant.set_soil(soil)

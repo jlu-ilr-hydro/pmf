@@ -2,7 +2,7 @@
 '''
 Created on 25 sep 2014
 
-@author: kellner-j
+:author: kellner-j
 '''
 import math
 import pylab as pylab
@@ -42,13 +42,13 @@ class Waterstress_Feddes:
         """
         Returns a Waterstress_Feddes instance.
         
-        @type maxcomp: double
-        @param maxcomp: Maximal compensation capacity factor in [-].
-        @type layercount: double
-        @param layercount: Count of the layer in the soil profile.
+        :type maxcomp: double
+        :param maxcomp: Maximal compensation capacity factor in [-].
+        :type layercount: double
+        :param layercount: Count of the layer in the soil profile.
         
-        @rtype: water_feddes
-        @return: Waterstress_Feddes instance
+        :rtype: water_feddes
+        :return: Waterstress_Feddes instance
         """
         self.waterbalance=waterbalance
         self.plant=plant
@@ -64,10 +64,10 @@ class Waterstress_Feddes:
         """
         Calculates water uptake under stressed conditions.
     
-        @type rootzone: list
-        @param rootzone: List with middle depth of each layer in  [cm].
-        @rtype: list
-        @return: Stress values for each layer in rootzone in [-].
+        :type rootzone: list
+        :param rootzone: List with middle depth of each layer in  [cm].
+        :rtype: list
+        :return: Stress values for each layer in rootzone in [-].
         """
         return [self.sink_term(self.waterbalance.get_pressurehead(z), self.plant.pressure_threshold)for z in rootzone]
     def compensate(self,Sh,Sp,pressurehead,alpha,maxopth,maxcomp):
@@ -76,25 +76,25 @@ class Waterstress_Feddes:
         
         Compensation capacity = (Actual uptake-Potential uptake)*maxcom
         
-        @type s_p: list
-        @param s_p: List with the potential water uptake for each soillayer in
+        :type s_p: list
+        :param s_p: List with the potential water uptake for each soillayer in
         rootingzone in [mm].
-        @type s_h: list
-        @param s_h: List with the actual water uptake for each soillayer in
+        :type s_h: list
+        :param s_h: List with the actual water uptake for each soillayer in
         rootingzone in [mm].
-        @type pressurehead: list
-        @param pressurehead: List with the soil pressurehead for each soillayer
+        :type pressurehead: list
+        :param pressurehead: List with the soil pressurehead for each soillayer
         in rootingzone in [cm].
-        @type alpha: list
-        @param alpha: Prescribed crop specific function of soil water pressure
+        :type alpha: list
+        :param alpha: Prescribed crop specific function of soil water pressure
         head with values between or equal zero and one in [-].
-        @type maxcomp: double
-        @param maxcomp: Maximal compensation capacity factor in [-].
-        @type maxopth: double
-        @param maxopth: Plant pressure head until water uptake can occur without
+        :type maxcomp: double
+        :param maxcomp: Maximal compensation capacity factor in [-].
+        :type maxopth: double
+        :param maxopth: Plant pressure head until water uptake can occur without
         stress in [cm water column].
-        @rtype: list
-        @return: List with the compensated uptake in [mm].
+        :rtype: list
+        :return: List with the compensated uptake in [mm].
         """
         #Remaining alpha of the less stress soil layer
         remaining_alpha= [max(1-(m/maxopth),0.) for i,m in enumerate(pressurehead)] 
@@ -115,17 +115,17 @@ class Waterstress_Feddes:
         h3 -optimal conditons). Values for the parameters vary with the crop. 
         H3 also varies with the transpiration.
         
-        @type h_soil: list
-        @param h_soil: List with soil pressurehead for each layer in 
+        :type h_soil: list
+        :param h_soil: List with soil pressurehead for each layer in 
         [cm water column].
-        @type h_plant: list
-        @param h_plant: List with soil pressurehead. These conditions limiting 
+        :type h_plant: list
+        :param h_plant: List with soil pressurehead. These conditions limiting 
         water uptake in. [cm water column].
-        @rtype: list
-        @return: Prescribed crop specific function of soil water pressure head 
+        :rtype: list
+        :return: Prescribed crop specific function of soil water pressure head 
         with values between or equal zero and one in [-].
         
-        @see: [Feddes and Raats, 2004]
+        :see: [Feddes and Raats, 2004]
         """
         try:
             if h_soil<h_plant[0] or h_soil>h_plant[-1]: return 0

@@ -3,11 +3,11 @@
 The Crop Database holds crop specific parameter. Theses parameter refer to
 the requirements of the classes in the Process Library 
 
-@author: Sebastian Multsch
+:author: Sebastian Multsch
 
-@version: 0.1 (26.10.2010)
+:version: 0.1 (26.10.2010)
 
-@copyright: 
+:copyright: 
  This program is free software; you can redistribute it and/or modify it under  
  the terms of the GNU General Public License as published by the Free Software  
  Foundation; either version 3 of the License, or (at your option) any later 

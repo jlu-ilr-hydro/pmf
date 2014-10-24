@@ -2,7 +2,7 @@
 '''
 Created on 25 sep 2014
 
-@author: kellner-j
+:author: kellner-j
 '''
 import pylab as pylab
 class ET_FAO:
@@ -42,23 +42,23 @@ class ET_FAO:
     implemented in the class SWC - SoilWaterContainer. It is possible
     to use other water balance models, if they match the interface requirements.    
     
-    @see: [Allen et al, 1998]
+    :see: [Allen et al, 1998]
     """
     def __init__(self,kcb_values,seasons, kcmin = 0.15):
         """
         Returns a ET_FAO instance.
         
-        @type seasons: list
-        @param seasons: List with the length of the four development seasons in [°C].
-        @type kcb_values: list
-        @param kcb_values: List with basal crop coefficients for each season in seasons parameter in [-].
-        @type Kcmin: double
-        @param Kcmin: Minimum Kc for dry bare soil with no ground cover [0.15 - 0.20] in [-].
+        :type seasons: list
+        :param seasons: List with the length of the four development seasons in [°C].
+        :type kcb_values: list
+        :param kcb_values: List with basal crop coefficients for each season in seasons parameter in [-].
+        :type Kcmin: double
+        :param Kcmin: Minimum Kc for dry bare soil with no ground cover [0.15 - 0.20] in [-].
         
-        @rtype: ET_FAO
-        @return: ET_FAO instance
+        :rtype: ET_FAO
+        :return: ET_FAO instance
         
-        @todo: Calculation of seasons!!!
+        :todo: Calculation of seasons!!!
         """
         #Constant variables
         self.kcb_values=kcb_values
@@ -78,8 +78,8 @@ class ET_FAO:
         """
         Returns transpiration
         
-        @rtype: double
-        @return: Transpiration in [mm].
+        :rtype: double
+        :return: Transpiration in [mm].
         """
         return self.eto * self.kcb
     @property
@@ -87,8 +87,8 @@ class ET_FAO:
         """
         Returns evaporation
         
-        @rtype: double
-        @return: evaporation in [mm].
+        :rtype: double
+        :return: evaporation in [mm].
         """
         return self.eto * self.ke
     @property
@@ -96,8 +96,8 @@ class ET_FAO:
         """
         Returns reference Evapotranspiration.
         
-        @rtype: double
-        @return: Reference Evapotranspiration in [mm].
+        :rtype: double
+        :return: Reference Evapotranspiration in [mm].
         """
         return self.eto
     @property
@@ -105,8 +105,8 @@ class ET_FAO:
         """
         Returns Cropspecific Evapotranspiration.
         
-        @rtype: double
-        @return: Cropspecific Evapotranspiration in [mm].
+        :rtype: double
+        :return: Cropspecific Evapotranspiration in [mm].
         """
         return self.eto * (self.kcb+self.ke)
     @property
@@ -114,8 +114,8 @@ class ET_FAO:
         """
         Returns Adjusted cropspecific Evapotranspiration to water stress.
         
-        @rtype: double
-        @return: Adjusted cropspecific Evapotranspiration to water stress in [mm].
+        :rtype: double
+        :return: Adjusted cropspecific Evapotranspiration to water stress in [mm].
         """
         return self.eto * (self.kcb*self.ks+self.ke)
     def __call__(self,Kr,thermaltime,Rn,T,e_s,e_a,windspeed,LAI,alt=0.,RHmin=30.,h=1.):
@@ -126,32 +126,32 @@ class ET_FAO:
         The user can call the transpiration coefficiEnts with the corresonding 
         properties of the class.
         
-        @type Kr: double 
-        @param Kr: evaporation reduction coefficient dependent on the soil water
+        :type Kr: double 
+        :param Kr: evaporation reduction coefficient dependent on the soil water
         depletion from the topsoil layer in [-].
-        @type thermaltime: double
-        @param thermaltime: Thermaltime in [degreedays].
-        @type Rn: double
-        @param Rn: Net radiation at the crop surface in [MJ m-2].
-        @type T: double
-        @param T: Mean daily air temperature at 2 m height in  [°c].
-        @type e_s: double
-        @param e_s: Saturation vapour pressure in [kPa].
-        @type e_a: double
-        @type e_a: Actual vapour pressure [kPa].
-        @type windspeed: double
-        @param windspedd: Wind speed at 2 m height [m s-1].
-        @type vegH: double
-        @param vegH: Vegetation height in [m].
-        @type LAI: double
-        @param LAI: Leaf are index in [m2 m-2].
-        @type stomatal_resistance: double
-        @param stomatal_resistance: Stomatal ristance in [s m-1].
-        @type RHmin: double
-        @param RHmin: Mean value for daily minimum relative humidity during the 
+        :type thermaltime: double
+        :param thermaltime: Thermaltime in [degreedays].
+        :type Rn: double
+        :param Rn: Net radiation at the crop surface in [MJ m-2].
+        :type T: double
+        :param T: Mean daily air temperature at 2 m height in  [°c].
+        :type e_s: double
+        :param e_s: Saturation vapour pressure in [kPa].
+        :type e_a: double
+        :type e_a: Actual vapour pressure [kPa].
+        :type windspeed: double
+        :param windspedd: Wind speed at 2 m height [m s-1].
+        :type vegH: double
+        :param vegH: Vegetation height in [m].
+        :type LAI: double
+        :param LAI: Leaf are index in [m2 m-2].
+        :type stomatal_resistance: double
+        :param stomatal_resistance: Stomatal ristance in [s m-1].
+        :type RHmin: double
+        :param RHmin: Mean value for daily minimum relative humidity during the 
         mid- or late season growth stage in [percent].
-        @type h: double
-        @param h: mean maximum plant height during the period of calculation 
+        :type h: double
+        :param h: mean maximum plant height during the period of calculation 
         (initial, development, mid-season, or late-season) in [m].
         """
         #Calculates reference Evapotranspiration
@@ -185,28 +185,28 @@ class ET_FAO:
         resistance of 70 s m-1 implies a moderately dry soil surface resulting 
         from about a weekly irrigation frequency. 
         
-        @type Rn: double
-        @param Rn: Net radiation at the crop surface in [MJ m-2].
-        @type T: double
-        @param T: Mean daily air temperature at 2 m height in  [Celsius].
-        @type e_s: double
-        @param e_s: Saturation vapour pressure in [kPa].
-        @type e_a: double
-        @type e_a: Actual vapour pressure [kPa].
-        @type windspeed: double
-        @param windspedd: Wind speed at 2 m height [m s-1].
-        @type vegH: double
-        @param vegH: Vegetation height in [m].
-        @type LAI: double
-        @param LAI: Leaf are index in [m2 m-2].
-        @type stomatal_resistance: double
-        @param stomatal_resistance: Stomatal ristance in [s m-1].
-        @type alt: double
-        @param alt: Geographical altitude in [decimal degrees].
-        @rtype: double
-        @return: Reference evapotranspiration in [mm].
+        :type Rn: double
+        :param Rn: Net radiation at the crop surface in [MJ m-2].
+        :type T: double
+        :param T: Mean daily air temperature at 2 m height in  [Celsius].
+        :type e_s: double
+        :param e_s: Saturation vapour pressure in [kPa].
+        :type e_a: double
+        :type e_a: Actual vapour pressure [kPa].
+        :type windspeed: double
+        :param windspedd: Wind speed at 2 m height [m s-1].
+        :type vegH: double
+        :param vegH: Vegetation height in [m].
+        :type LAI: double
+        :param LAI: Leaf are index in [m2 m-2].
+        :type stomatal_resistance: double
+        :param stomatal_resistance: Stomatal ristance in [s m-1].
+        :type alt: double
+        :param alt: Geographical altitude in [decimal degrees].
+        :rtype: double
+        :return: Reference evapotranspiration in [mm].
         
-        @todo: defintion of altitude
+        :todo: defintion of altitude
         """
         delta=4098*(0.6108*pylab.exp(17.27*T/(T+237.3)))/(T+237.3)**2
         if daily:   G=0
@@ -243,33 +243,33 @@ class ET_FAO:
         """ 
         Calculates crop specific Evapotranspiration.
         
-        @type ETo: double
-        @param ETo: Reference Evapotranspiration in [mm].
-        @type Kcb: double
-        @param Kcb: Basal crop coefficient (Kcb) in [-].
-        @type Ke: double
-        @type Ke: evaporation coefficiant in [-].
-        @rtype: double
-        @return: Crop specific evapotranspiration in [mm].
+        :type ETo: double
+        :param ETo: Reference Evapotranspiration in [mm].
+        :type Kcb: double
+        :param Kcb: Basal crop coefficient (Kcb) in [-].
+        :type Ke: double
+        :type Ke: evaporation coefficiant in [-].
+        :rtype: double
+        :return: Crop specific evapotranspiration in [mm].
         """
         return ETo * (Kcb+Ke)
     def adjust_Kcb(self,Kcb_tab,windspeed,RHmin,h):
         """ 
         Adjust basal crOP coefficiant (Kcb) to environmental conditions.
         
-        @type Kcb_tab: double
-        @param Kcb_tab: Constant basal crop coefficient (Kcb) related to the 
+        :type Kcb_tab: double
+        :param Kcb_tab: Constant basal crop coefficient (Kcb) related to the 
         development season in [-].
-        @type windspeed: double
-        @param windspedd: Wind speed at 2 m height [m s-1].
-        @type RHmin: double
-        @param RHmin: Mean value for daily minimum relative humidity during 
+        :type windspeed: double
+        :param windspedd: Wind speed at 2 m height [m s-1].
+        :type RHmin: double
+        :param RHmin: Mean value for daily minimum relative humidity during 
         the mid- or late season growth stage in [percent].
-        @type h: double
-        @param h: mean maximum plant height during the period of calculation 
+        :type h: double
+        :param h: mean maximum plant height during the period of calculation 
         (initial, development, mid-season, or late-season) in [m].
-        @rtype: double
-        @return: Kcb adjusted with windspeed, plant height and relative 
+        :rtype: double
+        :return: Kcb adjusted with windspeed, plant height and relative 
         humidity in [-].
         """
         return Kcb_tab + (0.04*(windspeed-2.)-0.004*(RHmin-45))*(h/3.)**0.3
@@ -277,24 +277,24 @@ class ET_FAO:
         """ 
         Constructs basal crop coefficient (Kcb) curve. 
             
-        @type time: double 
-        @param time: Day is the actual day or thermaltime in [days] or [°days]. 
-        @type Kcb_ini: double 
-        @param Kcb_ini: Kcb for initial season  
-        @type Kcb_mid: double 
-        @param Kcb_mid: Kcb for mid season 
-        @type Kcb_end: double 
-        @param Kcb_end: Kcb for late season   
-        @type Lini: double 
-        @param Lini: Length of initial season  
-        @type Ldev: double 
-        @param Ldev: Length of crop development season  
-        @type Lmid: double 
-        @param Lmid: Length of mid season
-        @type Llate: double 
-        @param Llate: Length of late season     
-        @rtype: double
-        @return: Kbc depending on the actual time in [-].
+        :type time: double 
+        :param time: Day is the actual day or thermaltime in [days] or [°days]. 
+        :type Kcb_ini: double 
+        :param Kcb_ini: Kcb for initial season  
+        :type Kcb_mid: double 
+        :param Kcb_mid: Kcb for mid season 
+        :type Kcb_end: double 
+        :param Kcb_end: Kcb for late season   
+        :type Lini: double 
+        :param Lini: Length of initial season  
+        :type Ldev: double 
+        :param Ldev: Length of crop development season  
+        :type Lmid: double 
+        :param Lmid: Length of mid season
+        :type Llate: double 
+        :param Llate: Length of late season     
+        :rtype: double
+        :return: Kbc depending on the actual time in [-].
         """
         if time <=Lini: return Kcb_ini
         elif time <=Lini+Ldev: return Kcb_ini+(time-Lini)/Ldev*(Kcb_mid-Kcb_ini)
@@ -305,36 +305,36 @@ class ET_FAO:
         """
         Calculates evaporation coefficiant.
         
-        @type Kr: double
-        @param Kr: evaporation reduction coefficient dependent on the cumulative
+        :type Kr: double
+        :param Kr: evaporation reduction coefficient dependent on the cumulative
         depth of water depleted (evaporated) from the topsoil.
-        @type Kcmax: double
-        @param Kcmax: Maximum value of Kc following rain or irrigation in [-].
-        @type Kcb: double
-        @param Kcb: Basal crop coefficient in [mm].
-        @type few: double
-        @param few: Fraction of the soil that is both exposed and wetted, i.e.,
+        :type Kcmax: double
+        :param Kcmax: Maximum value of Kc following rain or irrigation in [-].
+        :type Kcb: double
+        :param Kcb: Basal crop coefficient in [mm].
+        :type few: double
+        :param few: Fraction of the soil that is both exposed and wetted, i.e.,
         the fraction of soil surface from which most evaporation occurs.
-        @rtype: double
-        @return: evaporation coefficiant in [mm].
+        :rtype: double
+        :return: evaporation coefficiant in [mm].
         """
         return min(Kr*(Kcmax - Kcb), few*Kcmax,)
     def calc_Kcmax(self,Kcb,h,windspeed,RHmin):
         """ 
         Calculates maximum value of Kc following rain or irrigation.
         
-        @type Kcb: double
-        @param Kcb: Basal crop coefficient in [mm].
-        @type windspeed: double
-        @param windspedd: Wind speed at 2 m height [m s-1].
-        @type RHmin: double
-        @param RHmin: Mean value for daily minimum relative humidity during the 
+        :type Kcb: double
+        :param Kcb: Basal crop coefficient in [mm].
+        :type windspeed: double
+        :param windspedd: Wind speed at 2 m height [m s-1].
+        :type RHmin: double
+        :param RHmin: Mean value for daily minimum relative humidity during the 
         mid- or late season growth stage in [percent].
-        @type h: double
-        @param h: mean maximum plant height during the period of calculation 
+        :type h: double
+        :param h: mean maximum plant height during the period of calculation 
         (initial, development, mid-season, or late-season) in [m].
-        @rtype: double
-        @return: Maximum value of Kc following rain or irrigation in [-].
+        :rtype: double
+        :return: Maximum value of Kc following rain or irrigation in [-].
         """
         return max((1.2 + (0.04*(windspeed-2.)-0.004*(RHmin-45))*(h/3.)**0.3),Kcb+0.05)
     def calc_TEW(self,qFC,qWP,Ze):
@@ -345,15 +345,15 @@ class ET_FAO:
         that can be evaporated from the soil when the topsoil
         has been initially completely wetted.
         
-        @type qFC: double
-        @param qFC: Soil water content at field capacity in [m3 m-3].
-        @type qWP: double
-        @param qWP: Soil water content at wilting point in [m3 m-3].
-        @type Ze: double
-        @param Ze: Depth [0.10-0.15m] of the surface soil layer that is subject 
+        :type qFC: double
+        :param qFC: Soil water content at field capacity in [m3 m-3].
+        :type qWP: double
+        :param qWP: Soil water content at wilting point in [m3 m-3].
+        :type Ze: double
+        :param Ze: Depth [0.10-0.15m] of the surface soil layer that is subject 
         to drying by way of evaporation in [m].
-        @rtype: double
-        @return: Total evaporable water in [mm].
+        :rtype: double
+        :return: Total evaporable water in [mm].
         """
         return 1000(qFC-0.5*qWP)*Ze
     def calc_Kr(self,De,TEW,REW):
@@ -364,16 +364,16 @@ class ET_FAO:
         on the soil  water depletion (cumulative depth of evaporation) 
         from the topsoil layer.
         
-        @type De: double
-        @param De:  Cumulative depth of evaporation (depletion) from the soil 
+        :type De: double
+        :param De:  Cumulative depth of evaporation (depletion) from the soil 
         surface layer at the end of the previos day in [mm].
-        @type TEW: double
-        @param TEW: Total evaporable water in [mm] 
-        @type param: double
-        @param param: cumulative depth of evaporation (depletion) at the end of 
+        :type TEW: double
+        :param TEW: Total evaporable water in [mm] 
+        :type param: double
+        :param param: cumulative depth of evaporation (depletion) at the end of 
         stage 1 (REW = readily evaporable water)in [mm].
-        @rtype: double
-        @return: Dimensionless evaporation reduction coefficient in [-].
+        :rtype: double
+        :return: Dimensionless evaporation reduction coefficient in [-].
         """
         if De > REW:
             return (TEW-De)/(TEW-REW)
@@ -385,14 +385,14 @@ class ET_FAO:
         
         fc and fw: [0.01 - 1], for precipitation fw = 1.0
         
-        @type fc: double
-        @param gc: Effective fraction of soil surface covered by vegetation 
+        :type fc: double
+        :param gc: Effective fraction of soil surface covered by vegetation 
         in [-].
-        @type fw: double
-        @param fw: Average fraction of soil surface wetted by irrigation or 
+        :type fw: double
+        :param fw: Average fraction of soil surface wetted by irrigation or 
         precipitation in [-].
-        @rtype: double
-        @return: Fraction of the soil that is both exposed and wetted in [-].
+        :rtype: double
+        :return: Fraction of the soil that is both exposed and wetted in [-].
         """
         return min(1-fc,fw)
     def calc_fc_dynamic(self,Kcb,Kcmax,h,Kcmin):#
@@ -402,18 +402,18 @@ class ET_FAO:
         
         Kcmin =0.15 - annual crops under nearly bare soil conditions
         
-        @type Kcb: double
-        @param Kcb: Basal crop coefficient in [mm].
-        @type Kcmax: double
-        @param Kcmax: Maximum value of Kc following rain or irrigation in [-].
-        @type h: double
-        @param h: mean maximum plant height during the period of calculation 
+        :type Kcb: double
+        :param Kcb: Basal crop coefficient in [mm].
+        :type Kcmax: double
+        :param Kcmax: Maximum value of Kc following rain or irrigation in [-].
+        :type h: double
+        :param h: mean maximum plant height during the period of calculation 
         (initial, development, mid-season, or late-season) in [m].
-        @type Kcmin: double
-        @param Kcmin: Minimum Kc for dry bare soil with no ground cover 
+        :type Kcmin: double
+        :param Kcmin: Minimum Kc for dry bare soil with no ground cover 
         [0.15 - 0.20] in [-].
-        @rtype: double
-        @return: Effective fraction of soil surface covered by vegetation 
+        :rtype: double
+        :return: Effective fraction of soil surface covered by vegetation 
         in [-].
         """
         return ((Kcb-Kcmin)/(Kcmax-Kcmin))**(1+0.5*h) 
@@ -429,13 +429,13 @@ class ET_FAO:
         3        0.8-1.
         4        0.2-0.8
         
-        @type thermaltime: double
-        @param thermaltime: Thermaltime in [degreedays].
-        @type seasons: list
-        @param seasons: List with the length of the four development seasons 
+        :type thermaltime: double
+        :param thermaltime: Thermaltime in [degreedays].
+        :type seasons: list
+        :param seasons: List with the length of the four development seasons 
         in [°C].
-        @rtype: double
-        @return: Effective fraction of soil surface covered by vegetation 
+        :rtype: double
+        :return: Effective fraction of soil surface covered by vegetation 
         in [-].
         """
         if thermaltime <= seasons[0]: return 0.1 
@@ -450,12 +450,12 @@ class ET_FAO:
         For LAI > 3.0 fc equals one, for values under 3.0
         fc is computed as fraction from full cover.
         
-        @type LAI: double
-        @param LAI: Leaf area index in [m2 m-2].
-        @type fullcover: double
-        @param fullcover: LAI which leads to full fieldcover in [m2 m-2].
+        :type LAI: double
+        :param LAI: Leaf area index in [m2 m-2].
+        :type fullcover: double
+        :param fullcover: LAI which leads to full fieldcover in [m2 m-2].
         
-        @rtype: double
-        @return: Effective fraction of soil surface covered by vegetation in [-].
+        :rtype: double
+        :return: Effective fraction of soil surface covered by vegetation in [-].
         """ 
         return min(LAI / fullcover,1.)

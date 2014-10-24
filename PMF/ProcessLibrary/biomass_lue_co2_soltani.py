@@ -2,7 +2,7 @@
 '''
 Created on 25 sep 2014
 
-@author: kellner-j
+:author: kellner-j
 '''
 import math
 
@@ -33,14 +33,14 @@ class Biomass_LUE_CO2_Soltani:
         """
         Returns a Biomass_LUE instance.
         
-        @type RUE: double
-        @param RUE: Radiation use efficiency [g m-1 day-1]
-        @type k: double
-        @param k: Canopy extinction coefficient in [-].
-        @type factor_b: double
-        @param factor_b: coefficient that adapt RUE to C4 (factor_b=0.4) or C3 (factor_b=0.8) plants [-]   
-        @rtype: biomass_lue
-        @return: Biomass_LUE instance
+        :type RUE: double
+        :param RUE: Radiation use efficiency [g m-1 day-1]
+        :type k: double
+        :param k: Canopy extinction coefficient in [-].
+        :type factor_b: double
+        :param factor_b: coefficient that adapt RUE to C4 (factor_b=0.4) or C3 (factor_b=0.8) plants [-]   
+        :rtype: biomass_lue
+        :return: Biomass_LUE instance
         """
         #Constant variables
         self.rue_0=RUE
@@ -59,8 +59,8 @@ class Biomass_LUE_CO2_Soltani:
         """
         Return potential growth without stress.
         
-        @rtype: double
-        @return: Potential growth in [g biomass day-1].
+        :rtype: double
+        :return: Potential growth in [g biomass day-1].
         """ 
         return self.growthrate
     @property
@@ -68,8 +68,8 @@ class Biomass_LUE_CO2_Soltani:
         """
         Return actual growth influenced by water and nitorgen stress.
         
-        @rtype: double
-        @return: Actual growth in [g biomass day-1].
+        :rtype: double
+        :return: Actual growth in [g biomass day-1].
         """ 
         return self.growthrate * (1-self.stress)
     @property
@@ -77,25 +77,25 @@ class Biomass_LUE_CO2_Soltani:
         """
         Returns total biomass.
         
-        @rtype: double
-        @return: Biomass in [g biomass day-1].
+        :rtype: double
+        :return: Biomass in [g biomass day-1].
         """ 
         return self.total
     def __call__(self,step,stress,Rs,interception,LAI,CO2_measured,senesced_leaf):  
         """
         Calculates the stressed and unstressed growth of the plant.
         
-        @type step: double
-        @param step: Time step in [days].
-        @type Rs: double
-        @param Rs: total solar radiation [MJ m-2 day-1].
-        @type stress: double
-        @param stress: Parameter for water and nitrogen stress between 0 - 1. 
+        :type step: double
+        :param step: Time step in [days].
+        :type Rs: double
+        :param Rs: total solar radiation [MJ m-2 day-1].
+        :type stress: double
+        :param stress: Parameter for water and nitrogen stress between 0 - 1. 
         in [-].
-        @type LAI: double
-        @param LAI: Leaf area index of the plant in [m2 m-2].
-        @type CO2_measured: double
-        @param CO2_measured: atmospheric CO2 concentration in rings [ppm].
+        :type LAI: double
+        :param LAI: Leaf area index of the plant in [m2 m-2].
+        :type CO2_measured: double
+        :param CO2_measured: atmospheric CO2 concentration in rings [ppm].
         """
         
         self.stress = stress
@@ -111,14 +111,14 @@ class Biomass_LUE_CO2_Soltani:
         This approach is taken from Soltani and Sinclair (2012) and based on 
         Penning de Vries 1989.
         
-        @type rue_0: double
-        @param rue_0: radiation use efficiency at the reference CO2 concentration (350 µmol/mol) [g/MJ]
-        @type C_0: double
-        @param C_0: reference CO2 concentration (=350 µmol/mol)
-        @type factor_b: double
-        @param factor_b: coefficient that adapt RUE to C4 (factor_b=0.4) or C3 (factor_b=0.8) plants [-]
-        @type C_measured: double
-        @param C_measured: target CO2 concentration [µmol/mol] 
+        :type rue_0: double
+        :param rue_0: radiation use efficiency at the reference CO2 concentration (350 µmol/mol) [g/MJ]
+        :type C_0: double
+        :param C_0: reference CO2 concentration (=350 µmol/mol)
+        :type factor_b: double
+        :param factor_b: coefficient that adapt RUE to C4 (factor_b=0.4) or C3 (factor_b=0.8) plants [-]
+        :type C_measured: double
+        :param C_measured: target CO2 concentration [µmol/mol] 
         """
         return rue_0*(1+factor_b*math.log(C_measured/C_0)) 
         
@@ -130,12 +130,12 @@ class Biomass_LUE_CO2_Soltani:
         This apporach is extracted from Stockle et al. 1992 to adapt the EPIC model to changing CO2 concentrations.
         In this paper b1 = 7784 and b2 = 0.00107 to reach RUE = 3 at 350 ppm and RUE = 3.9 at 600 ppm.
         
-        @type C_measured: double
-        @param C_measured: target CO2 concentration [µmol/mol]
-        @type b_1: double
-        @param b_1: parameter to adapt RUE for any value of CO2 concentration.
-        @type b_2: double
-        @param b_2: parameter to adapt RUE for any value of CO2 concentration.
+        :type C_measured: double
+        :param C_measured: target CO2 concentration [µmol/mol]
+        :type b_1: double
+        :param b_1: parameter to adapt RUE for any value of CO2 concentration.
+        :type b_2: double
+        :param b_2: parameter to adapt RUE for any value of CO2 concentration.
         """
         return 100 * C_measured / (C_measured + b_1 *math.exp(- b_2 * C_measured))          
     
@@ -152,14 +152,14 @@ class Biomass_LUE_CO2_Soltani:
         fraction of radiation absorbed by the crop  allowing for a 6 percent 
         albedo and for inactive radiation absorption.
         
-        @type Rs: double
-        @param Rs: total solar radiation [MJ m-2 day-1].
-        @type interception: double
-        @param interception: Fraction of total solar radiation flux, which is 
+        :type Rs: double
+        :param Rs: total solar radiation [MJ m-2 day-1].
+        :type interception: double
+        :param interception: Fraction of total solar radiation flux, which is 
         intercepted by the crop in [-].
         
-        @rtype: double
-        @return: Photosynthetically active absorbed radiation in [MJ m-2 day-1].
+        :rtype: double
+        :return: Photosynthetically active absorbed radiation in [MJ m-2 day-1].
         """
         return Rs*0.5*0.9*(1-interception)
 
@@ -169,12 +169,12 @@ class Biomass_LUE_CO2_Soltani:
         Returns a method to interfere with the atmosphere interface over the 
         plant instance.
         
-        @type atmosphere: atmosphere
-        @param atmosphere: Atmosphere object from the plant interface soil.
-        @type time_act: datetime
-        @param time_act: Actual time in [DD,MM,JJJ].
-        @rtype: method
-        @return: Function for getting required atmosphere values.
+        :type atmosphere: atmosphere
+        :param atmosphere: Atmosphere object from the plant interface soil.
+        :type time_act: datetime
+        :param time_act: Actual time in [DD,MM,JJJ].
+        :rtype: method
+        :return: Function for getting required atmosphere values.
         """
         return atmosphere.get_Rs(time_act)
         
@@ -184,11 +184,11 @@ class Biomass_LUE_CO2_Soltani:
         Returns a method to interfere with the atmosphere interface over the 
         plant instance.
         
-        @type atmosphere: atmosphere
-        @param atmosphere: Atmosphere object from the plant interface soil.
-        @type time_act: datetime
-        @param time_act: Actual time in [DD,MM,JJJ].
-        @rtype: method
-        @return: Function for getting elevated CO2 concentration
+        :type atmosphere: atmosphere
+        :param atmosphere: Atmosphere object from the plant interface soil.
+        :type time_act: datetime
+        :param time_act: Actual time in [DD,MM,JJJ].
+        :rtype: method
+        :return: Function for getting elevated CO2 concentration
         """
         return atmosphere.get_CO2_measured(time_act)

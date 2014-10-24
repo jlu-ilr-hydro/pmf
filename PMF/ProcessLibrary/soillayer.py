@@ -2,7 +2,7 @@
 '''
 Created on 25 sep 2014
 
-@author: kellner-j
+:author: kellner-j
 '''
 class SoilLayer:
     """
@@ -29,21 +29,21 @@ class SoilLayer:
         
         To create a rootingzone get_rootingzone() must be called.
         
-        @type lower: double
-        @param lower: Lower limit of the soil layer relative to ground 
+        :type lower: double
+        :param lower: Lower limit of the soil layer relative to ground 
         surface level in [cm].
-        @type upper: double
-        @param upper: Upper limit of the soil layer relative to ground 
+        :type upper: double
+        :param upper: Upper limit of the soil layer relative to ground 
         surface level in [cm].
-        @type center: double
-        @param center: Center of the soil layer relative to ground 
+        :type center: double
+        :param center: Center of the soil layer relative to ground 
         surface level in [cm].
-        @type thickness: double
-        @param thickness: Thickness of the layer in [cm].
-        @type penetration: double 
-        @param penetration: Root penetrated fraction of the layer in [cm].
-        @rtype: soillayer
-        @return: soillayer instance
+        :type thickness: double
+        :param thickness: Thickness of the layer in [cm].
+        :type penetration: double 
+        :param penetration: Root penetrated fraction of the layer in [cm].
+        :rtype: soillayer
+        :return: soillayer instance
         """
         self.lower=lower
         self.upper=upper
@@ -62,11 +62,11 @@ class SoilLayer:
     def get_rootingzone(self,soilprofile):
         """ Returns a rootingzone.
         
-        @type soilprofile: list
-        @param soilprofile: List with the lower limits of the layers in the 
+        :type soilprofile: list
+        :param soilprofile: List with the lower limits of the layers in the 
         soilprofile in [cm].
-        @rtype: soilprofile
-        @return: Soilprofile which defines the actual rootingzone.
+        :rtype: soilprofile
+        :return: Soilprofile which defines the actual rootingzone.
         """
         #Create soillayer for each layer in soilprofile
         for i,layer in enumerate(soilprofile):
@@ -87,9 +87,9 @@ class SoilLayer:
         """
         Calculates the penetration depth for each soillayer in the rootingzone.
         
-        @type Zr: double
-        @param: Rootingdepth in [cm].
-        @return: -
+        :type Zr: double
+        :param: Rootingdepth in [cm].
+        :return: -
         """
         #For each layer in rootingzone
         for layer in self.rootingzone:
