@@ -6,11 +6,11 @@ leaf and storage organs. These components hold the growth state variables.
 Plant.py abstractly connects the growth processes and interacts with the 
 environmental models.
 
-@author: Sebastian Multsch
+:author: Sebastian Multsch
 
-@version: 0.1 (26.10.2010)
+:version: 0.1 (26.10.2010)
 
-@copyright: 
+:copyright: 
  This program is free software; you can redistribute it and/or modify it under  
  the terms of the GNU General Public License as published by the Free Software  
  Foundation; either version 3 of the License, or (at your option) any later 
@@ -21,7 +21,7 @@ environmental models.
  Public License along  with this program;
  if not, see <http://www.gnu.org/licenses/>.
  
-@summary:Physical plant structure 
+:summary:Physical plant structure 
 """
 import math 
 import pylab as pylab
@@ -59,7 +59,7 @@ class Plant:
     calculates the growth processes with the process modules for the given
     time periode.
     
-    @summary: Plant connects the plant components, holds the process modules and
+    :summary: Plant connects the plant components, holds the process modules and
       interacts with the environmental models
     """ 
     Count=0   
@@ -85,70 +85,70 @@ class Plant:
         environmental interfaces and the specification of several crop specific 
         properties. The default values of the properties refer to cereals.
         
-        @type  soil: soil
-        @param soil: Interface to water balance data.
-        @type  atmosphere: atmosphere
-        @param atmosphere: Interface to meteorological data.
+        :type  soil: soil
+        :param soil: Interface to water balance data.
+        :type  atmosphere: atmosphere
+        :param atmosphere: Interface to meteorological data.
         
-        @type  et: et
-        @param et: Calculates potential transpiration and evaporation.
-        @type  water: water
-        @param water: Calculates water stress term in relation to the soil water
+        :type  et: et
+        :param et: Calculates potential transpiration and evaporation.
+        :type  water: water
+        :param water: Calculates water stress term in relation to the soil water
         status and crop specific response.
-        @type  biomass: biomass
-        @param biomass: Calculates potential and actual biomass accumulation.
-        @type  developmentstage: developmentstage
-        @param developmentstage: Calculates development status.
-        @type  nitrogen: nitrogen
-        @param nitrogen: Calculates nitrogen uptake.
-        @type layer: layer
-        @param layer: Calculates rooting zone.        
+        :type  biomass: biomass
+        :param biomass: Calculates potential and actual biomass accumulation.
+        :type  developmentstage: developmentstage
+        :param developmentstage: Calculates development status.
+        :type  nitrogen: nitrogen
+        :param nitrogen: Calculates nitrogen uptake.
+        :type layer: layer
+        :param layer: Calculates rooting zone.        
         
-        @type  root_percent: list
-        @param root_percent: List with partitioning coefficiants for each 
+        :type  root_percent: list
+        :param root_percent: List with partitioning coefficiants for each 
         development as fraction from the plant biomass in [-].
-        @type  shoot_percent: list
-        @param shoot_percent: List with partitioning coefficiants for each 
+        :type  shoot_percent: list
+        :param shoot_percent: List with partitioning coefficiants for each 
         development as fraction from the plant biomass in [-].
-        @type  leaf_percent: list
-        @param leaf_percent: List with partitioning coefficiants for each 
+        :type  leaf_percent: list
+        :param leaf_percent: List with partitioning coefficiants for each 
         development as fraction from the plant biomass in [-].
-        @type  stem_percent: list
-        @param stem_percent: List with partitioning coefficiants for each 
+        :type  stem_percent: list
+        :param stem_percent: List with partitioning coefficiants for each 
         development as fraction from the plant biomass in [-].
-        @type  storage_percent: list
-        @param storage_percent: List with partitioning coefficiants for each 
+        :type  storage_percent: list
+        :param storage_percent: List with partitioning coefficiants for each 
         development as fraction from the plant biomass in [-].
         
-        @type tbase: double
-        @param tbase: Minimum temperature above growth can take place in [°C].
-        @type pressure_threshold: list
-        @param pressure_threshold: List with pressurehead values. These values 
+        :type tbase: double
+        :param tbase: Minimum temperature above growth can take place in [°C].
+        :type pressure_threshold: list
+        :param pressure_threshold: List with pressurehead values. These values 
         describe the limiting conditions due to soil water conditions
         in [cm water column].
-        @type plantN: list
-        @param plantN: List with plant nitrogen fractions in relation to
+        :type plantN: list
+        :param plantN: List with plant nitrogen fractions in relation to
         thermaltime in [-] and [°days].        
-        @type leaf_specific_weight: double
-        @param leaf_specific_weight: Specific leaf weight in [g m-2].
-        @type root_growth: double
-        @param root_growth: Root elongation factor in [cm day-1].
-        @type max_height : double
-        @param max_height : Maximum crop height in [m].
-        @type stress_adaption: double
-        @param stress_adaption: Modifies the stress influences on biomass
+        :type leaf_specific_weight: double
+        :param leaf_specific_weight: Specific leaf weight in [g m-2].
+        :type root_growth: double
+        :param root_growth: Root elongation factor in [cm day-1].
+        :type max_height : double
+        :param max_height : Maximum crop height in [m].
+        :type stress_adaption: double
+        :param stress_adaption: Modifies the stress influences on biomass
         accumulation (one = full stress) in [-].
-        @type carbonfraction: double
-        @param carbonfraction: Fractional carboncontent in [-].
-        @type max_depth: double
-        @param max_depth: Maximal rooting depth in [cm].
-        @type FRDR: double
-        @param FRDR: factor changing shape of senescence function [-] 
+        :type carbonfraction: double
+        :param carbonfraction: Fractional carboncontent in [-].
+        :type max_depth: double
+        :param max_depth: Maximal rooting depth in [cm].
+        :type FRDR: double
+        :param FRDR: factor changing shape of senescence function [-] 
         
-        @rtype:   plant
-        @return:  Plant instance
+        :rtype:   Plant
+        :return:  Plant instance
         
-        @summary: Returns a plant instance
+        :summary: Returns a plant instance
         """
         #### N E W ####### N E W ############################################
         self.max_height = max_height        
@@ -197,8 +197,8 @@ class Plant:
         """
         Returns actual nitrogen content of the above ground biomass.
         
-        @rtype: double
-        @return: Above ground biomass nitrogen content in [g].
+        :rtype: double
+        :return: Above ground biomass nitrogen content in [g].
         """ 
         return self.shoot.Wtot * self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
     @property
@@ -206,8 +206,8 @@ class Plant:
         """
         Returns actual nitrogen content of the under ground biomass.
         
-        @rtype: double
-        @return: Under ground biomass nitrogen content in [g].
+        :rtype: double
+        :return: Under ground biomass nitrogen content in [g].
         """ 
         return self.root.Wtot * self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
     @property
@@ -215,8 +215,8 @@ class Plant:
         """
         Returns actual nitrogen content of the leafs.
         
-        @rtype: double
-        @return: Leaf nitrogen content in [g].
+        :rtype: double
+        :return: Leaf nitrogen content in [g].
         """ 
         return self.shoot.leaf.Wtot * self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
     @property
@@ -224,8 +224,8 @@ class Plant:
         """
         Returns actual nitrogen content of the stem.
         
-        @rtype: double
-        @return: Stem nitrogen content in [g].
+        :rtype: double
+        :return: Stem nitrogen content in [g].
         """ 
         return self.shoot.stem.Wtot * self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
     @property
@@ -233,8 +233,8 @@ class Plant:
         """
         Returns actual nitrogen content of the storage organs.
         
-        @rtype: double
-        @return: Storage organs nitrogen content in [g].
+	:rtype: double
+        :return: Storage organs nitrogen content in [g].
         """ 
         return self.shoot.storage_organs.Wtot * self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
     @property
@@ -242,8 +242,8 @@ class Plant:
         """
         Returns actual carbon content of the above ground biomass.
         
-        @rtype: double
-        @return: Above ground biomass carbon content in [g].
+        :rtype: double
+        :return: Above ground biomass carbon content in [g].
         """ 
         return self.shoot.Wtot * self.carbonfraction
     @property
@@ -251,8 +251,8 @@ class Plant:
         """
         Returns actual carbon content of the under ground biomass.
         
-        @rtype: double
-        @return: Under ground biomass carbon content in [g].
+        :rtype: double
+        :return: Under ground biomass carbon content in [g].
         """ 
         return self.root.Wtot * self.carbonfraction
     @property
@@ -260,8 +260,8 @@ class Plant:
         """
         Returns actual carbon content of the leafs.
         
-        @rtype: double
-        @return: Leaf carbon content in [g].
+        :rtype: double
+        :return: Leaf carbon content in [g].
         """ 
         return self.shoot.leaf.Wtot * self.carbonfraction
     @property
@@ -269,8 +269,8 @@ class Plant:
         """
         Returns actual carbon content of the stem.
         
-        @rtype: double
-        @return: Stem carbon content in [g].
+        :rtype: double
+        :return: Stem carbon content in [g].
         """ 
         return self.shoot.stem.Wtot * self.carbonfraction
     @property
@@ -278,8 +278,8 @@ class Plant:
         """
         Returns actual carbon content of the storage organs.
         
-        @rtype: double
-        @return: Storage organs carbon content in [g].
+        :rtype: double
+        :return: Storage organs carbon content in [g].
         """ 
         return self.shoot.storage_organs.Wtot * self.carbonfraction
 ###### N E W ####### N E W ############ N E W ######################### N E W ###### N E W ####### N E W ############ N E W ######################### N E W     
@@ -293,11 +293,11 @@ class Plant:
         Connects the plant to the soil interface and sets the soil specific 
         values of the plant components and process modules.
         
-        @type  soil: soil
-        @param soil: Interface to water balance data.
+        :type  soil: soil
+        :param soil: Interface to water balance data.
         
-        @return: -
-        @summary: Connects plant to the soil interface.
+        :return: -
+        :summary: Connects plant to the soil interface.
         """
         self.soil=soil
         self.root.zone.get_rootingzone(self.soil.soilprofile())
@@ -313,18 +313,18 @@ class Plant:
         """
         Connects the plant to the atmosphere interface.
         
-        @type  atmosphere: atmosphere
-        @param atmosphere: Interface to meteorological data.
+        :type  atmosphere: atmosphere
+        :param atmosphere: Interface to meteorological data.
         
-        @return: -
-        @summary: Connects the plant to the atmosphere interface.
+        :return: -
+        :summary: Connects the plant to the atmosphere interface.
         """
         self.atmosphere = atmosphere
     def __del__(self):
         """
         Decrease class variable Plant.Count about one.
         
-        @return: -
+        :return: -
         """
         Plant.Count-=1
     def __call__(self,time_act,step,interval):
@@ -336,18 +336,18 @@ class Plant:
         Bioamss accumulation and partitioning takes places
         during the growing season.
         
-        @type time_act: datetime(JJJJ,MM,DD)
-        @param time_act: Actual time in [JJJJ,MM,DD]. 
-        @type step: string
-        @param step: Defines the running step. Can be 'day' or 'hour'.
-        @type interval: double
-        @param interval: Duration of the simulation step.
+        :type time_act: datetime(JJJJ,MM,DD)
+        :param time_act: Actual time in [JJJJ,MM,DD]. 
+        :type step: string
+        :param step: Defines the running step. Can be 'day' or 'hour'.
+        :type interval: double
+        :param interval: Duration of the simulation step.
         
-        @return: -
+        :return: -
         
-        @summary: Calculates the actual growth status.
+        :summary: Calculates the actual growth status.
         
-        @todo: vegH equals at the first day of growth zero: ZeroDivisionError.
+        :todo: vegH equals at the first day of growth zero: ZeroDivisionError.
         The recent solution is very bad ( max(0.01,self.shoot.stem.height))
         """
         #Set time step
@@ -447,23 +447,23 @@ class Plant:
         The coefficients range between zero and one. The sum of all 
         coefficients for one is one (100%). 
         
-        @type Sh: list
-        @param Sh: Total actual water uptake in [mm].
-        @type Tpot: double
-        @param Tpot: Potential transpiration in [mm].
-        @type Ra: list
-        @param Ra: Total actual nitrogen uptake in [g].
-        @type Rp: double
-        @param Rp: Nitrogen demand of the plant in [g].
-        @type NO3dis: list
-        @param NO3dis: Nitrogen conditions in each layer of the rootingzone.
-        @type H2Odis: list
-        @param H2Odis: Water conditions in each layer of the rootingzone.
+        :type Sh: list
+        :param Sh: Total actual water uptake in [mm].
+        :type Tpot: double
+        :param Tpot: Potential transpiration in [mm].
+        :type Ra: list
+        :param Ra: Total actual nitrogen uptake in [g].
+        :type Rp: double
+        :param Rp: Nitrogen demand of the plant in [g].
+        :type NO3dis: list
+        :param NO3dis: Nitrogen conditions in each layer of the rootingzone.
+        :type H2Odis: list
+        :param H2Odis: Water conditions in each layer of the rootingzone.
         
-        @rtype: list
-        @return: Distribution coefficiants for the root biomass.
+        :rtype: list
+        :return: Distribution coefficiants for the root biomass.
         
-        @summary: Calculates root biomass distribution coeffciants.
+        :summary: Calculates root biomass distribution coeffciants.
         """
         #Compute stress index for nitrogen and water
         w=1-Sh/Tpot
@@ -487,20 +487,20 @@ class Plant:
         the growth respiration, the product of total bioamss
         and m_resp the maintenance respiration.
         
-        @type Wact: double
-        @param Wact: Actual growthrate in [g day-1].
-        @type Wtot: double
-        @param Wtot: Total biomass in [g].
-        @type g_resp: double
-        @param g_resp: Adjustment coefficiant for growth respiration in [-].
-        @type m_resp: double
-        @param m_resp: Adjustment coefficiant for maintenance respiration
+        :type Wact: double
+        :param Wact: Actual growthrate in [g day-1].
+        :type Wtot: double
+        :param Wtot: Total biomass in [g].
+        :type g_resp: double
+        :param g_resp: Adjustment coefficiant for growth respiration in [-].
+        :type m_resp: double
+        :param m_resp: Adjustment coefficiant for maintenance respiration
         in [-].
         
-        @rtype: double
-        @return: Respiration
+        :rtype: double
+        :return: Respiration
         
-        @summary: Calculates respiration.
+        :summary: Calculates respiration.
         """
         return g_resp*Wact+m_resp*Wtot
     def NO3cont(self,plantN,thermaltime):
@@ -510,15 +510,15 @@ class Plant:
         time values between this stages the nitrogen content decreases
         linear from emergence to maturity.
         
-        @param plantN: List with plant nitrogen fractions in relation to
+        :param plantN: List with plant nitrogen fractions in relation to
         thermaltime in [-] and [°days].
-        @type thermaltime: double
-        @param thermaltime: Thermaltime in [°days].
+        :type thermaltime: double
+        :param thermaltime: Thermaltime in [°days].
         
-        @rtype: double
-        @return: Nitrogen fraction of the plant biomass in [-].
+        :rtype: double
+        :return: Nitrogen fraction of the plant biomass in [-].
         
-        @summary: Calculates fractional nitrogen content.
+        :summary: Calculates fractional nitrogen content.
         """
         if thermaltime<=plantN[0][0]: return plantN[0][1]
         elif thermaltime>=plantN[1][0]: return plantN[1][1]
@@ -529,28 +529,28 @@ class Plant:
         potential growthrate and the actual nitrogen content
         of the biomass.
         
-        @type Wpot: double
-        @param Wpot: Potential growthrate in [g day-1]
-        @type NO3conc: double
-        @param NO3conc: Actual nitrogen fraction of the biomass in [-].
+        :type Wpot: double
+        :param Wpot: Potential growthrate in [g day-1]
+        :type NO3conc: double
+        :param NO3conc: Actual nitrogen fraction of the biomass in [-].
         
-        @rtype: double
-        @return: Nitrogen demand in [g]
+        :rtype: double
+        :return: Nitrogen demand in [g]
         
-        @summary: Calculates nitrogen demand.
+        :summary: Calculates nitrogen demand.
         """
         return Wpot*NO3conc
     def vernalisation(self,tmean,plant_vern):
         """
         Returns the relative vernalisation based on the daily mean temperature.
         
-        @type tmean: double
-        @param tmean: Daily average temperature in [Celsius]
-        @type plant_vern: list
-        @type plant_vern: List with vernalisation coefficiants.
+        :type tmean: double
+        :param tmean: Daily average temperature in [Celsius]
+        :type plant_vern: list
+        :type plant_vern: List with vernalisation coefficiants.
         
-        @rtype: double
-        @return: Relative vernalisation coefficiant.
+        :rtype: double
+        :return: Relative vernalisation coefficiant.
         """
         if tmean<plant_vern[0] or tmean>plant_vern[2]: return 0.
         elif tmean>=plant_vern[0] and tmean<=plant_vern[1]: return 1.0
@@ -561,17 +561,17 @@ class Plant:
 #        accelerate  development depending on the daylenght and the plant
 #        type.
 #        
-#        @type dl: double
-#        @param dl: Daylenght in [hours].
-#        @type type: string
-#        @param type: Plant photopreiod type, can be longday or shortday plant.
-#        @type plant_photoperiod: list
-#        @param plant_photoperiod: List with the photoperiod coefficiants.
+#        :type dl: double
+#        :param dl: Daylenght in [hours].
+#        :type type: string
+#        :param type: Plant photopreiod type, can be longday or shortday plant.
+#        :type plant_photoperiod: list
+#        :param plant_photoperiod: List with the photoperiod coefficiants.
 #        
-#        @rtype: double
-#        @return: Relative photoperiod coefficiant in [-].
+#        :rtype: double
+#        :return: Relative photoperiod coefficiant in [-].
 #        
-#        @summary: Calculates photoperiode value.
+#        :summary: Calculates photoperiode value.
 #        """  
 #        if type=='longday':
 #            if dl<=plant_photoperiod[0] or dl>=plant_photoperiod[-1]: 
@@ -588,15 +588,15 @@ class Plant:
         """
         Calculates the crop response due to the soil water conditions.
         
-        @type h_soil: list
-        @param h_soil: Pressurehead from each soil layer in [cm water column].
-        @type h_plant: list
-        @param h_plant: List with pressurehead values. These values 
+        :type h_soil: list
+        :param h_soil: Pressurehead from each soil layer in [cm water column].
+        :type h_plant: list
+        :param h_plant: List with pressurehead values. These values 
         describe the limiting conditions due to soil water conditions
         in [cm water column].
         
-        @rtype: list
-        @return: Response value due to soil water conditions between zero 
+        :rtype: list
+        :return: Response value due to soil water conditions between zero 
         and one in [-].
         """
         try:
@@ -634,18 +634,18 @@ class Root:
         """
         Returns a root instance and creates a rootingzone from the soilprofile.
         
-        @type plant: plant
-        @param plant: Plant class, which owns root.
-        @type  root_percent: list
-        @param root_percent: List with partitioning coefficiants for each 
+        :type plant: plant
+        :param plant: Plant class, which owns root.
+        :type  root_percent: list
+        :param root_percent: List with partitioning coefficiants for each 
         developmentstage as fraction from the plant biomass in [-].
-        @type root_growth: double
-        @param root_growth: Root elongation factor in [cm day-1]
-        @type layer: layer
-        @param layer: Calculates rooting zone.
+        :type root_growth: double
+        :param root_growth: Root elongation factor in [cm day-1]
+        :type layer: layer
+        :param layer: Calculates rooting zone.
 
-        @rtype: root
-        @return: Root instance
+        :rtype: root
+        :return: Root instance
         """
         #Root is part from plant
         self.plant=plant
@@ -676,15 +676,15 @@ class Root:
         is restricted due to the water conditions at actual depth and drought
         stress influences on the whole plant. 
         
-        @type physical_constraints: double
-        @param physical_constraints: Resistance of the soil against root 
+        :type physical_constraints: double
+        :param physical_constraints: Resistance of the soil against root 
         penetration in [-].
-        @type step: double
-        @param step: Time step of the run period.
-        @type fgi: list
-        @param fgi: Biomass distribution values for each layer in [-].
-        @type stress: double
-        @param stress: Stress index from plant droght/nitrogen stress 
+        :type step: double
+        :param step: Time step of the run period.
+        :type fgi: list
+        :param fgi: Biomass distribution values for each layer in [-].
+        :type stress: double
+        :param stress: Stress index from plant droght/nitrogen stress 
         (0 optimal, 1 worst conditions) in [-].
         """
         #Calculate actual rooting depth, restricted by plant stress and soil resistance 
@@ -705,18 +705,18 @@ class Root:
         Allocates biomass over the rooting zone in realtion to a distribution
         index fgi (FeelingGoodIndex).
         
-        @type distr: list
-        @param distr: Total biomass allocation over the rootingzone in [g]. 
-        @type biomass: double
-        @param biomass: Actual root growthrate in [g day-1]
-        @type fgi: list
-        @param fgi: Biomass distribution values for each layer in [-].
+        :type distr: list
+        :param distr: Total biomass allocation over the rootingzone in [g]. 
+        :type biomass: double
+        :param biomass: Actual root growthrate in [g day-1]
+        :type fgi: list
+        :param fgi: Biomass distribution values for each layer in [-].
 
-        @rtype: list
-        @return: List with the total biomass in each layer in the rootingzone 
+        :rtype: list
+        :return: List with the total biomass in each layer in the rootingzone 
         in [g].
         
-        @summary: Returns the biomass distribution over the rootingzone.
+        :summary: Returns the biomass distribution over the rootingzone.
         """
         return [b+(biomass*fgi[i]) for i,b in enumerate(distr)]
     
@@ -739,34 +739,34 @@ class Shoot:
     above ground biomass and the allocation to the other
     above ground parts.
     
-    @summary: Allocates aboveground biomass to leaf, stem and storage organs.
+    :summary: Allocates aboveground biomass to leaf, stem and storage organs.
     """
     def __init__(self,plant,leaf_specific_weight,FRDR,thermaltime_anthesis,shoot_percent,leaf_percent,stem_percent,storage_percent,max_height,elongation_end, thermaltime_maturity):    #FRDR new
         """
         Returns shoot instance. Shoot implements leaf, stem and storageorgans.
         
-        @type plant: plant
-        @param plant: Plant instance which owns shoot.
-        @type leaf_specific_weight: double
-        @param leaf_specific_weight: Specific leaf weight in [g m-2].
-        @type thermaltime_anthesis: double
-        @param thermaltime_anthesis: Accumulative thermaltime at anthesis 
+        :type plant: plant
+        :param plant: Plant instance which owns shoot.
+        :type leaf_specific_weight: double
+        :param leaf_specific_weight: Specific leaf weight in [g m-2].
+        :type thermaltime_anthesis: double
+        :param thermaltime_anthesis: Accumulative thermaltime at anthesis 
         in [°days].
-        @type  shoot_percent: list
-        @param shoot_percent: List with partitioning coefficiants for each
+        :type  shoot_percent: list
+        :param shoot_percent: List with partitioning coefficiants for each
         developmentstage as fraction from the plant biomass in [-].
-        @type  leaf_percent: list
-        @param leaf_percent: List with partitioning coefficiants for each
+        :type  leaf_percent: list
+        :param leaf_percent: List with partitioning coefficiants for each
         developmentstage as fraction from the plant biomass in [-].
-        @type  stem_percent: list
-        @param stem_percent: List with partitioning coefficiants for each
+        :type  stem_percent: list
+        :param stem_percent: List with partitioning coefficiants for each
         developmentstage as fraction from the plant biomass in [-].
-        @type  storage_percent: list
-        @param storage_percent: List with partitioning coefficiants for
+        :type  storage_percent: list
+        :param storage_percent: List with partitioning coefficiants for
         each developmentstage as fraction from the plant biomass in [-].
         
-        @rtype: shoot
-        @return: shoot instance
+        :rtype: shoot
+        :return: shoot instance
         """
         #Shoot is part from plant
         self.plant=plant
@@ -787,18 +787,18 @@ class Shoot:
         Shoot calculates the actual above ground biomass and allocates
         these biomass between the above ground plant organs.
         
-        @type step: double
-        @param step: Time step of the actual model period in [days or hours].
-        @type biomass: double
-        @param biomass: Growthrate of the above ground biomass in [g m-2].
-        @type Wleaf: double
-        @param Wleaf: Growthrate of the leaf biomass in [g m-2].
-        @type Wstem: double
-        @param Wstem: Growthrate of the stem biomass in [g m-2].
-        @type Wstorage: double
-        @param Wstorage: Growthrate of the storage biomass in [g m-2].
-        @type thermaltime: double
-        @param thermaltime: Thermaltime in [°days].
+        :type step: double
+        :param step: Time step of the actual model period in [days or hours].
+        :type biomass: double
+        :param biomass: Growthrate of the above ground biomass in [g m-2].
+        :type Wleaf: double
+        :param Wleaf: Growthrate of the leaf biomass in [g m-2].
+        :type Wstem: double
+        :param Wstem: Growthrate of the stem biomass in [g m-2].
+        :type Wstorage: double
+        :param Wstorage: Growthrate of the storage biomass in [g m-2].
+        :type thermaltime: double
+        :param thermaltime: Thermaltime in [°days].
         """
         #Calculate actual total aboveground biomass
         self.Wtot=self.Wtot+biomass*step
@@ -825,19 +825,19 @@ class Stem:
         """
         Returns stem instance.
         
-        @type shoot: shoot
-        @param shoot: Shoot instance which holds stem.
-        @type percent: list
-        @param percent: List with partitioning coefficiants for each 
+        :type shoot: shoot
+        :param shoot: Shoot instance which holds stem.
+        :type percent: list
+        :param percent: List with partitioning coefficiants for each 
         developmentstage as fraction from the plant biomass in [-].
-        @type elongation_end: double
-        @param elongation_end: Total thermaltime at the end of stem elongation
+        :type elongation_end: double
+        :param elongation_end: Total thermaltime at the end of stem elongation
         in  [°days].
-        @type max_height: double
-        @param max_height: Maximum crop height in [m].
+        :type max_height: double
+        :param max_height: Maximum crop height in [m].
         
-        @rtype: stem
-        @return: stem instance 
+        :rtype: stem
+        :return: stem instance 
         """
         #Stem is part from shoot
         self.shoot=shoot
@@ -855,13 +855,13 @@ class Stem:
         """
         Calculates total stem biomass and plant height.
         
-        @type step: double
-        @param step: Time step of the actual model period in [days or hours].
-        @type biomass: double
-        @param biomass: Growthrate of stem biomass in [g m-2].
-        @type thermaltime: double
-        @param thermaltime: Thermal time in [°days].
-        @return: -
+        :type step: double
+        :param step: Time step of the actual model period in [days or hours].
+        :type biomass: double
+        :param biomass: Growthrate of stem biomass in [g m-2].
+        :type thermaltime: double
+        :param thermaltime: Thermal time in [°days].
+        :return: -
         """
         self.height = self.vertical_stem_growth(self.max_height,self.elongation_end,thermaltime)
         self.Wtot=self.Wtot+biomass*step
@@ -873,16 +873,16 @@ class Stem:
         height. That fraction refers to fraction of actual thermal time
         form the total thermaltime at the end of stem elongation stage.
         
-        @type max_height: double
-        @param max_height: Maximum Crop Height in [m].
-        @type thermaltime: double
-        @param thermaltime: Actual thermal time in [degreedays].
-        @type elongation_end: double
-        @param elongation_end: Total thermal time at the end of stem elongation [degreedays].
-        @type start_height: double
-        @param start_height: inital and minimum height of the vegetation [m].
-        @rtype: double
-        @return: Vertical growth rate depending on development in [m].
+        :type max_height: double
+        :param max_height: Maximum Crop Height in [m].
+        :type thermaltime: double
+        :param thermaltime: Actual thermal time in [degreedays].
+        :type elongation_end: double
+        :param elongation_end: Total thermal time at the end of stem elongation [degreedays].
+        :type start_height: double
+        :param start_height: inital and minimum height of the vegetation [m].
+        :rtype: double
+        :return: Vertical growth rate depending on development in [m].
         """
         return max(start_height, min((thermaltime / elongation_end) * max_height,max_height))
 #        return                  min(thermaltime / elongation_end,max_height) *max_height      ## before it was
@@ -905,13 +905,13 @@ class Storage_Organs:
         """
         Returns storageorgans instance.
         
-        @type shoot: shoot
-        @param shoot: Shoot instance which holds sotragaorgans.
-        @type percent: list
-        @param percent: List with partitioning coefficiants for each 
+        :type shoot: shoot
+        :param shoot: Shoot instance which holds sotragaorgans.
+        :type percent: list
+        :param percent: List with partitioning coefficiants for each 
         developmentstage as fraction from the plant biomass in [-].
-        @rtype: storage_organs
-        @return: storaga_organs instance
+        :rtype: storage_organs
+        :return: storaga_organs instance
         """
         self.shoot=shoot
         #Constant variables
@@ -925,12 +925,12 @@ class Storage_Organs:
         """
         Calculates storageorgans total biomass.
         
-        @type step: double
-        @param step: Time step of the actual model period in [days or hours].
-        @type biomass: double
-        @param biomass: Growthrate of storageorgans biomass in [g m-2].
+        :type step: double
+        :param step: Time step of the actual model period in [days or hours].
+        :type biomass: double
+        :param biomass: Growthrate of storageorgans biomass in [g m-2].
         
-        @return: -
+        :return: -
         """
         self.Wtot=self.Wtot+biomass*step
 
@@ -938,12 +938,8 @@ class Leaf:
     """
     Calculates leaf biomass and leaf area index.
     
-    Implementation
-    ==============
     Leaf is implemented from the shoot class.
     
-    Call signature
-    ==============
     Leaf calculates actual total biomass and the leaf area index with
     the specific leaf weight and a partitioing coefficiant.
     """
@@ -951,19 +947,19 @@ class Leaf:
         """
         Returns a leaf instance.
         
-        @type shoot: shoot
-        @param shoot: Shoot instance which holds sotragaorgans.
-        @type percent: list
-        @param percent: List with partitioning coefficiants for each 
+        :type shoot: shoot
+        :param shoot: Shoot instance which holds sotragaorgans.
+        :type percent: list
+        :param percent: List with partitioning coefficiants for each 
         developmentstage as fraction from the plant biomass in [-].
-        @type leaf_specific_weight: double
-        @param leaf_specific_weight: Specific leaf weight in [g m-2].
+        :type leaf_specific_weight: double
+        :param leaf_specific_weight: Specific leaf weight in [g m-2].
         weight to leaf area index [g m-2].
-        @type thermaltime_anthesis: double
-        @param thermaltime_anthesis: Total thermaltime at 
+        :type thermaltime_anthesis: double
+        :param thermaltime_anthesis: Total thermaltime at 
         developmentstage anthesis in [degreedays].
-        @rtype: leaf
-        @return: leaf instance
+        :rtype: leaf
+        :return: leaf instance
         """
         #Part from shoot
         self.shoot=shoot
@@ -988,8 +984,8 @@ class Leaf:
         """
         Returns leaf area index.
         
-        @rtype: double
-        @return: LeafAreaIndex in [m2 m-2]
+        :rtype: double
+        :return: LeafAreaIndex in [m2 m-2]
         """
         return self.leafarea
         
@@ -998,13 +994,13 @@ class Leaf:
         Call leaf calculates total leaf biomass and LAI. Additional LAI is
         calculated from the specific leaf weight and leaf biomass.
         
-        @type step: double
-        @param step: Time step of the actual model period in [days or hours].
-        @type biomass: double
-        @param biomass: Growthrate of the above ground biomass in [g m-2].
-        @type Wleaf: double
-        @type thermaltime: double
-        @param thermaltime: Thermaltime in [°days].
+        :type step: double
+        :param step: Time step of the actual model period in [days or hours].
+        :type biomass: double
+        :param biomass: Growthrate of the above ground biomass in [g m-2].
+        :type Wleaf: double
+        :type thermaltime: double
+        :param thermaltime: Thermaltime in [°days].
         """
         
 ##### O L D ########### O L D ############## O L D ############### without senescence
@@ -1047,16 +1043,16 @@ class Leaf:
         The calculation is based on the concept applied in SUCROS97.
         Here sen (PMF) equate to RDR (SUCROS97).
         
-        @type tt_rate: double
-        @param tt_rate: degree day (Tmean - Tbase) [°C days]
-        @type tt_maturity: doulbe
-        @param tt_maturity: sum of degree days when maturity is reached [°C days]
-        @type tt_sum: double
-        @param tt_sum: sum of all degree days [°C days]
-        @type DRDR: double
-        @param FRDR: factor varying senescence rate [-]
-        @return senenscenece: 
-        @rtype: double
+        :type tt_rate: double
+        :param tt_rate: degree day (Tmean - Tbase) [°C days]
+        :type tt_maturity: doulbe
+        :param tt_maturity: sum of degree days when maturity is reached [°C days]
+        :type tt_sum: double
+        :param tt_sum: sum of all degree days [°C days]
+        :type FRDR: double
+        :param FRDR: factor varying senescence rate [-]
+        :return: senenscenece: 
+        :rtype: double
         """
         sen = tt_rate / max(0.1,(tt_maturity - tt_sum)) * FRDR
         return sen
@@ -1070,14 +1066,14 @@ class Leaf:
         Leaf specific weight is a constant factor. It can be adjusted to the
         actual development stage with the function leaf.adj_weight().
         
-        @type biomass: double
-        @param biomass: Biomass of leafs in [g m-2].
-        @type specific_weight: double
-        @param specific_weight: Specific biomass of the leafs in [g m-2].
-        @rtype: double
-        @return: LeafAreaIndex in [m2 m-2]
+        :type biomass: double
+        :param biomass: Biomass of leafs in [g m-2].
+        :type specific_weight: double
+        :param specific_weight: Specific biomass of the leafs in [g m-2].
+        :rtype: double
+        :return: LeafAreaIndex in [m2 m-2]
         
-        @see: [De Vries et al, 1989]
+        :see: [De Vries et al, 1989]
         """
         return biomass/specific_weight             
             
@@ -1092,10 +1088,10 @@ class Leaf:
         factor that depends on the development stage of the crop.
         
         
-        @type thermaltime: double
-        @param thermaltime: Actual thermaltime in [degreedays].
-        @type thermaltime_anthesis: double
-        @param thermaltime_anthesis: Thermaltime at anthesis in [°days].
+        :type thermaltime: double
+        :param thermaltime: Actual thermaltime in [degreedays].
+        :type thermaltime_anthesis: double
+        :param thermaltime_anthesis: Thermaltime at anthesis in [°days].
         
         """
         return min((thermaltime/tt_anthesis+0.25),1.)
@@ -1106,17 +1102,17 @@ class Leaf:
         transpiration rate. The actual transpiration rate is below the potential rate
         when stomatal resistance increases in response to water shortage.
         
-        @type param: double
-        @param param: 
-        @rtype: double
-        @return: Stomatal resistance
+        :type param: double
+        :param param: 
+        :rtype: double
+        :return: Stomatal resistance
         
         The stomatal resistance is mainly determined by photosynthesis and the
         CO 2 -internal/external fraction.
         
-        @see: [O'Toole and Cruz, 1980, De Vries et al, 1989]
+        :see: [O'Toole and Cruz, 1980, De Vries et al, 1989]
         
-        @todo: Calculation of stomatal resistance
+        :todo: Calculation of stomatal resistance
         """
         pass
 

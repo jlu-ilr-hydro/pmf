@@ -2,11 +2,11 @@
 """
 PMF interfaces (atmosphere, soil) to the environmental models.
 
-@author: Sebastian Multsch
+:author: Sebastian Multsch
 
-@version: 0.1 (26.10.2010)
+:version: 0.1 (26.10.2010)
 
-@copyright: 
+:copyright: 
  This program is free software; you can redistribute it and/or modify it under  
  the terms of the GNU General Public License as published by the Free Software  
  Foundation; either version 3 of the License, or (at your option) any later 
@@ -17,7 +17,7 @@ PMF interfaces (atmosphere, soil) to the environmental models.
  Public License along  with this program;
  if not, see <http://www.gnu.org/licenses/>.
  
-@summary: Plant interfaces (atmosphere, soil) to the environmental models.
+:summary: Plant interfaces (atmosphere, soil) to the environmental models.
 """
 class Atmosphere:
     def get_tmean(self,time):

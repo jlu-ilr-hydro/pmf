@@ -2,7 +2,7 @@
 '''
 Created on 25 sep 2014
 
-@author: kellner-j
+:author: kellner-j
 '''
 import math
 
@@ -40,7 +40,7 @@ class ET_ShuttleworthWallace:
     implemented in the class SWC - SoilWaterContainer. It is possible
     to use other water balance models, if they match the interface requirements.    
     
-    @see: [Zhou et al. (2006)]
+    :see: [Zhou et al. (2006)]
     """
 
     
@@ -54,18 +54,18 @@ class ET_ShuttleworthWallace:
         """
         Returns a ET_ShuttleworthWallace instance.
         
-        @type w_leafwidth: double
-        @param w_leafwidth: Width of leaves [m]; for perennial w_leafwidth = w_leafwidth_max.    
-        @type z_0w: double
-        @param z_0w: Roughness length over weather station ground [m]
-        @type z_0g: double
-        @param z_0g: Roughness length of substrate ground [m]
-        @type z_w: double
-        @param z_w: Height of weather observation [m]
-        @type kappa: double
-        @param kappa: von Karman's constant [-]
-        @rtype r_st_min: double
-        @return r_st_min: Minimal stomatal resistance of individual leaves under optimal conditions [s m-1] 
+        :type w_leafwidth: double
+        :param w_leafwidth: Width of leaves [m]; for perennial w_leafwidth = w_leafwidth_max.    
+        :type z_0w: double
+        :param z_0w: Roughness length over weather station ground [m]
+        :type z_0g: double
+        :param z_0g: Roughness length of substrate ground [m]
+        :type z_w: double
+        :param z_w: Height of weather observation [m]
+        :type kappa: double
+        :param kappa: von Karman's constant [-]
+        :rtype r_st_min: double
+        :return r_st_min: Minimal stomatal resistance of individual leaves under optimal conditions [s m-1] 
                           extracted from Zhou et al. (2006) for grasslands               
         """
 
@@ -93,8 +93,8 @@ class ET_ShuttleworthWallace:
         Pot_Transpiration_PenmanMonteith is similar to the transpiration by 
         applying the Penman-Monteith equation to a closed canopy.        
         
-        @rtype: double
-        @return: Transpiration [MJ m-2 d-1]
+        :rtype: double
+        :return: Transpiration [MJ m-2 d-1]
         """
         return self._Tpot_penmanmonteith
     @property
@@ -105,8 +105,8 @@ class ET_ShuttleworthWallace:
         Pot_Evaporation_PenmanMonteith is similar to the evaporation by 
         applying the Penman-Monteith equation to a bare substrate.
         
-        @rtype: double
-        @return: Evaporation [MJ m-2 d-1]
+        :rtype: double
+        :return: Evaporation [MJ m-2 d-1]
         """
         return self._Epot_penmanmonteith
    
@@ -116,8 +116,8 @@ class ET_ShuttleworthWallace:
         Returns potential transpiration from canopy calculated according to 
         Shuttleworth-Wallace 1989.
 
-        @rtype: double
-        @return: Transpiration in [mm d-1].
+        :rtype: double
+        :return: Transpiration in [mm d-1].
         """
         return self._Tpot_SW
         
@@ -127,8 +127,8 @@ class ET_ShuttleworthWallace:
         Returns potential evaporation from soil calculated according to 
         Shuttleworth-Wallace 1989.
 
-        @rtype: double
-        @return: evaporation in [mm d-1].
+        :rtype: double
+        :return: evaporation in [mm d-1].
         """
         return self._Epot_SW
         
@@ -138,8 +138,8 @@ class ET_ShuttleworthWallace:
         Returns potential evapotranspiration calcutlated according to 
         Shuttleworth-Wallace 1989.
         
-        @rtype: double
-        @return: Evapotranspiration [mm d-1]
+        :rtype: double
+        :return: Evapotranspiration [mm d-1]
         """
         return self._ETpot_SW
     
@@ -150,26 +150,26 @@ class ET_ShuttleworthWallace:
         The user can call the transpiration coefficiEnts with the corresonding 
         properties of the class.
 
-        @type T: double
-        @param T: Mean daily air temperature at 2 m height [°C]       
-        @type Tmax: double
-        @param Tmax: Maximum daily air temperature at 2 m height [°C]   
-        @type Tmin: double
-        @param Tmin: Minimum daily air temperature at 2 m height [°C]   
-        @type Rs: double
-        @param Rs: Solar radiation that reaches the earth surface [MJ m-2]
-        @type Rs_clearsky: double
-        @param Rs_clearsky: Solar that reaches the earth surface under clear sky conditions [MJ m-2]
-        @type e_s: double
-        @param e_s: Saturation vapour pressure [kPa]
-        @type e_a: double
-        @type e_a: Actual vapour pressure [kPa]
-        @type windspeed: double
-        @param windspedd: Wind speed at 2 m height [m s-1]
-        @type LAI: double
-        @param LAI: Leaf are index [m2 m-2]
-        @type vegH: double
-        @param vegH: Vegetation height [m]
+        :type T: double
+        :param T: Mean daily air temperature at 2 m height [°C]       
+        :type Tmax: double
+        :param Tmax: Maximum daily air temperature at 2 m height [°C]   
+        :type Tmin: double
+        :param Tmin: Minimum daily air temperature at 2 m height [°C]   
+        :type Rs: double
+        :param Rs: Solar radiation that reaches the earth surface [MJ m-2]
+        :type Rs_clearsky: double
+        :param Rs_clearsky: Solar that reaches the earth surface under clear sky conditions [MJ m-2]
+        :type e_s: double
+        :param e_s: Saturation vapour pressure [kPa]
+        :type e_a: double
+        :type e_a: Actual vapour pressure [kPa]
+        :type windspeed: double
+        :param windspedd: Wind speed at 2 m height [m s-1]
+        :type LAI: double
+        :param LAI: Leaf are index [m2 m-2]
+        :type vegH: double
+        :param vegH: Vegetation height [m]
         """
 
         
@@ -222,26 +222,26 @@ class ET_ShuttleworthWallace:
         """
         Calculates potential transpiration in (MJ m-2 d-1).
     
-        @type T: double
-        @param T: Mean daily air temperature at 2 m height [°C]       
-        @type Rsn: double
-        @param Rsn: Net radiation at the soil surface [MJ m-2]
-        @type Rn: double
-        @param Rn: Net radiation at the crop surface [MJ m-2]
-        @type e_s: double
-        @param e_s: Saturation vapour pressure [kPa]
-        @type e_a: double
-        @type e_a: Actual vapour pressure [kPa]
-        @type r_c_a: double
-        @param r_c_a: bulk resistance of boundary layer [m s-1].
-        @type r_a_a: double
-        @param r_a_a: aerodynamic resistance from canopy to reference height [m s-1]
-        @type r_c_s: double
-        @param r_c_s: bulk resistance of canopy stomatal [m*s-1]        
-        @type alt: double
-        @param alt: Geographical altitude [decimal degrees]
-        @rtype: double
-        @return: Potential transpiraton [MJ m-2 d-1]
+        :type T: double
+        :param T: Mean daily air temperature at 2 m height [°C]       
+        :type Rsn: double
+        :param Rsn: Net radiation at the soil surface [MJ m-2]
+        :type Rn: double
+        :param Rn: Net radiation at the crop surface [MJ m-2]
+        :type e_s: double
+        :param e_s: Saturation vapour pressure [kPa]
+        :type e_a: double
+        :type e_a: Actual vapour pressure [kPa]
+        :type r_c_a: double
+        :param r_c_a: bulk resistance of boundary layer [m s-1].
+        :type r_a_a: double
+        :param r_a_a: aerodynamic resistance from canopy to reference height [m s-1]
+        :type r_c_s: double
+        :param r_c_s: bulk resistance of canopy stomatal [m*s-1]        
+        :type alt: double
+        :param alt: Geographical altitude [decimal degrees]
+        :rtype: double
+        :return: Potential transpiraton [MJ m-2 d-1]
         """
         
         delta1 = 4098.*(0.6108*math.exp(17.27*T/(T + 237.3)))/((T + 237.3)**2.)  # slope of saturation vapour pressure curve [kPa °C-1]
@@ -262,28 +262,28 @@ class ET_ShuttleworthWallace:
         """
         Calculates potential evaporation in (MJ m-2 d-1).
     
-        @type T: double
-        @param T: Mean daily air temperature at 2 m height [°C]      
-        @type Rsn: double
-        @param Rsn: Net radiation at the soil surface [MJ m-2]
-        @type Rn: double
-        @param Rn: Net radiation at the crop surface [MJ m-2]
-        @type e_s: double
-        @param e_s: Saturation vapour pressure [kPa]
-        @type e_a: double
-        @type e_a: Actual vapour pressure [kPa]
-        @type r_c_a: double
-        @param r_c_a: bulk resistance of boundary layer [m s-1]
-        @type r_a_a: double
-        @param r_a_a: aerodynamic resistance from canopy to reference height [m s-1]        
-        @type r_s_a: double
-        @param r_s_a: aerodynamic resistance from soil to canopy [m s-1] 
-        @type r_s_s: double
-        @param r_s_s: soil surface resistance [m s-1]        
-        @type alt: double
-        @param alt: Geographical altitude [decimal degrees]
-        @rtype: double
-        @return: Potential evaporation which is similar to PenmanMonteith by applying it to a bare soil [MJ m-2 d-1].
+        :type T: double
+        :param T: Mean daily air temperature at 2 m height [°C]      
+        :type Rsn: double
+        :param Rsn: Net radiation at the soil surface [MJ m-2]
+        :type Rn: double
+        :param Rn: Net radiation at the crop surface [MJ m-2]
+        :type e_s: double
+        :param e_s: Saturation vapour pressure [kPa]
+        :type e_a: double
+        :type e_a: Actual vapour pressure [kPa]
+        :type r_c_a: double
+        :param r_c_a: bulk resistance of boundary layer [m s-1]
+        :type r_a_a: double
+        :param r_a_a: aerodynamic resistance from canopy to reference height [m s-1]        
+        :type r_s_a: double
+        :param r_s_a: aerodynamic resistance from soil to canopy [m s-1] 
+        :type r_s_s: double
+        :param r_s_s: soil surface resistance [m s-1]        
+        :type alt: double
+        :param alt: Geographical altitude [decimal degrees]
+        :rtype: double
+        :return: Potential evaporation which is similar to PenmanMonteith by applying it to a bare soil [MJ m-2 d-1].
         """
         
         delta1 = 4098.*(0.6108*math.exp(17.27*T/(T + 237.3)))/((T + 237.3)**2.)   # slope of saturation vapour pressure curve [kPa °C-1]
@@ -304,22 +304,22 @@ class ET_ShuttleworthWallace:
         """
         Calculates the weighting coefficient C_c for transpiration.
     
-        @type T: double
-        @param T: Mean daily air temperature at 2 m height [°C]        
-        @type r_c_a: double
-        @param r_c_a: bulk resistance of boundary layer [m s-1].
-        @type r_a_a: double
-        @param r_a_a: aerodynamic resistance from canopy to reference height [m s-1]
-        @type r_c_s: double
-        @param r_c_s: bulk resistance of canopy stomatal [m s-1]           
-        @type r_s_a: double
-        @param r_s_a: aerodynamic resistance from soil to canopy [m s-1] 
-        @type r_s_s: double
-        @param r_s_s: soil surface resistance [m s-1]            
-        @type alt: double
-        @param alt: Geographical altitude [decimal degrees]
-        @rtype: double
-        @return: Weightig factor for potential transpiration [-].
+        :type T: double
+        :param T: Mean daily air temperature at 2 m height [°C]        
+        :type r_c_a: double
+        :param r_c_a: bulk resistance of boundary layer [m s-1].
+        :type r_a_a: double
+        :param r_a_a: aerodynamic resistance from canopy to reference height [m s-1]
+        :type r_c_s: double
+        :param r_c_s: bulk resistance of canopy stomatal [m s-1]           
+        :type r_s_a: double
+        :param r_s_a: aerodynamic resistance from soil to canopy [m s-1] 
+        :type r_s_s: double
+        :param r_s_s: soil surface resistance [m s-1]            
+        :type alt: double
+        :param alt: Geographical altitude [decimal degrees]
+        :rtype: double
+        :return: Weightig factor for potential transpiration [-].
         """
             
         delta1 = 4098.*(0.6108*math.exp(17.27*T/(T + 237.3)))/((T + 237.3)**2.)  # slope of saturation vapour pressure curve [kPa °C-1]
@@ -340,22 +340,22 @@ class ET_ShuttleworthWallace:
         """
         Calculates the weighting factor C_s for evaporation. 
         
-        @type T: double
-        @param T: Mean daily air temperature at 2 m height [°C]        
-        @type r_c_a: double
-        @param r_c_a: bulk resistance of boundary layer [m s-1]
-        @type r_a_a: double
-        @param r_a_a: aerodynamic resistance from canopy to reference height [m s-1]
-        @type r_c_s: double
-        @param r_c_s: bulk resistance of canopy stomatal [m s-1]           
-        @type r_s_a: double
-        @param r_s_a: aerodynamic resistance from soil to canopy [m s-1] 
-        @type r_s_s: double
-        @param r_s_s: soil surface resistance [m s-1]            
-        @type alt: double
-        @param alt: Geographical altitude in [decimal degrees]
-        @rtype: double
-        @return: Weightig factor for potential evaporation [-].
+        :type T: double
+        :param T: Mean daily air temperature at 2 m height [°C]        
+        :type r_c_a: double
+        :param r_c_a: bulk resistance of boundary layer [m s-1]
+        :type r_a_a: double
+        :param r_a_a: aerodynamic resistance from canopy to reference height [m s-1]
+        :type r_c_s: double
+        :param r_c_s: bulk resistance of canopy stomatal [m s-1]           
+        :type r_s_a: double
+        :param r_s_a: aerodynamic resistance from soil to canopy [m s-1] 
+        :type r_s_s: double
+        :param r_s_s: soil surface resistance [m s-1]            
+        :type alt: double
+        :param alt: Geographical altitude in [decimal degrees]
+        :rtype: double
+        :return: Weightig factor for potential evaporation [-].
         """
            
         delta1 = 4098.*(0.6108*math.exp(17.27*T/(T + 237.3)))/((T + 237.3)**2.)  # slope of saturation vapour pressure curve [kPa °C-1]
@@ -375,12 +375,12 @@ class ET_ShuttleworthWallace:
         """
         Calculates mean drag coefficients for indiviual crops.
 
-        @type vegH: double
-        @param vegH: Vegetation height [m]     
-        @type z_0c: double
-        @param z_0c: Roughness length of a closed canopy [m] 
-        @rtype: double
-        @return: Mean drag coefficients for indiviual crops [m].
+        :type vegH: double
+        :param vegH: Vegetation height [m]     
+        :type z_0c: double
+        :param z_0c: Roughness length of a closed canopy [m] 
+        :rtype: double
+        :return: Mean drag coefficients for indiviual crops [m].
         """
         if vegH <= 0.0:    c_d=1.4*0.001
         else : c_d=((-1.+math.exp(0.909 - 3.03*z_0c/vegH))**4.)/4. 
@@ -391,12 +391,12 @@ class ET_ShuttleworthWallace:
         """
         Calculates the zero plane displacement of canopy.
 
-        @type LAI: double
-        @param LAI: leaf area index [m2 m-2]
-        @type vegH: double
-        @param vegH: Vegetation height [m]    
-        @rtype: double
-        @return: Zero plane displacement of canopy [m].
+        :type LAI: double
+        :param LAI: leaf area index [m2 m-2]
+        :type vegH: double
+        :param vegH: Vegetation height [m]    
+        :rtype: double
+        :return: Zero plane displacement of canopy [m].
         """
         if LAI<4.:   d_0 =1.1*vegH*math.log(1+(c_d*LAI)**0.25)
         else : d_0 = vegH-z_0c/0.3        
@@ -407,10 +407,10 @@ class ET_ShuttleworthWallace:
         """
         Calculates the "preferred" zero plane displacement.
 
-        @type vegH: double
-        @param vegH: Vegetation height [m]    
-        @rtype: double
-        @return: "Preferred" zero plane displacement [m].
+        :type vegH: double
+        :param vegH: Vegetation height [m]    
+        :rtype: double
+        :return: "Preferred" zero plane displacement [m].
         """
         return 0.63*vegH
         
@@ -419,16 +419,16 @@ class ET_ShuttleworthWallace:
         """
         Calculates the eddy diffusion coefficient at the top of canopy.
 
-        @type vegH: double
-        @param vegH: Vegetation height [m]
-        @type kappa: double
-        @param kappa: von Karman's constant [-] 
-        @type u_stern: double
-        @param u_stern: friction velocity [m s-1] 
-        @type d_0: double
-        @param d_0: Zero plane displacement of canopy [m]
-        @rtype: double
-        @return: Eddy diffusion coefficient at the top of canopy [m2 s-1].
+        :type vegH: double
+        :param vegH: Vegetation height [m]
+        :type kappa: double
+        :param kappa: von Karman's constant [-] 
+        :type u_stern: double
+        :param u_stern: friction velocity [m s-1] 
+        :type d_0: double
+        :param d_0: Zero plane displacement of canopy [m]
+        :rtype: double
+        :return: Eddy diffusion coefficient at the top of canopy [m2 s-1].
         """
         return kappa * u_stern*(vegH - d_0)
         
@@ -437,10 +437,10 @@ class ET_ShuttleworthWallace:
         """
         Calculates the effective LAI.
 
-        @type LAI: double
-        @param LAI: Leaf area index [m2 m-2]
-        @rtype: double
-        @return: Effective leaf area index [m2 m-2].       
+        :type LAI: double
+        :param LAI: Leaf area index [m2 m-2]
+        :rtype: double
+        :return: Effective leaf area index [m2 m-2].       
         """
         if LAI <=2.: LAI_e=LAI
         elif LAI >=4.: LAI_e=LAI/2.
@@ -452,10 +452,10 @@ class ET_ShuttleworthWallace:
         """
         Calculates the latent heat of water vapourisation (MJ/kg), called lambda.
         
-        @type T: double
-        @param T: Mean daily air temperature at 2 m height [°C].
-        @rtype: double
-        @return: latent heat of water vapourisation [MJ/kg].
+        :type T: double
+        :param T: Mean daily air temperature at 2 m height [°C].
+        :rtype: double
+        :return: latent heat of water vapourisation [MJ/kg].
         """
         return (2.501 - 0.002361*T)     
         
@@ -464,10 +464,10 @@ class ET_ShuttleworthWallace:
         """
         Calculates eddy diffusivity decay constant of the vegetation.
 
-        @type vegH: double
-        @param vegH: Vegetation height [m]
-        @rtype: double
-        @return: Eddy diffusivity decay constant of the vegetation [-].
+        :type vegH: double
+        :param vegH: Vegetation height [m]
+        :rtype: double
+        :return: Eddy diffusivity decay constant of the vegetation [-].
         """
         if vegH <= 1.: n_eddy = 2.5                               # vegH = h_c                 
         else : n_eddy = 2.306 + 0.194* vegH  
@@ -478,26 +478,26 @@ class ET_ShuttleworthWallace:
         """
         Calculates aerodynamic resistance from canopy to reference height.
 
-        @type vegH: double
-        @param vegH: Vegetation height [m]
-        @type kappa: double
-        @param kappa: von Karman's constant [-]   
-        @type u_stern: double
-        @param u_stern: Friction velocity [m s-1]
-        @type z_a: double
-        @param z_a: Reference height [m]        
-        @type d_0: double
-        @param d_0: Zero plane displacement of canopy [m]        
-        @type n_eddy: double
-        @param n_eddy: Eddy diffusivity decay constant of the vegetation [-] 
-        @type k_h: double
-        @param k_h: Eddy diffusion coefficient at the top of canopy [m2 s-1]
-        @type Z_0: double
-        @param Z_0: "Preferred" roughness length [m]
-        @type d_p: double
-        @param d_p: "Preferred" zero plane displacement [m]
-        @rtype: double
-        @return: Aerodynamic resistance from canopy to reference height [m s-1].
+        :type vegH: double
+        :param vegH: Vegetation height [m]
+        :type kappa: double
+        :param kappa: von Karman's constant [-]   
+        :type u_stern: double
+        :param u_stern: Friction velocity [m s-1]
+        :type z_a: double
+        :param z_a: Reference height [m]        
+        :type d_0: double
+        :param d_0: Zero plane displacement of canopy [m]        
+        :type n_eddy: double
+        :param n_eddy: Eddy diffusivity decay constant of the vegetation [-] 
+        :type k_h: double
+        :param k_h: Eddy diffusion coefficient at the top of canopy [m2 s-1]
+        :type Z_0: double
+        :param Z_0: "Preferred" roughness length [m]
+        :type d_p: double
+        :param d_p: "Preferred" zero plane displacement [m]
+        :rtype: double
+        :return: Aerodynamic resistance from canopy to reference height [m s-1].
         """
         return 1./(kappa*u_stern)*math.log((z_a-d_0)/(vegH-d_0))+vegH/(n_eddy*k_h)*(math.exp(n_eddy*(1.-(Z_0+d_p)/vegH))-1.)
 
@@ -506,14 +506,14 @@ class ET_ShuttleworthWallace:
         """
         Calculates r_b which is needed for calculation of r_c_a
         
-        @type w_leafwidth: double
-        @param w_leafwidth: Width of leaves [m]; for perennial w_leafwidth = w_leafwidth_max        
-        @type u_h: double
-        @param u_h: Wind speed at the top of canopy [m s-1]
-        @type n_eddy: double
-        @param n_eddy: Eddy diffusivity decay constant of the vegetation [-]           
-        @rtype: double
-        @return: r_b which is needed for calculation of r_c_a [s m-1].
+        :type w_leafwidth: double
+        :param w_leafwidth: Width of leaves [m]; for perennial w_leafwidth = w_leafwidth_max        
+        :type u_h: double
+        :param u_h: Wind speed at the top of canopy [m s-1]
+        :type n_eddy: double
+        :param n_eddy: Eddy diffusivity decay constant of the vegetation [-]           
+        :rtype: double
+        :return: r_b which is needed for calculation of r_c_a [s m-1].
         """       
         return (100./n_eddy*(w_leafwidth/u_h)**0.5 * (1.-math.exp(-n_eddy/2.))**(-1.))
 
@@ -522,12 +522,12 @@ class ET_ShuttleworthWallace:
         """
         Calculates bulk resistance of boundary layer.
         
-        @type LAI: double
-        @param LAI: Leaf area index [m2 m-2]
-        @type r_b: double
-        @param r_b: r_b [s m-1]
-        @rtype: double
-        @return: Bulk resistance of boundary layer [m s-1].
+        :type LAI: double
+        :param LAI: Leaf area index [m2 m-2]
+        :type r_b: double
+        :param r_b: r_b [s m-1]
+        :rtype: double
+        :return: Bulk resistance of boundary layer [m s-1].
         """
         return r_b * 0.5/LAI
         
@@ -542,18 +542,18 @@ class ET_ShuttleworthWallace:
         This limit is also extracted from Zhou et al. (2006) and based on Tourula and 
         Heikinheimo (1998).
 
-        @type LAI_e: double
-        @param LAI_e: Effective leaf area index [m2 m-2]
-        @type r_st_min: double
-        @param r_st_min: Minimal stomatal resistance of individual leaves under optimal conditions [s m-1]        
-        @type CO2_stress: double
-        @param CO2_stress: Stomatal stress due to atmospheric CO2 [-]
-        @type VPD_stress: double
-        @param VPD_stress: Stomatal stress due to vapor pressure deficit [-]
-        @type Temp_stress: double
-        @param Temp_stress: Stomatal stress due to temperature [-]
-        @rtype: double
-        @return: Bulk stomatal resistance of canopy [m s-1].
+        :type LAI_e: double
+        :param LAI_e: Effective leaf area index [m2 m-2]
+        :type r_st_min: double
+        :param r_st_min: Minimal stomatal resistance of individual leaves under optimal conditions [s m-1]        
+        :type CO2_stress: double
+        :param CO2_stress: Stomatal stress due to atmospheric CO2 [-]
+        :type VPD_stress: double
+        :param VPD_stress: Stomatal stress due to vapor pressure deficit [-]
+        :type Temp_stress: double
+        :param Temp_stress: Stomatal stress due to temperature [-]
+        :rtype: double
+        :return: Bulk stomatal resistance of canopy [m s-1].
         """
         
         return max(50000. , r_st_min/(LAI_e*(CO2_response * VPD_response * Temp_response)))  
@@ -572,10 +572,10 @@ class ET_ShuttleworthWallace:
         
         This approach was taken based on Stockle 1992, p.233.
         
-        @type CO2_measured: double
-        @param CO2_measured: atmospheric CO2 concentration in rings [ppm].
-        @rtype: double
-        @return: Stomatal response to atmospheric CO2 [-].          
+        :type CO2_measured: double
+        :param CO2_measured: atmospheric CO2 concentration in rings [ppm].
+        :rtype: double
+        :return: Stomatal response to atmospheric CO2 [-].          
         """        
     
         return 1.4 - 0.4*(CO2_measured/330.) 
@@ -591,12 +591,12 @@ class ET_ShuttleworthWallace:
         
         This approach was taken from Zhou et al. 2006, p.155.
         
-        @type e_s: double
-        @param e_s: Saturation vapour pressure [kPa]
-        @type e_a: double
-        @param e_a: Actual vapour pressure [kPa] 
-        @rtype: double
-        @return: Stomatal response to vapor pressure deficit [-].          
+        :type e_s: double
+        :param e_s: Saturation vapour pressure [kPa]
+        :type e_a: double
+        :param e_a: Actual vapour pressure [kPa] 
+        :rtype: double
+        :return: Stomatal response to vapor pressure deficit [-].          
         """
         vapor = e_s - e_a
         vpd_response = 1. - 0.409 * vapor
@@ -613,10 +613,10 @@ class ET_ShuttleworthWallace:
         Is the air temperature less than 0°C the stomata close completely.
         This approach was taken from Zhou et al. 2006, p.155.
         
-        @type T: double
-        @param T: Daily mean air temperature [°C] 
-        @rtype: double
-        @return: Stomatal response to temperature [-].         
+        :type T: double
+        :param T: Daily mean air temperature [°C] 
+        :rtype: double
+        :return: Stomatal response to temperature [-].         
         """
         T_kelvin = T + 273.16
         
@@ -631,20 +631,20 @@ class ET_ShuttleworthWallace:
         """
         Calculates aerodynamic resistance from soil to canopy.
         
-        @type vegH: double
-        @param vegH: Vegetation height [m]  
-        @type n_eddy: double
-        @param n_eddy: Eddy diffusivity decay constant of the vegetation [-]   
-        @type k_h: double
-        @param k_h: Eddy diffusion coefficient at the top of canopy [m2 s-1]
-        @type z_0g: double
-        @param z_0g: Roughness length of substrate ground [m]
-        @type Z_0: double
-        @param Z_0: "Preferred" roughness length [m]
-        @type d_p: double
-        @param d_p: "Preferred" zero plane displacement [m]
-        @rtype: double
-        @return: Aerodynamic resistance from soil to canopy [m s-1].
+        :type vegH: double
+        :param vegH: Vegetation height [m]  
+        :type n_eddy: double
+        :param n_eddy: Eddy diffusivity decay constant of the vegetation [-]   
+        :type k_h: double
+        :param k_h: Eddy diffusion coefficient at the top of canopy [m2 s-1]
+        :type z_0g: double
+        :param z_0g: Roughness length of substrate ground [m]
+        :type Z_0: double
+        :param Z_0: "Preferred" roughness length [m]
+        :type d_p: double
+        :param d_p: "Preferred" zero plane displacement [m]
+        :rtype: double
+        :return: Aerodynamic resistance from soil to canopy [m s-1].
         """
         return (vegH*math.exp(n_eddy)/(n_eddy*k_h)*(math.exp(-n_eddy*z_0g/vegH)-math.exp(-n_eddy*(Z_0+d_p)/vegH)))
         
@@ -663,22 +663,22 @@ class ET_ShuttleworthWallace:
         """
         Calculates the wind speed at the reference height.
         
-        @type windspeed: double
-        @param windspedd: Wind speed at 2 m height [m s-1]
-        @type z_b: double
-        @param z_b: Height of the internal boundary layer [m]
-        @type z_0w: double
-        @param z_0w: Roughness length over weather station ground [m]
-        @type z_a: double
-        @param z_a: Reference height [m]
-        @type d_0: double
-        @param d_0: Zero plane displacement of canopy [m]
-        @type z_0: double
-        @param z_0: Roughness length of the ground [m]
-        @type z_w: double
-        @param z_w: Height of weather observation [m]
-        @rtype: double
-        @return: Wind speed at the reference height [m s-1].
+        :type windspeed: double
+        :param windspedd: Wind speed at 2 m height [m s-1]
+        :type z_b: double
+        :param z_b: Height of the internal boundary layer [m]
+        :type z_0w: double
+        :param z_0w: Roughness length over weather station ground [m]
+        :type z_a: double
+        :param z_a: Reference height [m]
+        :type d_0: double
+        :param d_0: Zero plane displacement of canopy [m]
+        :type z_0: double
+        :param z_0: Roughness length of the ground [m]
+        :type z_w: double
+        :param z_w: Height of weather observation [m]
+        :rtype: double
+        :return: Wind speed at the reference height [m s-1].
         """
         return windspeed*((math.log(z_b/z_0w)*math.log((z_a-d_0)/z_0))/(math.log(z_b/z_0)*math.log(z_w/z_0w)))
 
@@ -687,22 +687,22 @@ class ET_ShuttleworthWallace:
         """
         Calculates the wind speed at the top of canopy.
         
-        @type windspeed: double
-        @param windspedd: Wind speed at 2 m height [m s-1]
-        @type z_b: double
-        @param z_b: Height of the internal boundary layer [m]
-        @type z_0w: double
-        @param z_0w: Roughness length over weather station ground [m]
-        @type vegH: double
-        @param vegH: Vegetation height [m]  
-        @type d_0: double
-        @param d_0: Zero plane displacement of canopy [m]
-        @type z_0: double
-        @param z_0: Roughness length of the ground [m]
-        @type z_w: double
-        @param z_w: Height of weather observation [m]
-        @rtype: double
-        @return: Wind speed at the top of canopy [m s-1].
+        :type windspeed: double
+        :param windspedd: Wind speed at 2 m height [m s-1]
+        :type z_b: double
+        :param z_b: Height of the internal boundary layer [m]
+        :type z_0w: double
+        :param z_0w: Roughness length over weather station ground [m]
+        :type vegH: double
+        :param vegH: Vegetation height [m]  
+        :type d_0: double
+        :param d_0: Zero plane displacement of canopy [m]
+        :type z_0: double
+        :param z_0: Roughness length of the ground [m]
+        :type z_w: double
+        :param z_w: Height of weather observation [m]
+        :rtype: double
+        :return: Wind speed at the top of canopy [m s-1].
         """
         if vegH <= 0.:  u_h = windspeed*((math.log(z_b/z_0w)*math.log((0.1)/z_0))/(math.log(z_b/z_0)*math.log(z_w/z_0w))) 
         else : u_h =windspeed*((math.log(z_b/z_0w)*math.log((vegH-d_0)/z_0))/(math.log(z_b/z_0)*math.log(z_w/z_0w))) 
@@ -713,18 +713,18 @@ class ET_ShuttleworthWallace:
         """
         Calculates friction velocity.
 
-        @type u_a: double
-        @param u_a: Wind speed at the reference height [m s-1]
-        @type kappa: double
-        @param kappa: von Karman's constant [-]   
-        @type z_a: double
-        @param z_a: Reference height [m]
-        @type d_0: double
-        @param d_0: Zero plane displacement of canopy [m]
-        @type z_0: double
-        @param z_0: Roughness length of the ground [m]
-        @rtype: double
-        @return: Friction velocity [m s-1].
+        :type u_a: double
+        :param u_a: Wind speed at the reference height [m s-1]
+        :type kappa: double
+        :param kappa: von Karman's constant [-]   
+        :type z_a: double
+        :param z_a: Reference height [m]
+        :type d_0: double
+        :param d_0: Zero plane displacement of canopy [m]
+        :type z_0: double
+        :param z_0: Roughness length of the ground [m]
+        :rtype: double
+        :return: Friction velocity [m s-1].
         """
         return kappa*u_a/(math.log((z_a-d_0)/z_0))
             
@@ -733,10 +733,10 @@ class ET_ShuttleworthWallace:
         """
         Calculates the "preferred" roughness length.
 
-        @type vegH: double
-        @param vegH: Vegetation height [m]  
-        @rtype: double
-        @return: "Preferred" roughness length [m].
+        :type vegH: double
+        :param vegH: Vegetation height [m]  
+        :rtype: double
+        :return: "Preferred" roughness length [m].
         """
         return 0.13*vegH
 
@@ -745,10 +745,10 @@ class ET_ShuttleworthWallace:
         """
         Calculates the roughness length of the ground.
 
-        @type vegH: double
-        @param vegH: Vegetation height [m]  
-        @rtype: double
-        @return: Roughness length of the ground [m].
+        :type vegH: double
+        :param vegH: Vegetation height [m]  
+        :rtype: double
+        :return: Roughness length of the ground [m].
         """
         if vegH <= 0.:    z_0 = 0.01        # aus dem origial Shuttle-Paper, p.847
         else : z_0 =  min(0.3*(vegH-d_0), z_0g + 0.3*vegH*(c_d*LAI)**0.5)
@@ -759,10 +759,10 @@ class ET_ShuttleworthWallace:
         """
         Calculates roughness length of a closed canopy.
 
-        @type vegH: double
-        @param vegH: Vegetation height [m]
-        @rtype: double
-        @return: Roughness length of a closed canopy [m].
+        :type vegH: double
+        :param vegH: Vegetation height [m]
+        :rtype: double
+        :return: Roughness length of a closed canopy [m].
         """
         if vegH<=1.:    z_0c = 0.13*vegH
         else : z_0c = 0.139*vegH - 0.009*vegH**2. 
@@ -773,10 +773,10 @@ class ET_ShuttleworthWallace:
         """
         Calculates reference height, which is 2 m above vegetation.
 
-        @type vegH: double
-        @param vegH: Vegetation height [m]
-        @rtype: double
-        @return: Reference height [m].
+        :type vegH: double
+        :param vegH: Vegetation height [m]
+        :rtype: double
+        :return: Reference height [m].
         """
         return vegH + 2.
         
@@ -785,9 +785,9 @@ class ET_ShuttleworthWallace:
         """
         Calculates the height of the internal boundary layer.
 
-        @type z_0w: double
-        @param z_0w: Roughness length over weather station ground [m]       
-        @rtype: double
-        @return: Height of the internal boundary layer [m].
+        :type z_0w: double
+        :param z_0w: Roughness length over weather station ground [m]       
+        :rtype: double
+        :return: Height of the internal boundary layer [m].
         """
         return 0.334 * 5000.**0.875 * z_0w**0.125

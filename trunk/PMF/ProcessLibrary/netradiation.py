@@ -2,7 +2,7 @@
 '''
 Created on 25 sep 2014
 
-@author: kellner-j
+:author: kellner-j
 '''
 import math
 import pylab as pylab
@@ -23,14 +23,14 @@ class Net_Radiation:
         """
         Returns the net radiation [MJ m-2 d-1]
         
-        @type: leaf
-        @param: leaf instance
-        @type albedo_m: double
-        @param albedo_m: Albedo for a closed grass canopy [-]
-        @type Cr: double
-        @param Cr: Extinction coefficient of the vegeation [-]
-        @rtype: Net_Radiation
-        @return: Net_Radiation instance
+        :type: leaf
+        :param: leaf instance
+        :type albedo_m: double
+        :param albedo_m: Albedo for a closed grass canopy [-]
+        :type Cr: double
+        :param Cr: Extinction coefficient of the vegeation [-]
+        :rtype: Net_Radiation
+        :return: Net_Radiation instance
         """
         
         # crop specific parameter (listet in the CropDatabase)
@@ -50,8 +50,8 @@ class Net_Radiation:
         """
         Returns acutal albedo on basis of LAI.
         
-        @rtype: double
-        @return: Albedo [-]
+        :rtype: double
+        :return: Albedo [-]
         """
         return self.albedo
         
@@ -60,8 +60,8 @@ class Net_Radiation:
         """
         Returns net radiation.
         
-        @rtype: double
-        @return: Net radiation [MJ m-2 d-1]
+        :rtype: double
+        :return: Net radiation [MJ m-2 d-1]
         """
         return self.R_n
         
@@ -74,18 +74,18 @@ class Net_Radiation:
         The net radiation is calculated considering a change in albedo 
         due to varying LAI over development.
 
-        @type Tmax: double
-        @param Tmax: Maximum temperature [K]       
-        @type Tmin: double
-        @param Tmin: Minimum temperature [K]
-        @type e_a: double
-        @type e_a: Actual vapour pressure [kPa]  
-        @type Rsolar: double
-        @param Rsolar: Solar radiation [MJ m-2 d-1]
-        @type Rs_clearsky: double
-        @type Rs_clearsky: Solar raditaion of a clear sky [MJ m-2 d-1]
-        @type LAI: double
-        @param LAI: Effective leaf area index [m2 m-2]
+        :type Tmax: double
+        :param Tmax: Maximum temperature [K]       
+        :type Tmin: double
+        :param Tmin: Minimum temperature [K]
+        :type e_a: double
+        :type e_a: Actual vapour pressure [kPa]  
+        :type Rsolar: double
+        :param Rsolar: Solar radiation [MJ m-2 d-1]
+        :type Rs_clearsky: double
+        :type Rs_clearsky: Solar raditaion of a clear sky [MJ m-2 d-1]
+        :type LAI: double
+        :param LAI: Effective leaf area index [m2 m-2]
         """
         
         self.albedo = self.calc_albedo(LAI,self.albedo_m)  
@@ -101,12 +101,12 @@ class Net_Radiation:
         """ 
         Calculates the albedo depending on LAI.
         
-        @type LAI: double
-        @param LAI: Effective leaf area index [m2 m-2]
-        @type albedo_m: double
-        @param albedo_m: Albedo for a closed grass canopy [-]
-        @rtype: double
-        @return: Albedo [-].        
+        :type LAI: double
+        :param LAI: Effective leaf area index [m2 m-2]
+        :type albedo_m: double
+        :param albedo_m: Albedo for a closed grass canopy [-]
+        :rtype: double
+        :return: Albedo [-].        
         """
         albedo_s = 0.1 #albedo for bare wet soil
         return albedo_m - (albedo_m - albedo_s)*math.exp(-0.56*LAI)
@@ -116,12 +116,12 @@ class Net_Radiation:
         """
         Calculates the net shortwave radiation.        
         
-        @type Rsolar: double
-        @param Rsolar: Solar radiation [MJ m-2 d-1]
-        @type albedo: double
-        @param albedo: Part of the radiation that is reflected []
-        @rtype: double
-        @return: Net shortwave radiation [MJ m-2 d-1].   
+        :type Rsolar: double
+        :param Rsolar: Solar radiation [MJ m-2 d-1]
+        :type albedo: double
+        :param albedo: Part of the radiation that is reflected []
+        :rtype: double
+        :return: Net shortwave radiation [MJ m-2 d-1].   
         """
         return ((1.-albedo)*Rsolar)
     
@@ -129,18 +129,18 @@ class Net_Radiation:
         """
         Calculates the net longwave radiation.        
     
-        @type Tmax: double
-        @param Tmax: Maximum temperature [K]       
-        @type Tmin: double
-        @param Tmin: Minimum temperature [K]
-        @type e_a: double
-        @param e_a: Actual vapour pressure [kPa]
-        @type Rsolar: double
-        @param Rsolar: Solar radiation [MJ m-2 d-1]
-        @type Rs_clearsky: double
-        @param Rs_clearsky: Solar raditaion of a clear sky [MJ m-2 d-1]
-        @rtype: double
-        @return: Net longwave radiation [MJ m-2 d-1].   
+        :type Tmax: double
+        :param Tmax: Maximum temperature [K]       
+        :type Tmin: double
+        :param Tmin: Minimum temperature [K]
+        :type e_a: double
+        :param e_a: Actual vapour pressure [kPa]
+        :type Rsolar: double
+        :param Rsolar: Solar radiation [MJ m-2 d-1]
+        :type Rs_clearsky: double
+        :param Rs_clearsky: Solar raditaion of a clear sky [MJ m-2 d-1]
+        :rtype: double
+        :return: Net longwave radiation [MJ m-2 d-1].   
         """
         Tmax_k = Tmax + 273.16     # maximum daily temperature in Kelvin
         Tmin_k = Tmin + 273.16     # minimum daily temperature in Kelvin
@@ -151,12 +151,12 @@ class Net_Radiation:
         """
         Calculates the net radiation.        
         
-        @type R_n_l: double
-        @param R_n_l: Net longwave radiation [MJ m-2 d-1]       
-        @type R_n_s: double
-        @param R_n_s: Net shortwave radiation [MJ m-2 d-1]
-        @rtype: double
-        @return: Net radiation [MJ m-2 d-1].   
+        :type R_n_l: double
+        :param R_n_l: Net longwave radiation [MJ m-2 d-1]       
+        :type R_n_s: double
+        :param R_n_s: Net shortwave radiation [MJ m-2 d-1]
+        :rtype: double
+        :return: Net radiation [MJ m-2 d-1].   
         """        
         return (R_n_s - R_n_l)
 
@@ -164,12 +164,12 @@ class Net_Radiation:
         """ 
         Calculates fraction of radiation which is intercepted by the crop.
  
-        @type LAI: double
-        @param LAI: Effective leaf area index [m2 m-2]
-        @type Cr: double
-        @param Cr: Extinction coefficient of the vegeation [-]
-        @rtype: double
-        @return: Fraction of total solar radiation flux, which is intercepted by the crop [-].
+        :type LAI: double
+        :param LAI: Effective leaf area index [m2 m-2]
+        :type Cr: double
+        :param Cr: Extinction coefficient of the vegeation [-]
+        :rtype: double
+        :return: Fraction of total solar radiation flux, which is intercepted by the crop [-].
         """           
         return math.exp(-Cr*LAI)  
 
@@ -181,11 +181,11 @@ class Net_Radiation:
         To calculate the radation which reaches the soil surface the Beer's 
         law relationship was taken.
 
-        @type R_n: double
-        @param R_n: Net radiation [MJ m-2 d-1]   
-        @type interception: double
-        @param interception: Fraction of total solar radiation flux, which is intercepted by the crop [-]   
-        @rtype: double
-        @return: Radiation which reaches the soil surface [MJ m-2 d-1].
+        :type R_n: double
+        :param R_n: Net radiation [MJ m-2 d-1]   
+        :type interception: double
+        :param interception: Fraction of total solar radiation flux, which is intercepted by the crop [-]   
+        :rtype: double
+        :return: Radiation which reaches the soil surface [MJ m-2 d-1].
         """ 
         return R_n * interception  

@@ -2,7 +2,7 @@
 '''
 Created on 25 sep 2014
 
-@author: kellner-j
+:author: kellner-j
 '''
 import math
 import pylab as pylab
@@ -31,12 +31,12 @@ class Biomass_LUE:
         """
         Returns a Biomass_LUE instance.
         
-        @type RUE: double
-        @param RUE: Radiation use efficiency [g m-1 day-1]
-        @type k: double
-        @param k: Canopy extinction coefficient in [-].
-        @rtype: biomass_lue
-        @return: Biomass_LUE instance
+        :type RUE: double
+        :param RUE: Radiation use efficiency [g m-1 day-1]
+        :type k: double
+        :param k: Canopy extinction coefficient in [-].
+        :rtype: biomass_lue
+        :return: Biomass_LUE instance
         """
         #Constant variables
         self.rue=RUE
@@ -51,8 +51,8 @@ class Biomass_LUE:
         """
         Return potential growth without stress.
         
-        @rtype: double
-        @return: Potential growth in [g biomass day-1].
+        :rtype: double
+        :return: Potential growth in [g biomass day-1].
         """ 
         return self.growthrate
     @property
@@ -60,8 +60,8 @@ class Biomass_LUE:
         """
         Return actual growth influenced by water and nitorgen stress.
         
-        @rtype: double
-        @return: Actual growth in [g biomass day-1].
+        :rtype: double
+        :return: Actual growth in [g biomass day-1].
         """ 
         return self.growthrate * (1-self.stress)
     @property
@@ -69,25 +69,25 @@ class Biomass_LUE:
         """
         Returns total biomass.
         
-        @rtype: double
-        @return: Biomass in [g biomass day-1].
+        :rtype: double
+        :return: Biomass in [g biomass day-1].
         """ 
         return self.total
     def __call__(self,step,stress,Rs,LAI):
         """
         Calculates the stressed and unstressed growth of the plant.
         
-        @type step: double
-        @param step: Time step in [days].
-        @type Rs: double
-        @param Rs: total solar radiation [MJ m-2 day-1].
-        @type stress: double
-        @param stress: Parameter for water and nitrogen stress between 0 - 1. 
+        :type step: double
+        :param step: Time step in [days].
+        :type Rs: double
+        :param Rs: total solar radiation [MJ m-2 day-1].
+        :type stress: double
+        :param stress: Parameter for water and nitrogen stress between 0 - 1. 
         in [-].
-        @type LAI: double
-        @param LAI: Leaf area index of the plant in [m2 m-2].
-        @param Rs: total solar radiation [MJ m-2 day-1].
-        @type stress: double
+        :type LAI: double
+        :param LAI: Leaf area index of the plant in [m2 m-2].
+        :param Rs: total solar radiation [MJ m-2 day-1].
+        :type stress: double
         """
         self.stress = stress
         self.growthrate = self.PAR_a(Rs, self.intercept(LAI, self.k))* self.rue
@@ -105,14 +105,14 @@ class Biomass_LUE:
         fraction of radiation absorbed by the crop  allowing for a 6 percent 
         albedo and for inactive radiation absorption.
         
-        @type Rs: double
-        @param Rs: total solar radiation [MJ m-2 day-1].
-        @type interception: double
-        @param interception: Fraction of total solar radiation flux, which is 
+        :type Rs: double
+        :param Rs: total solar radiation [MJ m-2 day-1].
+        :type interception: double
+        :param interception: Fraction of total solar radiation flux, which is 
         intercepted by the crop in [-].
         
-        @rtype: double
-        @return: Photosynthetically active absorbed radiation in [MJ m-2 day-1].
+        :rtype: double
+        :return: Photosynthetically active absorbed radiation in [MJ m-2 day-1].
         """
         return Rs*0.5*0.9*(1-interception)
     def intercept(self,LAI,k):
@@ -125,10 +125,10 @@ class Biomass_LUE:
         95 percent PAR interception requires a LAI as high as 7.5 for erect 
         leaves but a LAI of only about 4.0 for more horizontal leaves
         
-        @type LAI: double
-        @param LAI: Leaf area index of the plant in [m2 m-2].
-        @type k: double
-        @param k: Canopy extinction coefficient in [-].
+        :type LAI: double
+        :param LAI: Leaf area index of the plant in [m2 m-2].
+        :type k: double
+        :param k: Canopy extinction coefficient in [-].
         """
         return pylab.exp(-k*LAI)
     def atmosphere_values(self,atmosphere,time_act):
@@ -136,11 +136,11 @@ class Biomass_LUE:
         Returns a method to interfere with the atmosphere interface over the 
         plant instance.
         
-        @type atmosphere: atmosphere
-        @param atmosphere: Atmosphere object from the plant interface soil. 
-        @type time_act: datetime
-        @param time_act: Actual time in [DD,MM,JJJ].
-        @rtype: method
-        @return: Function for getting required atmosphere values.
+        :type atmosphere: atmosphere
+        :param atmosphere: Atmosphere object from the plant interface soil. 
+        :type time_act: datetime
+        :param time_act: Actual time in [DD,MM,JJJ].
+        :rtype: method
+        :return: Function for getting required atmosphere values.
         """
         return atmosphere.get_Rs(time_act)

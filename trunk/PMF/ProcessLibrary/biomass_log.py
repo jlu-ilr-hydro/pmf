@@ -2,7 +2,7 @@
 '''
 Created on 25 sep 2014
 
-@author: kellner-j
+:author: kellner-j
 '''
 
 class Biomass_LOG:
@@ -24,18 +24,18 @@ class Biomass_LOG:
     Biomass_LOG must be called with the actual time step and stress
     coefficiant.
     
-    @see: [J.H.M. Thornley & Johnson 1990]
+    :see: [J.H.M. Thornley & Johnson 1990]
     """
     def __init__(self,capacitylimit,growthfactor):
         """
         Returns a Biomass_LOG instance.
         
-        @type capacitylimit: double
-        @param capacitylimit: Maximal plant biomass in [g]. 
-        @type growthfactor: double
-        @param growthfactor: Growth facor of the plant in [g biomass day-1].
-        @rtype: biomass_log
-        @return: Biomass_LOG instance
+        :type capacitylimit: double
+        :param capacitylimit: Maximal plant biomass in [g]. 
+        :type growthfactor: double
+        :param growthfactor: Growth facor of the plant in [g biomass day-1].
+        :rtype: biomass_log
+        :return: Biomass_LOG instance
         """
         #Constant variables
         self.capacitylimit=capacitylimit
@@ -48,8 +48,8 @@ class Biomass_LOG:
         """
         Return potential growth without stress.
         
-        @rtype: double
-        @return: Potential growth in [g biomass day-1].
+        :rtype: double
+        :return: Potential growth in [g biomass day-1].
         """ 
         return self.logarithmic_growth(self.total, self.growthfactor, self.capacitylimit)
     @property
@@ -57,8 +57,8 @@ class Biomass_LOG:
         """
         Return actual growth influenced by water and nitorgen stress.
         
-        @rtype: double
-        @return: Actual growth in [g biomass day-1].
+        :rtype: double
+        :return: Actual growth in [g biomass day-1].
         """ 
         return self.PotentialGrowth * self.stress
     @property
@@ -66,20 +66,20 @@ class Biomass_LOG:
         """
         Return total biomass.
         
-        @rtype: double
-        @return: Total biomass in [g].
+        :rtype: double
+        :return: Total biomass in [g].
         """ 
         return self.total
     def __call__(self,stress,step):
         """
         Calculates total plant biomass under stressed conditions.
         
-        @type stress: double
-        @param stress: Parameter for water and nitrogen stress between 0 - 1
+        :type stress: double
+        :param stress: Parameter for water and nitrogen stress between 0 - 1
         in [-].
-        @type step: double
-        @param step: Time of the actual intervall.
-        @return: -
+        :type step: double
+        :param step: Time of the actual intervall.
+        :return: -
         """
         self.stress=stress
         self.total = self.total + self.logarithmic_growth(self.total, self.growthfactor, self.capacitylimit) * stress * step
@@ -89,14 +89,14 @@ class Biomass_LOG:
         
         Calculates the growthrare of a logarithmic growth function.
         
-        @type total_biomass: double
-        @param total_biomass: Total bioamss of the plant in [g].
-        @type capacitylimit: double
-        @param capacitylimit: Maximal plant biomass in [g]. 
-        @type growthfactor: double
-        @param growthfactor: Growth facor of the plant in [g biomass day-1].
-        @rtype: double
-        @return: Growhtrate in [g biomass day-1].
+        :type total_biomass: double
+        :param total_biomass: Total bioamss of the plant in [g].
+        :type capacitylimit: double
+        :param capacitylimit: Maximal plant biomass in [g]. 
+        :type growthfactor: double
+        :param growthfactor: Growth facor of the plant in [g biomass day-1].
+        :rtype: double
+        :return: Growhtrate in [g biomass day-1].
         """
         return total_biomass * growthfactor * (1- total_biomass / capacitylimit)
     def atmosphere_values(self,atmosphere,time_act):

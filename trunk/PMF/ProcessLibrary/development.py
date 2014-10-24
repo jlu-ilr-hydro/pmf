@@ -2,7 +2,7 @@
 '''
 Created on 25 sep 2014
 
-@author: kellner-j
+:author: kellner-j
 '''
 
 class Development:
@@ -37,25 +37,25 @@ class Development:
         possible through the variation of the daily calculated
         degree days.
         
-        @type stage: list
-        @param stage: List with names and total thermaltime requirement 
+        :type stage: list
+        :param stage: List with names and total thermaltime requirement 
         for each stage in [°C].
-        @type Rp: double
-        @param Rp: crop specific parameter showing sensitivity to photoperiod [-]
-        @type Rv: double
-        @param Rv: crop specific parameter showing sensitivity to vernalization [-]
-        @type photo: double
-        @param photo: photoperiod factor between 0 and 1 [-]
-        @type verna_sum: double
-        @param verna_sum: total vernalization [-]
-        @type verna_factor: double
-        @param verna_factor: vernalization factor between 0 and 1 [-]
-        @type tt: double
-        @param tt: sum of degree days [°C days]
-        @type rate: double
-        @param rate: degree day (Tmean - Tbase) [°C days]
-        @rtype: development
-        @return: Development instance        
+        :type Rp: double
+        :param Rp: crop specific parameter showing sensitivity to photoperiod [-]
+        :type Rv: double
+        :param Rv: crop specific parameter showing sensitivity to vernalization [-]
+        :type photo: double
+        :param photo: photoperiod factor between 0 and 1 [-]
+        :type verna_sum: double
+        :param verna_sum: total vernalization [-]
+        :type verna_factor: double
+        :param verna_factor: vernalization factor between 0 and 1 [-]
+        :type tt: double
+        :param tt: sum of degree days [°C days]
+        :type rate: double
+        :param rate: degree day (Tmean - Tbase) [°C days]
+        :rtype: development
+        :return: Development instance        
         """
         
         
@@ -85,8 +85,8 @@ class Development:
         Returns the index of the actual development stage in the stage 
         attribute of the development class
         
-        @rtype: integer
-        @return: Index of the actual development stage
+        :rtype: integer
+        :return: Index of the actual development stage
         """
         
         return self.stages.index(self.Stage)
@@ -95,8 +95,8 @@ class Development:
         """
         Returns True during growingseason.
         
-        @rtype: boolean
-        @return: True during growingseason.
+        :rtype: boolean
+        :return: True during growingseason.
         """
         return True if self.tt>=self.stages[0][1] and self.tt< self.stages[-1][1] else False
     @property
@@ -104,8 +104,8 @@ class Development:
         """
         Return True, if germination is complete.
         
-        @rtype: boolean
-        @return: True, if germination is complete.
+        :rtype: boolean
+        :return: True, if germination is complete.
         """
         return True if self.tt > self.stages[0][1] else False
     @property
@@ -113,8 +113,8 @@ class Development:
         """
         Return actual thermaltime.
         
-        @rtype: double
-        @return: Thermaltime in [°days].
+        :rtype: double
+        :return: Thermaltime in [°days].
         """
         return self.tt
     @property
@@ -124,8 +124,8 @@ class Development:
         
         If development is finished, the function returns 'Development finished'
         
-        @rtype: String
-        @return: Actual developmentstage.
+        :rtype: String
+        :return: Actual developmentstage.
         """
         return filter(lambda i:i[1]>=self.tt, self.stages)[0] if self.tt<=self.stages[-1][1] else 'Development finished'
     def __setitem__(self,stage):
@@ -141,17 +141,17 @@ class Development:
         """
         Calculates thermaltime.
         
-        @type step: double
-        @param step: Time step of the actual model period in [days or hours].
-        @type tmin: double
-        @param tmin: Daily minimum temperature in [°C].
-        @type tmax: double
-        @param tmax: Daily maximum temperature in [°C].
-        @type tbase: double 
-        @param tbase: Crop specific base temperature over which development 
+        :type step: double
+        :param step: Time step of the actual model period in [days or hours].
+        :type tmin: double
+        :param tmin: Daily minimum temperature in [°C].
+        :type tmax: double
+        :param tmax: Daily maximum temperature in [°C].
+        :type tbase: double 
+        :param tbase: Crop specific base temperature over which development 
         can occur in [°C].
-        @type daylength: double
-        @param daylength: daylight [h], calculated according to FAO irrigationa and drainage paper pp.48
+        :type daylength: double
+        :param daylength: daylight [h], calculated according to FAO irrigationa and drainage paper pp.48
         """       
         
         
@@ -174,13 +174,13 @@ class Development:
         Calculates a photoperiod factor between 0 and 1, which adjusts development by letting thermal time get affected by day length.
         This concept follows the APSIM approach (source: "The APSIM-Wheat module (7.5 R3008)", March 2014)
         
-        @type Rp: double
-        @param Rp: crop specific parameter showing sensitivity to photoperiod [-]
-        @type dl: double
-        @param dl: day length [h]
+        :type Rp: double
+        :param Rp: crop specific parameter showing sensitivity to photoperiod [-]
+        :type dl: double
+        :param dl: day length [h]
         
-        @rtype: double
-        @return: Photoperiod factor which is used to adjust development by letting thermal time get affected by day length. [-]
+        :rtype: double
+        :return: Photoperiod factor which is used to adjust development by letting thermal time get affected by day length. [-]
         """
         return 1.-0.002*Rp*(20. - daylength)**2.
                  
@@ -191,14 +191,14 @@ class Development:
         Calculates the daily rate of vernalization [-].
         This concept follows the CERES approach and was extracted from APSIM documentation (source: "The APSIM-Wheat module (7.5 R3008)", March 2014)
         
-        @type tmin: double
-        @param tmin: Daily minimum temperature in [°C].
-        @type tmax: double
-        @param tmax: Daily maximum temperature in [°C].
-        @type temp_crown: double
-        @param temp_crown: Daily temperature in plant crown [°C].
-        @rtype: double
-        @return: daily vernalization based on daily temperature minimum and maximum [-].
+        :type tmin: double
+        :param tmin: Daily minimum temperature in [°C].
+        :type tmax: double
+        :param tmax: Daily maximum temperature in [°C].
+        :type temp_crown: double
+        :param temp_crown: Daily temperature in plant crown [°C].
+        :rtype: double
+        :return: daily vernalization based on daily temperature minimum and maximum [-].
         """
         if tmin < 15. and tmax < 30.:
 #            temp_crown = ((tmax+tmin)/2.0 * 1.2)   
@@ -216,13 +216,13 @@ class Development:
         Else, devernalization is set to zero.
         This concept follows the CERES approach and was extracted from APSIM documentation (source: "The APSIM-Wheat module (7.5 R3008)", March 2014)
         
-        @type verna_sum: double
-        @param verna_sum: total vernalization
-        @type tmax: double
-        @param tmax: Daily maximum temperature in [°C].
+        :type verna_sum: double
+        :param verna_sum: total vernalization
+        :type tmax: double
+        :param tmax: Daily maximum temperature in [°C].
         
-        @rtype: double
-        @return: daily devernalization 
+        :rtype: double
+        :return: daily devernalization 
         """
         if tmax > 30. and verna_sum < 10.:       
             devernali = min(verna_sum, 0.5*(tmax - 30.))
@@ -239,18 +239,18 @@ class Development:
         If tmax or tmin smaller than tbase, the rate is defined to be zero.
         Else the rate is computed as (tmax+tmin/2 - tbase).
         
-        @type tmin: double
-        @param tmin: Daily minimum temperature in [°C].
-        @type tmax: double
-        @param tmax: Daily maximum temperature in [°C].
-        @type tbase: double 
-        @param tbase: Crop specific base temperature over which development 
+        :type tmin: double
+        :param tmin: Daily minimum temperature in [°C].
+        :type tmax: double
+        :param tmax: Daily maximum temperature in [°C].
+        :type tbase: double 
+        :param tbase: Crop specific base temperature over which development 
         can occur in [°C].
         
-        @rtype: double
-        @return: Development rate as thermatime in [°C].
+        :rtype: double
+        :return: Development rate as thermatime in [°C].
          
-        @see: [Bonhomme, 2000, McMaster & Wilhelm, 1997] 
+        :see: [Bonhomme, 2000, McMaster & Wilhelm, 1997] 
         """
         if tmax < tbase or tmin < tbase:
             return 0

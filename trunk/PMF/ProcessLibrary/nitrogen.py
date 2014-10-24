@@ -2,7 +2,7 @@
 '''
 Created on 25 sep 2014
 
-@author: kellner-j
+:author: kellner-j
 '''
 import math
 import pylab as pylab
@@ -32,26 +32,26 @@ class Nitrogen:
     Must be calles with water uptake, the plant nitrogen demand  
     and the nitrogen concentration in the soil.
     
-    @see: [Simunek & Hopmans 2009]
+    :see: [Simunek & Hopmans 2009]
     """
     def __init__(self,Km=0.1,NO3_min=0.,max_passive_uptake=1e300,layercount=41):
         """
         Returns a Biomass_LOG instance.
         
-        @type Km: double
-        @param Km: Half saturation concentration in umol/l  27. * 14e-6
-        @type NO3_min: double
-        @param NO3_min: Residual N concentration
-        @type layercount: double
-        @param layercount: Count of the layer in the soil profile.
-        @type max_passive_uptake: double
-        @param max_passive_uptake: ...
+        :type Km: double
+        :param Km: Half saturation concentration in umol/l  27. * 14e-6
+        :type NO3_min: double
+        :param NO3_min: Residual N concentration
+        :type layercount: double
+        :param layercount: Count of the layer in the soil profile.
+        :type max_passive_uptake: double
+        :param max_passive_uptake: ...
         
         
-        @rtype: nitrogen
-        @return: Nitrogen instance
+        :rtype: nitrogen
+        :return: Nitrogen instance
         
-        @todo: Define units for all parameters. 
+        :todo: Define units for all parameters. 
         """
         self.layercount=layercount
         #Constant variables
@@ -66,8 +66,8 @@ class Nitrogen:
         """
         Returns active nitrogen uptake.
         
-        @rtype: double
-        @return: Active nitrogen uptake.
+        :rtype: double
+        :return: Active nitrogen uptake.
         """
         return self.Aa
     @property
@@ -75,8 +75,8 @@ class Nitrogen:
         """
         Returns passive nitrogen uptake.
         
-        @rtype: double
-        @return: Passive nitrogen uptake.
+        :rtype: double
+        :return: Passive nitrogen uptake.
         """
         return self.Pa
     @property
@@ -84,24 +84,24 @@ class Nitrogen:
         """
         Returns total nitrogen uptake.
         
-        @rtype: double
-        @return: Total nitrogen uptake.
+        :rtype: double
+        :return: Total nitrogen uptake.
         """
         return [pa + self.Aa[i] for i,pa in enumerate(self.Pa)]
     def __call__(self,NO3_conc,Sh,Rp,root_fraction):
         """
         Calculates active and passive nitrogen uptake.
         
-        @type NO3_conc: list
-        @param NO3_conc: NO3 concnetrations in rootzone.
-        @type Sh: list
-        @param Sh: Plant water uptake from the rootzone in [mm].
-        @type Rp: list
-        @param Rp: Potential nutrient demand of the plant in [g].
-        @type root_fraction: list
-        @param root_fraction: Root biomass fraction form whole biomass for each layer in the soil profile in [-].
-        @todo: Check Passive uptake
-        @return: -
+        :type NO3_conc: list
+        :param NO3_conc: NO3 concnetrations in rootzone.
+        :type Sh: list
+        :param Sh: Plant water uptake from the rootzone in [mm].
+        :type Rp: list
+        :param Rp: Potential nutrient demand of the plant in [g].
+        :type root_fraction: list
+        :param root_fraction: Root biomass fraction form whole biomass for each layer in the soil profile in [-].
+        :todo: Check Passive uptake
+        :return: -
         """
         
         #Passive uptake

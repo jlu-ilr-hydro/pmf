@@ -2,7 +2,7 @@
 '''
 Created on 25 sep 2014
 
-@author: kellner-j
+:author: kellner-j
 '''
 import math
 import pylab as pylab
@@ -34,26 +34,26 @@ class SWC:
     Must be called with environmental paramters and calculates the actual water
     status.
     
-    @see: [Allen et al, 1998]
+    :see: [Allen et al, 1998]
     """
     def __init__(self,fc=.22,wp=.09,rew=8.,initial_Zr=0.1,Ze=0.1):
         """
         Returns a SWC instance.
         
-        @param rew: Cumulative depth of evaporation (depletion) at the end of 
+        :param rew: Cumulative depth of evaporation (depletion) at the end of 
         stage 1 (REW = readily evaporable water) [mm]
-        @type  rew: double
-        @type initital_Zr: double
-        @param initial_Zr: Initial rooting depth in [m].
-        @type Ze: double
-        @param param: Effective depth of the soil evaporation layer in [m].
-        @type fc: double 
-        @param fc: Water content at field capacity in [m3 m-3].
-        @type wp: double 
-        @param wp: Water content at wilting point in [m3 m-3].
+        :type  rew: double
+        :type initital_Zr: double
+        :param initial_Zr: Initial rooting depth in [m].
+        :type Ze: double
+        :param param: Effective depth of the soil evaporation layer in [m].
+        :type fc: double 
+        :param fc: Water content at field capacity in [m3 m-3].
+        :type wp: double 
+        :param wp: Water content at wilting point in [m3 m-3].
         
-        @rtype: swc
-        @return: SWC instance.
+        :rtype: swc
+        :return: SWC instance.
         """        
         #Water content at fieldcapacity and wiltingpoint
         self.fc=fc
@@ -78,8 +78,8 @@ class SWC:
         """
         Returns root zone depletion at the end of day.
         
-        @rtype: double
-        @return: Root zone depletion at the end of day in [mm]. 
+        :rtype: double
+        :return: Root zone depletion at the end of day in [mm]. 
         """
         return self.dr
     
@@ -87,8 +87,8 @@ class SWC:
         """
         Returns evaporation reduction coefficient.
         
-        @rtype: double
-        @return: Revaporation reduction coefficient in [-].
+        :rtype: double
+        :return: Revaporation reduction coefficient in [-].
         """
         return self.kr
     def get_nitrogen(self,depth):
@@ -99,25 +99,25 @@ class SWC:
         cumulative depth of evaporation De and the evaporation reduction 
         coefficient Kr. 
         
-        @type ETc: double
-        @param ETc: crop evapotranspiration in [mm],
-        @type evaporation: double
-        @param evaporation: Evaporation in [mm],
-        @type rainfall: double
-        @param rainfall:  Rainfall in [-].
-        @type Zr: double
-        @param Zr:  Rooting depth in [m].
-        @type fc:double 
-        @param fc: File cover in [-].
-        @type runoff: double
-        @param runoff: Runoff from the soil surface on day in [mm],
-        @type irrigation: double
-        @param irrigation: Net irrigation depth on day i that infiltrates the 
+        :type ETc: double
+        :param ETc: crop evapotranspiration in [mm],
+        :type evaporation: double
+        :param evaporation: Evaporation in [mm],
+        :type rainfall: double
+        :param rainfall:  Rainfall in [-].
+        :type Zr: double
+        :param Zr:  Rooting depth in [m].
+        :type fc:double 
+        :param fc: File cover in [-].
+        :type runoff: double
+        :param runoff: Runoff from the soil surface on day in [mm],
+        :type irrigation: double
+        :param irrigation: Net irrigation depth on day i that infiltrates the 
         soil in [mm] 
-        @type capillarrise: double
-        @param capillarrise: Capillary rise from the groundwater table in [mm].
+        :type capillarrise: double
+        :param capillarrise: Capillary rise from the groundwater table in [mm].
         
-        @return: -
+        :return: -
         """
         #Root zone depletion
         dr = max(self.dr-rainfall,0)
@@ -146,24 +146,24 @@ class SWC:
         water content in the evaporation layer is below field capacity the soil 
         will not drain and DPe, i = 0. 
         
-        @type De: double
-        @param De: Cumulative depth of evaporation in [mm]
-        @type P: double
-        @param P: Precipitation on day in [mm]
-        @type RO: double
-        @param RO: Precipitation run off from the soil surface in [mm].
-        @type I: double 
-        @param I: Irrigation depth that infiltrates the soil in [mm].
-        @type fw: double 
-        @param fw: Fraction of soil surface wetted by irrigation in [-].
-        @type E: double
-        @param E: Evaporation in [mm],
-        @type Tew: double
-        @param Tew: Depth of transpiration from the exposed and wetted fraction 
+        :type De: double
+        :param De: Cumulative depth of evaporation in [mm]
+        :type P: double
+        :param P: Precipitation on day in [mm]
+        :type RO: double
+        :param RO: Precipitation run off from the soil surface in [mm].
+        :type I: double 
+        :param I: Irrigation depth that infiltrates the soil in [mm].
+        :type fw: double 
+        :param fw: Fraction of soil surface wetted by irrigation in [-].
+        :type E: double
+        :param E: Evaporation in [mm],
+        :type Tew: double
+        :param Tew: Depth of transpiration from the exposed and wetted fraction 
         of the soil surface layer in [mm].
         
-        @rtype: double
-        @return: Cumulative depth of evaporation (depletion) following complete 
+        :rtype: double
+        :return: Cumulative depth of evaporation (depletion) following complete 
         wetting at the end of the day in [mm]
         """
         DPe = max(P + I/fw - de,0)
@@ -194,22 +194,22 @@ class SWC:
         wetting event, so that the depletion Dr becomes zero. Therefore, 
         following heavy rain or irrigation.
             
-        @type Dr: double
-        @param Dr: Water content in the root zone at the end of the previous day
+        :type Dr: double
+        :param Dr: Water content in the root zone at the end of the previous day
         in [mm].
-        @type P: double
-        @param P: Precipitation in [mm].
-        @type RO: double
-        @param RO: Runoff from the soil surface in [mm].
-        @type I: double
-        @param I: Net irrigation depth that infiltrates the soil in [mm].
-        @type CR: double
-        @param CR: Capillary rise from the groundwater table in [mm].
-        @type ETc: double
-        @param ETc: Crop evapotranspiration in [mm],
+        :type P: double
+        :param P: Precipitation in [mm].
+        :type RO: double
+        :param RO: Runoff from the soil surface in [mm].
+        :type I: double
+        :param I: Net irrigation depth that infiltrates the soil in [mm].
+        :type CR: double
+        :param CR: Capillary rise from the groundwater table in [mm].
+        :type ETc: double
+        :param ETc: Crop evapotranspiration in [mm],
         
-        @rtype: double
-        @return: Root zone depletion at the end of day in [mm].
+        :rtype: double
+        :return: Root zone depletion at the end of day in [mm].
         """
         DP = max(P - RO + I - ETc - Dr,0)
         return Dr - (P-RO) - I - CR + ETc + DP
@@ -222,15 +222,15 @@ class SWC:
         content for the effective root zone. Following heavy rain or irrigation,
         the user can assume that the root zone is near field capacity.
         
-        @type FC: double 
-        @param FC: Water content at field capacity in [m3 m-3].
-        @type q: double
-        @param q: Average soil water content for the effective root zone in [-].
-        @type Zr: double
-        @param Zr: Initial rooting depth in [-].
+        :type FC: double 
+        :param FC: Water content at field capacity in [m3 m-3].
+        :type q: double
+        :param q: Average soil water content for the effective root zone in [-].
+        :type Zr: double
+        :param Zr: Initial rooting depth in [-].
         
-        @rtype: double
-        @return: Initial depletion in [mm].
+        :rtype: double
+        :return: Initial depletion in [mm].
         """
         return 1000*(FC-q)*Zr
     def calc_Kr(self,De,TEW,REW):
@@ -241,17 +241,17 @@ class SWC:
         the soil water depletion (cumulative depth of evaporation) from the 
         topsoil layer.
         
-        @type De: double
-        @param De: Cumulative depth of evaporation in [mm]
-        @type TEW: double
-        @param TEW: Depth of transpiration from the exposed and wetted fraction 
+        :type De: double
+        :param De: Cumulative depth of evaporation in [mm]
+        :type TEW: double
+        :param TEW: Depth of transpiration from the exposed and wetted fraction 
         of the soil surface layer on day in [mm].
-        @type REW: double
-        @param REW: Cumulative depth of evaporation (depletion) at the end of 
+        :type REW: double
+        :param REW: Cumulative depth of evaporation (depletion) at the end of 
         stage 1 (REW = readily evaporable water) in [mm].
         
-        @rtype: double
-        @return: Evaporation reduction coefficient in [-].
+        :rtype: double
+        :return: Evaporation reduction coefficient in [-].
         """
         if De > REW:
             return (TEW-De)/(TEW-REW)
@@ -265,15 +265,15 @@ class SWC:
         that can be evaporated from the soil when the topsoil
         has been initially completely wetted [mm],
         
-        @type FC: double
-        @param FC: Soil water content at field capacity in [m3 m-3] 
-        @type WP: double
-        @param WP: Soil water content at wilting point in [m3 m-3]
-        @type Ze: double
-        @param Ze: Depth of the surface soil layer that is subject to drying by 
+        :type FC: double
+        :param FC: Soil water content at field capacity in [m3 m-3] 
+        :type WP: double
+        :param WP: Soil water content at wilting point in [m3 m-3]
+        :type Ze: double
+        :param Ze: Depth of the surface soil layer that is subject to drying by 
         way of evaporation in [m].
        
-        @rtype: double
-        @return: Total evaporable water in [mm].
+        :rtype: double
+        :return: Total evaporable water in [mm].
         """
         return 1000*(FC-0.5*WP)*Ze
