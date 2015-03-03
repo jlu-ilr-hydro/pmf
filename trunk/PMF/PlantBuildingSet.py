@@ -99,7 +99,7 @@ def connect(plant,soil,atmosphere,**args):
 
 wheat=CropDatabase.CropCoefficiants_wheat()
 c3grass=PMF.CropCoefficiants_c3grass()
-c4grass=PMF.CropCoefficiants_c4grass() 
+c4grass=PMF.CropCoefficiants_c4grass()
 
 def createPlant_wheat_SWC(**args):                                                    
     """             

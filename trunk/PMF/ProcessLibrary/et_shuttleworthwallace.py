@@ -93,6 +93,16 @@ class ET_ShuttleworthWallace:
         self._Epot_SW = 0.  
         self._ETpot_SW= 0.
         
+    @property
+    def T_PM(self):
+        """
+        Returns potential transpiration from canopy calculated according to 
+        Shuttleworth-Wallace 1989.
+
+        :rtype: double
+        :return: Transpiration in [mm d-1].
+        """
+        return self._Tpot_penmanmonteith    
   
     @property
     def Transpiration_pot_SW(self):
@@ -195,7 +205,9 @@ class ET_ShuttleworthWallace:
         self._Epot_penmanmonteith = self.calc_Evapor(T,Rn, Rsn, e_s, e_a, lambda1,r_a_a, r_s_a, r_s_s)
                                             
         #potential Transpiration and Evaporation [mm d-1]
-        self._Tpot_SW = (self._Tpot_penmanmonteith * C_c/lambda1)   
+        if self._Tpot_penmanmonteith==0.:
+            self._Tpot_SW = 0.001
+        else: self._Tpot_SW = (self._Tpot_penmanmonteith * C_c/lambda1)   
         self._Epot_SW = (self._Epot_penmanmonteith * C_s/lambda1)
         
         #Calculates potential evapotranspiration [mm d-1]
