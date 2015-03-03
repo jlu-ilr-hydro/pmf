@@ -5,6 +5,7 @@ Created on 25 sep 2014
 :author: kellner-j
 '''
 import math
+import PMF
 
 class Biomass_LUE_CO2_Soltani:
     """
@@ -29,14 +30,14 @@ class Biomass_LUE_CO2_Soltani:
     """
 
     
-    def __init__(self,RUE,C_0,k, factor_b=0.4):
+    def __init__(self,RUE,C_0,factor_b,CO2_ring):
         """
         Returns a Biomass_LUE instance.
         
         :type RUE: double
         :param RUE: Radiation use efficiency [g m-1 day-1]
-        :type k: double
-        :param k: Canopy extinction coefficient in [-].
+        :type C_0: double
+        :param C_0: reference CO2 concentration (=350 µmol/mol)
         :type factor_b: double
         :param factor_b: coefficient that adapt RUE to C4 (factor_b=0.4) or C3 (factor_b=0.8) plants [-]   
         :rtype: biomass_lue
@@ -45,10 +46,9 @@ class Biomass_LUE_CO2_Soltani:
         #Constant variables
         self.rue_0=RUE
         self.C_0=C_0
-        self.k=k
         self.factor_b= factor_b
-
-        
+        self.CO2_ring = CO2_ring
+   
         #State variables
         self.total=0.
         self.growthrate=0.
@@ -60,7 +60,7 @@ class Biomass_LUE_CO2_Soltani:
         Return potential growth without stress.
         
         :rtype: double
-        :return: Potential growth in [g biomass day-1].
+        :return: Potential growth in [g dry matter m-2 day-1].
         """ 
         return self.growthrate
     @property
@@ -69,18 +69,19 @@ class Biomass_LUE_CO2_Soltani:
         Return actual growth influenced by water and nitorgen stress.
         
         :rtype: double
-        :return: Actual growth in [g biomass day-1].
+        :return: Actual growth in [g dry matter m-2 day-1].
         """ 
         return self.growthrate * (1-self.stress)
     @property
     def Total(self):
         """
-        Returns total biomass.
+        Returns produced total amount of dry matter including stress and senescence.
         
         :rtype: double
-        :return: Biomass in [g biomass day-1].
+        :return: Biomass [g dry matter m-2].
         """ 
         return self.total
+
     def __call__(self,step,stress,Rs,interception,LAI,CO2_measured,senesced_leaf):  
         """
         Calculates the stressed and unstressed growth of the plant.
@@ -90,8 +91,7 @@ class Biomass_LUE_CO2_Soltani:
         :type Rs: double
         :param Rs: total solar radiation [MJ m-2 day-1].
         :type stress: double
-        :param stress: Parameter for water and nitrogen stress between 0 - 1. 
-        in [-].
+        :param stress: Parameter for water and nitrogen stress between 0 - 1. [-].
         :type LAI: double
         :param LAI: Leaf area index of the plant in [m2 m-2].
         :type CO2_measured: double
@@ -99,10 +99,10 @@ class Biomass_LUE_CO2_Soltani:
         """
         
         self.stress = stress
-        self.growthrate = self.PAR_a(Rs, interception)* self.rue_soltani(self.rue_0,self.C_0,self.factor_b,CO2_measured)   ################ N E W #############
+        self.growthrate = self.PAR_a(Rs, interception)* self.rue_soltani(self.rue_0,self.C_0,self.factor_b,CO2_measured)
         self.total = self.total - senesced_leaf + self.growthrate * (1-self.stress) * step         
         self.pot_total = self.pot_total + self.growthrate
-
+        
     
     def rue_soltani(self,rue_0,C_0,factor_b,C_measured):
         """
@@ -122,23 +122,6 @@ class Biomass_LUE_CO2_Soltani:
         """
         return rue_0*(1+factor_b*math.log(C_measured/C_0)) 
         
-    
-    def rue_stockle(self, C_measured, b_1 = 7784., b_2 = 0.00107):
-        """
-        Returns radiation use efficiency affected by CO2 concentration [g/MJ] according to Stockle et al. 1992
-        
-        This apporach is extracted from Stockle et al. 1992 to adapt the EPIC model to changing CO2 concentrations.
-        In this paper b1 = 7784 and b2 = 0.00107 to reach RUE = 3 at 350 ppm and RUE = 3.9 at 600 ppm.
-        
-        :type C_measured: double
-        :param C_measured: target CO2 concentration [µmol/mol]
-        :type b_1: double
-        :param b_1: parameter to adapt RUE for any value of CO2 concentration.
-        :type b_2: double
-        :param b_2: parameter to adapt RUE for any value of CO2 concentration.
-        """
-        return 100 * C_measured / (C_measured + b_1 *math.exp(- b_2 * C_measured))          
-    
 
     def PAR_a(self,Rs,interception):
         """ 
@@ -191,4 +174,16 @@ class Biomass_LUE_CO2_Soltani:
         :rtype: method
         :return: Function for getting elevated CO2 concentration
         """
-        return atmosphere.get_CO2_measured(time_act)
+        if self.CO2_ring == 1.1:
+            CO2_measured = atmosphere.get_CO2_A1(time_act) 
+        elif self.CO2_ring == 1.2:
+            CO2_measured = atmosphere.get_CO2_A2(time_act) 
+        elif self.CO2_ring == 1.3:
+            CO2_measured = atmosphere.get_CO2_A3(time_act) 
+        elif self.CO2_ring == 2.1:
+            CO2_measured = atmosphere.get_CO2_E12(time_act) 
+        elif self.CO2_ring == 2.2:
+            CO2_measured = atmosphere.get_CO2_E2(time_act) 
+        else: CO2_measured = atmosphere.get_CO2_E3(time_act)
+#        return atmosphere.get_CO2_measured(time_act)
+        return CO2_measured

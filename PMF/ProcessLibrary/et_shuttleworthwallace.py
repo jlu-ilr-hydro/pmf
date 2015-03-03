@@ -45,12 +45,14 @@ class ET_ShuttleworthWallace:
 
     
     def __init__(self,
-                 w_leafwidth=0.01,
-                 z_0w = 0.005,
-                 z_0g = 0.01,
-                 z_w = 2.,
-                 kappa=0.41,
-                 r_st_min = 115.):
+                 w_leafwidth,
+                 z_0w,
+                 z_0g,
+                 z_w,
+                 r_st_min,
+                 sigma_b,
+                 c_int,
+                 kappa=0.41):
         """
         Returns a ET_ShuttleworthWallace instance.
         
@@ -63,10 +65,15 @@ class ET_ShuttleworthWallace:
         :type z_w: double
         :param z_w: Height of weather observation [m]
         :type kappa: double
-        :param kappa: von Karman's constant [-]
+        :param kappa: von Karman's constant describing the logarithmic velocity profile of a 
+                            turbulent fluid flow near a boundary with a no-slip condition[-]
         :rtype r_st_min: double
-        :return r_st_min: Minimal stomatal resistance of individual leaves under optimal conditions [s m-1] 
-                          extracted from Zhou et al. (2006) for grasslands               
+        :param r_st_min: Minimal stomatal resistance of individual leaves under optimal conditions [s m-1] 
+                          extracted from Zhou et al. (2006) for grasslands             
+        :type sigma_b: double
+        :param sigma_b: shielding factor [-]
+        :type c_int: double
+        :param c_int: Water interception coefficient [mm]
         """
 
         #Constant variables
@@ -76,7 +83,9 @@ class ET_ShuttleworthWallace:
         self.z_w = z_w
         self.kappa = kappa
         self.r_st_min = r_st_min
-
+        self.sigma_b = sigma_b
+        self.c_int = c_int
+        
         #State variables
         self._Tpot_penmanmonteith = 0.
         self._Epot_penmanmonteith = 0.
@@ -84,32 +93,7 @@ class ET_ShuttleworthWallace:
         self._Epot_SW = 0.  
         self._ETpot_SW= 0.
         
-
-    @property
-    def Tpot_PenmanMonteith(self):
-        """
-        Returns potential transpiration
-        
-        Pot_Transpiration_PenmanMonteith is similar to the transpiration by 
-        applying the Penman-Monteith equation to a closed canopy.        
-        
-        :rtype: double
-        :return: Transpiration [MJ m-2 d-1]
-        """
-        return self._Tpot_penmanmonteith
-    @property
-    def Epot_PenmanMonteith(self):   
-        """
-        Returns potential evaporation
-        
-        Pot_Evaporation_PenmanMonteith is similar to the evaporation by 
-        applying the Penman-Monteith equation to a bare substrate.
-        
-        :rtype: double
-        :return: Evaporation [MJ m-2 d-1]
-        """
-        return self._Epot_penmanmonteith
-   
+  
     @property
     def Transpiration_pot_SW(self):
         """
@@ -170,6 +154,8 @@ class ET_ShuttleworthWallace:
         :param LAI: Leaf are index [m2 m-2]
         :type vegH: double
         :param vegH: Vegetation height [m]
+        :type CO2_measured: double
+        :param CO2_measured: Measured CO2 concentration [ppm]
         """
 
         
@@ -197,7 +183,7 @@ class ET_ShuttleworthWallace:
         #Calculates the different resistances
         r_b = self.calc_r_b(self.w_leafwidth,u_h,n_eddy)    
         r_c_s = self.calc_r_c_s(LAI_e,self.r_st_min,CO2_response,VPD_response,Temp_response)
-        r_c_a = self.calc_r_c_a(LAI,r_b)
+        r_c_a = self.calc_r_c_a(LAI,r_b,self.sigma_b)
         r_a_a = self.calc_r_a_a(vegH,self.kappa,u_stern,z_a,d_0,n_eddy,k_h,Z_0,d_p)
         r_s_a = self.calc_r_s_a(vegH,n_eddy,k_h,self.z_0g,Z_0,d_p)    
         r_s_s = self.calc_r_s_s()
@@ -216,7 +202,7 @@ class ET_ShuttleworthWallace:
         self._ETpot_SW = self._Tpot_SW + self._Epot_SW
         #self.ET=self.calc_ET(T,Rs,Rn,e_s,e_a,windspeed,LAI,self.vegH,self.CO2stomata,self.etc,self.ets)
         return self._Tpot_SW
-        
+      
         
     def calc_Transpi(self, T, R_n, R_s_n, e_s, e_a,lat_heat, r_c_a, r_a_a, r_c_s, alt=172.):                   #vegH, z_w=Messhöhe Windspeed, h_w =messhöhe andere meteorologische parameter
         """
@@ -299,7 +285,7 @@ class ET_ShuttleworthWallace:
 
         return (delta1*(R_n-G)+(timeconverter*rho_a*c_p*vapour-delta1*r_s_a*(R_n-R_s_n))/(r_a_a+r_s_a))/(delta1 + gamma1*(1.+r_s_s/(r_a_a+r_s_a)))
         
-
+    
     def calc_C_c(self,T,lat_heat,r_a_a, r_s_a, r_s_s, r_c_s, r_c_a, alt=172.):
         """
         Calculates the weighting coefficient C_c for transpiration.
@@ -413,7 +399,7 @@ class ET_ShuttleworthWallace:
         :return: "Preferred" zero plane displacement [m].
         """
         return 0.63*vegH
-        
+         
         
     def calc_k_h(self,vegH,kappa,u_stern,d_0):
         """
@@ -422,7 +408,8 @@ class ET_ShuttleworthWallace:
         :type vegH: double
         :param vegH: Vegetation height [m]
         :type kappa: double
-        :param kappa: von Karman's constant [-] 
+        :param kappa: von Karman's constant describing the logarithmic velocity profile of a 
+                            turbulent fluid flow near a boundary with a no-slip condition[-]
         :type u_stern: double
         :param u_stern: friction velocity [m s-1] 
         :type d_0: double
@@ -436,6 +423,11 @@ class ET_ShuttleworthWallace:
     def calc_LAI_e(self,LAI):  
         """
         Calculates the effective LAI.
+        
+        The use of the effective LAI constrains the portion of leaves that are 
+        active in heat and vapor transfer to the upper leaves of the canopy 
+        (Zhou et al. 2006).
+        Source: Gardiol et al. 2003, p.192. 
 
         :type LAI: double
         :param LAI: Leaf area index [m2 m-2]
@@ -469,7 +461,8 @@ class ET_ShuttleworthWallace:
         :rtype: double
         :return: Eddy diffusivity decay constant of the vegetation [-].
         """
-        if vegH <= 1.: n_eddy = 2.5                               # vegH = h_c                 
+        if vegH <= 1.: n_eddy = 2.5                               # vegH = h_c              
+        elif  vegH>=10.: n_eddy = 4.25
         else : n_eddy = 2.306 + 0.194* vegH  
         return n_eddy
 
@@ -481,7 +474,8 @@ class ET_ShuttleworthWallace:
         :type vegH: double
         :param vegH: Vegetation height [m]
         :type kappa: double
-        :param kappa: von Karman's constant [-]   
+        :param kappa: von Karman's constant describing the logarithmic velocity profile of a 
+                            turbulent fluid flow near a boundary with a no-slip condition[-]   
         :type u_stern: double
         :param u_stern: Friction velocity [m s-1]
         :type z_a: double
@@ -518,7 +512,7 @@ class ET_ShuttleworthWallace:
         return (100./n_eddy*(w_leafwidth/u_h)**0.5 * (1.-math.exp(-n_eddy/2.))**(-1.))
 
         
-    def calc_r_c_a(self,LAI,r_b):  
+    def calc_r_c_a(self,LAI,r_b,sigma_b):  
         """
         Calculates bulk resistance of boundary layer.
         
@@ -526,16 +520,22 @@ class ET_ShuttleworthWallace:
         :param LAI: Leaf area index [m2 m-2]
         :type r_b: double
         :param r_b: r_b [s m-1]
+        :type sigma_b: double
+        :param sigma_b: shielding factor        
         :rtype: double
         :return: Bulk resistance of boundary layer [m s-1].
         """
-        return r_b * 0.5/LAI
+        return r_b * sigma_b/LAI
         
         
     def calc_r_c_s(self,LAI_e,r_st_min,CO2_response, VPD_response, Temp_response):
         """
         Calculates the bulk stomatal resistance of canopy.
         
+        The bulk stomatal resistance of canopy depends on three factors: 
+        CO2, VaporPresseureDeficit (VPD) and temperature. All three functions return 
+        a value ranging from 0 to 1, where 1=completely opened stomata 
+        and 0=completely closed stomata.
         In case, that one or more of the stress or response function is zero, 
         the stomatal resistance of the canopy is limited to 50000 [s/m], because 
         of the molecular diffusivity of water vapour through leaf cuticula. 
@@ -546,29 +546,29 @@ class ET_ShuttleworthWallace:
         :param LAI_e: Effective leaf area index [m2 m-2]
         :type r_st_min: double
         :param r_st_min: Minimal stomatal resistance of individual leaves under optimal conditions [s m-1]        
-        :type CO2_stress: double
-        :param CO2_stress: Stomatal stress due to atmospheric CO2 [-]
-        :type VPD_stress: double
-        :param VPD_stress: Stomatal stress due to vapor pressure deficit [-]
-        :type Temp_stress: double
-        :param Temp_stress: Stomatal stress due to temperature [-]
+        :type CO2_response: double
+        :param CO2_response: Stomatal response due to atmospheric CO2 [-]
+        :type VPD_response: double
+        :param VPD_response: Stomatal response due to vapor pressure deficit [-]
+        :type Temp_response: double
+        :param Temp_response: Stomatal response due to temperature [-]
         :rtype: double
         :return: Bulk stomatal resistance of canopy [m s-1].
         """
         
-        return max(50000. , r_st_min/(LAI_e*(CO2_response * VPD_response * Temp_response)))  
+        return min(50000. , r_st_min/(LAI_e*(CO2_response * VPD_response * Temp_response)))  
         
         
     def calc_CO2_response_stomata(self, CO2_measured):
         """
         Calculates the response of stomata to atmospheric CO2.
         
-        The function returns a value between 0 and 1, where 0 = stomatal closure (conductance=0)
-        and 1 = stomata are completely opened (resistance=0).
+        The function returns a value between 0 and 1, where 1=completely opened 
+        stomata and 0=completely closed stomata.
+        With increasing CO2 the stomata close linearly.
         The function = 1 at 330 ppm and reduces linearly to 0 1150 ppm.
         But, the function is only valid in the range of 330-660 ppm.   
         At 660 ppm calc_CO2_response_stomata = 0.6 [-]
-        --> with increasing CO2 the stomata close linearly.
         
         This approach was taken based on Stockle 1992, p.233.
         
@@ -585,8 +585,8 @@ class ET_ShuttleworthWallace:
         """
         Calculates the response of stomata to vapor pressure deficit (VPD).
         
-        The function returns a value between 0 and 1, where 0 = stomatal closure (conductance=0)
-        and 1 = stomata are completely opened (resistance=0).
+        The function returns a value between 0 and 1, where 1=completely opened 
+        stomata and 0=completely closed stomata.
         With increasing vapor pressure deficit the stomata close.  
         
         This approach was taken from Zhou et al. 2006, p.155.
@@ -607,8 +607,9 @@ class ET_ShuttleworthWallace:
         """
         Calculates the response of stomata to temperature.
         
-        The function returns a value between 0 and 1, where 0 = stomatal closure (conductance=0)
-        and 1 = stomata are completely opened (resistance=0).
+        The function returns a value between 0 and 1,  where 1=completely opened 
+        stomata and 0=completely closed stomata.
+        With decreasing temperature the stomata close.
         When the air temperature is higher than 25°C  the stomatal openness is not limited. 
         Is the air temperature less than 0°C the stomata close completely.
         This approach was taken from Zhou et al. 2006, p.155.
@@ -625,6 +626,29 @@ class ET_ShuttleworthWallace:
         else: temp_response = 1. - 1.6 * 10.**(-3.) * (298. - T_kelvin)**2.   # linear opening of stomata with increasing temperature    
         
         return temp_response
+    
+    def calc_SoilMoi_response_stomata(self, theta, theta_f, theta_r):
+        """
+        Calculates the response of stomata to soil moisture content.
+        
+        The function returns a value between 0 and 1, where 1 = completely opened
+        stomata and 0=completely closed stomata. 
+        
+        :type theta: double
+        :param theta: Soil moisture content in the root zone       
+        :type theta_f: double
+        :param theta_f: Field capacity     
+        :type theta_r: double
+        :param theta_r: residual soil moisture content
+        :rtype: double
+        :return: Stomatal response to soil moisture [-].      
+        """
+        
+        if theta>= theta_f: soilmoi_response = 1.
+        elif theta<= theta_r: soilmoi_response = 0.
+        else: soilmoi_response = (theta-theta_r)/(theta_f-theta_r)
+        
+        return soilmoi
 
 
     def calc_r_s_a(self,vegH,n_eddy,k_h,z_0g,Z_0,d_p):
@@ -652,6 +676,10 @@ class ET_ShuttleworthWallace:
     def calc_r_s_s(self):
         """
         Calculates soil surface resistance.  
+        
+        According to Zhou et al. 2006 the soil surface resistance is interpreted
+        as the resistance for the water vapor to diffuse through a dry top layer 
+        starting from a wet soil sublayer. 
         
         @rtype: double
         @return: Soil surface resistance [m s-1].
@@ -716,7 +744,8 @@ class ET_ShuttleworthWallace:
         :type u_a: double
         :param u_a: Wind speed at the reference height [m s-1]
         :type kappa: double
-        :param kappa: von Karman's constant [-]   
+        :param kappa: von Karman's constant describing the logarithmic velocity profile of a 
+                            turbulent fluid flow near a boundary with a no-slip condition[-]
         :type z_a: double
         :param z_a: Reference height [m]
         :type d_0: double
@@ -765,6 +794,7 @@ class ET_ShuttleworthWallace:
         :return: Roughness length of a closed canopy [m].
         """
         if vegH<=1.:    z_0c = 0.13*vegH
+        elif vegH>= 10.:    z_0c = 0.05*vegH 
         else : z_0c = 0.139*vegH - 0.009*vegH**2. 
         return z_0c
 
@@ -791,3 +821,32 @@ class ET_ShuttleworthWallace:
         :return: Height of the internal boundary layer [m].
         """
         return 0.334 * 5000.**0.875 * z_0w**0.125
+    
+    def intercept_max(self,LAI,c_int):
+        """
+        Calculates interception storage capacity.
+ 
+        :type LAI: double
+        :param LAI: Effective leaf area index [m2 m-2]
+        :type c_int: double
+        :param c_int: Interception coefficient of the vegeation [mm]
+        :rtype: double
+        :return: Maximum interception storage capacity [mm].
+        """   
+        return c_int*LAI
+        
+    def net_rainfall(precip, D_int):
+        """
+        Calculates the net rainfall on the land surface
+        
+        :type precip: double
+        :param precip: Effective leaf area index [m2 m-2]
+        :type D_int: double
+        :param D_int: Interception coefficient of the vegeation [-]
+        :rtype: double
+        :return: Net rainfall on the land surface [mm d-1].       
+        """
+        if precip> D_int: precip_landsurface = precip - D_int
+        else: precip_landsurface = 0.
+        
+        return precip_landsurface

@@ -101,6 +101,9 @@ class Net_Radiation:
         """ 
         Calculates the albedo depending on LAI.
         
+        Albedo is the fraction of solar radiation that is reflected by the surface.
+        The equation is taken from Zhou et al. 2006, p. 156.
+        
         :type LAI: double
         :param LAI: Effective leaf area index [m2 m-2]
         :type albedo_m: double
@@ -108,13 +111,17 @@ class Net_Radiation:
         :rtype: double
         :return: Albedo [-].        
         """
-        albedo_s = 0.1 #albedo for bare wet soil
+        albedo_s = 0.1 # albedo for bare wet soil
         return albedo_m - (albedo_m - albedo_s)*math.exp(-0.56*LAI)
     
       
     def calc_R_n_s(self,Rsolar, albedo):     
         """
-        Calculates the net shortwave radiation.        
+        Calculates the net shortwave radiation.     
+        
+        The net shortwave radiation results from the balance between incoming 
+        and reflected shortwave radiation. Hence, it is the fraction of solar
+        radiation that is not reflected.
         
         :type Rsolar: double
         :param Rsolar: Solar radiation [MJ m-2 d-1]
@@ -127,7 +134,7 @@ class Net_Radiation:
     
     def calc_R_n_l(self,Tmax,Tmin,e_a,Rsolar,Rs_clearsky):
         """
-        Calculates the net longwave radiation.        
+        Calculates the net longwave radiation.    
     
         :type Tmax: double
         :param Tmax: Maximum temperature [K]       
@@ -149,7 +156,10 @@ class Net_Radiation:
 
     def calc_R_n(self,R_n_s,R_n_l):
         """
-        Calculates the net radiation.        
+        Calculates the net radiation. 
+        
+        The net radiation is the difference between the incoming net shortwave 
+        radiation (R_n_s) and the outgoing longwave radiation (R_n_l).
         
         :type R_n_l: double
         :param R_n_l: Net longwave radiation [MJ m-2 d-1]       
