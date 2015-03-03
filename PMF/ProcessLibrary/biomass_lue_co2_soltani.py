@@ -181,7 +181,7 @@ class Biomass_LUE_CO2_Soltani:
         elif self.CO2_ring == 1.3:
             CO2_measured = atmosphere.get_CO2_A3(time_act) 
         elif self.CO2_ring == 2.1:
-            CO2_measured = atmosphere.get_CO2_E12(time_act) 
+            CO2_measured = atmosphere.get_CO2_E1(time_act) 
         elif self.CO2_ring == 2.2:
             CO2_measured = atmosphere.get_CO2_E2(time_act) 
         else: CO2_measured = atmosphere.get_CO2_E3(time_act)

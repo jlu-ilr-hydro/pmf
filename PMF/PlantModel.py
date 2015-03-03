@@ -382,7 +382,7 @@ class Plant:
         elif self.CO2_ring == 1.3:
             CO2_measured = self.atmosphere.get_CO2_A3(time_act) 
         elif self.CO2_ring == 2.1:
-            CO2_measured = self.atmosphere.get_CO2_E12(time_act) 
+            CO2_measured = self.atmosphere.get_CO2_E1(time_act) 
         elif self.CO2_ring == 2.2:
             CO2_measured = self.atmosphere.get_CO2_E2(time_act) 
         else: CO2_measured = self.atmosphere.get_CO2_E3(time_act)
@@ -398,16 +398,20 @@ class Plant:
 #        Rs_clearsky = self.atmosphere.get_Rs_clearsky(time_act)
 #        Tpot = self.et(T,Tmax,Tmin,Rs,Rs_clearsky,e_s,e_a,windspeed,LAI,veg_H)           #ET_Shuttleworth and Wallace
 
-        Tpot = self.et(T,Rnet,Rsn,e_s,e_a,windspeed,LAI_leaf,veg_H,CO2_measured) 
+        Tpot = self.et(T,Rnet,Rsn,e_s,e_a,windspeed,LAI_leaf,veg_H,CO2_measured)   #returns the potential transpiration according to Shuttleworth-Wallace
         ET_Intercept = self.interception(T,Rnet,Rsn,e_s,e_a,windspeed,LAI_leaf,veg_H,CO2_measured,precipi)
             #ET_Shuttleworth-Wallace mit Rn und Rsn aus PlantModel (unten)     
         if self.developmentstage.IsGerminated:
             #Water uptake
             s_p = [Tpot*biomass for biomass in biomass_distribution]
             rootzone = [l.center for l in self.root.zone]
-            alpha = self.water(rootzone)
+            alpha = self.water(rootzone)  #hier wird der Wassergehalt in jedem soillayer abgefragt
             s_h = [s * alpha[i] for i,s in enumerate(s_p)]
             self.Wateruptake = s_h
+            
+            #pressurehead = [self.waterbalance.get_pressurehead(z) for z in rootzone]
+            #s_h_comp = self.water.compensate(s_h,s_p,pressurehead,alpha,maxopth,2.) 
+            
             
             #Nutrient uptake
             NO3content=self.NO3cont(self.plantN, self.developmentstage.Thermaltime)
@@ -415,7 +419,7 @@ class Plant:
             self.nitrogen([self.soil.get_nitrogen(l.center) for l in self.root.zone],
                               s_h, self.Rp,biomass_distribution)  
         if self.developmentstage.IsGrowingseason:
-            self.water_stress = max(0,1 - sum(s_h) / Tpot*self.stress_adaption)
+            self.water_stress = max(0, 1 - sum(s_h) / Tpot*self.stress_adaption)
             self.nutrition_stress = max(0, 1 - sum(self.nitrogen.Total)/ self.Rp * self.stress_adaption if self.Rp>0 else 0.0)
             self.stress = min(max(self.water_stress, self.nutrition_stress),1)
             #Calls biomass interface for the calculation of the actual biomass                                                  ## CO2 neu eingefügt  ####
@@ -980,19 +984,19 @@ class Leaf:
         #Calculate total biomass
         self.Wtot = self.Wtot + biomass * step
         
-       #senescence starting with beginning of anthesis
+       #senescence starting with end of anthesis
         if thermaltime >= self.ttanthesis:
             sen = self.senescence(tt_rate,thermaltime,self.ttmaturity,self.fact_sen,self.FRDR)
         else:
             sen = 0.
-        
+#        print thermaltime,sen
         self.senesced_leafmass = self.Wtot * sen
         self.Wtot = self.Wtot - self.senesced_leafmass       
         
         #Calculate LAI with scenscence
 #        self.leafarea = 0.1 + self.convert(self.Wtot, self.adj_weigth(thermaltime, self.ttanthesis)*self.specific_weight)
+#        self.leafarea = max(self.min_LAI, self.convert(self.Wtot, self.specific_weight))
         self.leafarea = max(self.min_LAI, self.convert(self.Wtot, self.adj_weigth(thermaltime, self.ttanthesis)*self.specific_weight))
-
    
     def senescence(self,tt_rate,tt_sum,tt_maturity,fact_sen, FRDR):
         """ Calculates the relative senescence rate for leaves [1/d]. Before anthesis no senscence occurs.
@@ -1021,7 +1025,7 @@ class Leaf:
             sen = tt_rate / fact_sen * FRDR
            
         return sen
-    
+#        return 0.
 
     def convert(self,biomass,specific_weight):
         """ Calculates LeafAreaIndex from leaf biomass and leaf specific weight.
@@ -1057,6 +1061,7 @@ class Leaf:
         :param thermaltime_anthesis: Thermaltime at anthesis in [°days].
         
         """
-        return min((thermaltime/tt_anthesis+0.25),1.)
+#        return min((thermaltime/tt_anthesis+0.25),1.)
+        return 1.
 
 
