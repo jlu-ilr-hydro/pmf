@@ -23,7 +23,7 @@ class Development:
     ==============
     Call development calculates thermaltime.
     """
-    def __init__(self, stage, Rp=3., Rv=1.5):                                                 
+    def __init__(self, stage, Rp, Rv, photo_on_off, verna_on_off):                                                 
         """
         Returns a development instance.
         
@@ -42,8 +42,12 @@ class Development:
         for each stage in [°C].
         :type Rp: double
         :param Rp: crop specific parameter showing sensitivity to photoperiod [-]
+        :type photo_on_off: double
+        :param photo_on_off: Parameter to turn on (=1) or off (=0) photoperiodic response [-]
         :type Rv: double
         :param Rv: crop specific parameter showing sensitivity to vernalization [-]
+        :type verna_on_off: double
+        :param verna_on_off: Parameter to turn on (=1) or off (=0) vernalization function [-]
         :type photo: double
         :param photo: photoperiod factor between 0 and 1 [-]
         :type verna_sum: double
@@ -62,7 +66,9 @@ class Development:
         #constants
         self.stages = []
         self.Rp = Rp    
-        self.Rv = Rv        
+        self.Rv = Rv   
+        self.photo_on_off=photo_on_off
+        self.verna_on_off=verna_on_off 
         
         
         # state variable
@@ -77,7 +83,7 @@ class Development:
             
         stage_n = [i[0] for i in stage]
         self.index_anthesis = stage_n.index('Anthesis')
-        
+        self.index_stemelongationend = stage_n.index('Stem elongation')        
 
     @property
     def StageIndex(self):
@@ -154,16 +160,19 @@ class Development:
         :param daylength: daylight [h], calculated according to FAO irrigationa and drainage paper pp.48
         """       
         
-        
-        if self.tt < self.stages[0][1] or self.tt > self.stages[self.index_anthesis][1]:
-            self.rate = self.develop(tmin, tmax, tbase) * step                                  #dailyrate 
-            self.tt = self.tt + self.rate                                      # and thermaltime <= ttanthesis
+        # from emergence till floral initiation: vernalization and photoperiodic effect      
+        if self.tt < self.stages[0][1] or self.tt > self.stages[self.index_stemelongationend][1]:       
+            self.rate = self.develop(tmin, tmax, tbase) * step                                   
+            self.tt = self.tt + self.rate                                      
             
         else:
             self.rate = self.develop(tmin, tmax, tbase) * step
+            # vernalization, the colder, the bigger verna_sum
             self.verna_sum = self.verna_sum + (self.vernalization_rate(tmin, tmax,tmean) - self.devernalization(self.verna_sum, tmax))
-            self.verna_factor = max(0, 1 - (0.0054545 * self.Rv + 0.0003)*(50 - self.verna_sum))
-            self.photo = max(0, self.photoperiod(daylength, self.Rp))
+            #factor between 0 and 1
+            self.verna_factor = max(1-self.verna_on_off, max(0, 1 - (0.0054545 * self.Rv + 0.0003)*(50 - self.verna_sum)))
+            # photoperiod factor between 0 and 1
+            self.photo = max(1-self.photo_on_off, max(0, self.photoperiod(daylength, self.Rp))) 
             self.rate = self.rate * min(self.photo, self.verna_factor)          
             self.tt = self.tt + self.rate        
         
@@ -186,7 +195,7 @@ class Development:
                  
         
     def vernalization_rate(self,tmin,tmax,temp_crown):
-        """ Calculates the daily rate of vernalizationr [-].
+        """ Calculates the daily rate of vernalization [-].
         
         Calculates the daily rate of vernalization [-].
         This concept follows the CERES approach and was extracted from APSIM documentation (source: "The APSIM-Wheat module (7.5 R3008)", March 2014)

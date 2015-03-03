@@ -63,23 +63,18 @@ class Plant:
       interacts with the environmental models
     """ 
     Count=0   
-    def __init__(self,et,water,biomass,net_radiation,development,nitrogen,layer,         
+    def __init__(self,et,water,biomass,net_radiation,interception,development,nitrogen,layer,
+                 FRDR,max_height,CO2_ring,max_depth,root_growth,leaf_specific_weight,tbase,fact_sen,         
                  shoot_percent =   [.0,.5,.5,.9,.95,1.,1.,1.],
-                 root_percent =    [.0,.5,.5,.1,.05,.0,.0,.0],
-                 
+                 root_percent =    [.0,.5,.5,.1,.05,.0,.0,.0],                 
                  leaf_percent =    [.0,.5,.5,.5,.0,.0,.0,.0],
                  stem_percent =    [.0,.5,.5,.5,.5,.0,.0,.0],
                  storage_percent = [.0,.0,.0,.0,.5,1.,1.,1.],
-                 tbase = 0.,
                  pressure_threshold = [0.,1.,500.,16000.],
                  plantN = [[160.,0.043],[1200.,0.016]],
-                 leaf_specific_weight = 40.,
-                 root_growth=1.5,
-                 max_height = 1.5,
                  stress_adaption=1.,
                  carbonfraction=.4,
-                 max_depth=150.,
-                 soil=None,atmosphere=None,FRDR=0.3, Rp=3.):                                    # FRDR new
+                 soil=None,atmosphere=None):                                    # FRDR new
         """        
         The implementation of plant requires six process modules, two 
         environmental interfaces and the specification of several crop specific 
@@ -99,6 +94,8 @@ class Plant:
         :param biomass: Calculates potential and actual biomass accumulation.
         :type  developmentstage: developmentstage
         :param developmentstage: Calculates development status.
+        :type  interception: evaporation of interception
+        :param interception: Calculates evaporation of interception.       
         :type  nitrogen: nitrogen
         :param nitrogen: Calculates nitrogen uptake.
         :type layer: layer
@@ -132,16 +129,18 @@ class Plant:
         :type leaf_specific_weight: double
         :param leaf_specific_weight: Specific leaf weight in [g m-2].
         :type root_growth: double
-        :param root_growth: Root elongation factor in [cm day-1].
+        :param root_growth: Root elongation factor [cm day-1].
         :type max_height : double
-        :param max_height : Maximum crop height in [m].
+        :param max_height : Maximum crop height [m].
         :type stress_adaption: double
         :param stress_adaption: Modifies the stress influences on biomass
-        accumulation (one = full stress) in [-].
+        accumulation (one = full stress) [-].
         :type carbonfraction: double
-        :param carbonfraction: Fractional carboncontent in [-].
+        :param carbonfraction: Fractional carboncontent [-].
         :type max_depth: double
         :param max_depth: Maximal rooting depth in [cm].
+        :type fact_sen: double
+        :param fact_sen: factor to adjust senescence rate after maturity
         :type FRDR: double
         :param FRDR: factor changing shape of senescence function [-] 
         
@@ -150,8 +149,7 @@ class Plant:
         
         :summary: Returns a plant instance
         """
-        #### N E W ####### N E W ############################################
-        self.max_height = max_height        
+
         #Raise Count variable for each plant instance
         self.Count+=1
         
@@ -161,7 +159,11 @@ class Plant:
         self.pressure_threshold=pressure_threshold
         self.stress_adaption=stress_adaption
         self.carbonfraction=carbonfraction
-
+        self.max_height = max_height  
+        self.CO2_ring = CO2_ring
+#        self.max_depth = max_depth
+#        self.root_growth = root_growth
+#        self.leaf_specific_weight = leaf_specific_weight
       
         #Handing over environmental interfaces
         self.soil=soil
@@ -175,12 +177,12 @@ class Plant:
         self.et=et
         self.nitrogen=nitrogen
         self.net_radiation=net_radiation
-
-
+        self.interception=interception
+        self.FRDR = FRDR
        
         #Implementation of root and shoot class
         self.root=Root(self,root_percent,root_growth,max_depth,layer)
-        self.shoot=Shoot(self,leaf_specific_weight,FRDR,self.developmentstage[4][1],shoot_percent,leaf_percent,stem_percent,storage_percent,
+        self.shoot=Shoot(self,leaf_specific_weight,fact_sen,self.FRDR,self.developmentstage[4][1],shoot_percent,leaf_percent,stem_percent,storage_percent,
                          max_height,elongation_end=self.developmentstage[3][1],thermaltime_maturity=self.developmentstage[-1][1])        #FRDR          
 #        self.net_radiation = Net_Radiation()
         
@@ -282,12 +284,7 @@ class Plant:
         :return: Storage organs carbon content in [g].
         """ 
         return self.shoot.storage_organs.Wtot * self.carbonfraction
-###### N E W ####### N E W ############ N E W ######################### N E W ###### N E W ####### N E W ############ N E W ######################### N E W     
-#    @property
-#    def Vegetation_Height(self):
-#
-#        return self.veg_H #eight
-########################################################################################################################################################   
+
     def set_soil(self,soil):
         """
         Connects the plant to the soil interface and sets the soil specific 
@@ -362,22 +359,36 @@ class Plant:
         #Evapotranspiration
         Kr = self.soil.Kr()
         thermaltime = self.developmentstage.Thermaltime
-        
-        ####N E W ########################################################################################################################
+
         # calls the class net radiation        
         self.net_radiation(self.atmosphere.get_tmax(time_act),self.atmosphere.get_tmin(time_act),self.atmosphere.get_ea(time_act),self.atmosphere.get_Rs(time_act),self.atmosphere.get_Rs_clearsky(time_act),self.shoot.leaf.LAI)
-        veg_H = self.shoot.stem.vertical_stem_growth(self.max_height,self.developmentstage[3][1],self.developmentstage.Thermaltime)
-        ##### N E W ############################################################################################################################
+        veg_H = self.shoot.stem.vertical_stem_growth(self.max_height,self.developmentstage[4][1],self.developmentstage.Thermaltime)
+
         T = self.atmosphere.get_tmean(time_act)
         e_s = self.atmosphere.get_es(time_act)
         e_a = self.atmosphere.get_ea(time_act)
         windspeed = self.atmosphere.get_windspeed(time_act)
+        precipi = self.atmosphere.get_rainfall(time_act)
         LAI_leaf = self.shoot.leaf.LAI
         Rnet = self.net_radiation.calc_R_n(self.net_radiation.R_n_s,self.net_radiation.R_n_l)
         Rsn = self.net_radiation.calc_R_s_n(self.net_radiation.R_n,self.net_radiation.interception)   
         Cr = self.net_radiation.Cr
-        CO2_measured = self.atmosphere.get_CO2_measured(time_act)
-        ####N E W ########################################################################################################################
+        
+        'für interface_Jul.Atmosphere_FACE()'
+        if self.CO2_ring == 1.1:
+            CO2_measured = self.atmosphere.get_CO2_A1(time_act) 
+        elif self.CO2_ring == 1.2:
+            CO2_measured = self.atmosphere.get_CO2_A2(time_act) 
+        elif self.CO2_ring == 1.3:
+            CO2_measured = self.atmosphere.get_CO2_A3(time_act) 
+        elif self.CO2_ring == 2.1:
+            CO2_measured = self.atmosphere.get_CO2_E12(time_act) 
+        elif self.CO2_ring == 2.2:
+            CO2_measured = self.atmosphere.get_CO2_E2(time_act) 
+        else: CO2_measured = self.atmosphere.get_CO2_E3(time_act)
+        
+#        CO2_measured = self.atmosphere.get_CO2_measured(time_act)    
+        
 #        Rn = self.atmosphere.get_Rn(time_act,0.12,True)
 #        Tpot = self.et(Kr,thermaltime,Rn,T,e_s,e_a,windspeed,LAI)     #ET_FAO
 
@@ -387,7 +398,8 @@ class Plant:
 #        Rs_clearsky = self.atmosphere.get_Rs_clearsky(time_act)
 #        Tpot = self.et(T,Tmax,Tmin,Rs,Rs_clearsky,e_s,e_a,windspeed,LAI,veg_H)           #ET_Shuttleworth and Wallace
 
-        Tpot = self.et(T,Rnet,Rsn,e_s,e_a,windspeed,LAI_leaf,veg_H,CO2_measured)    
+        Tpot = self.et(T,Rnet,Rsn,e_s,e_a,windspeed,LAI_leaf,veg_H,CO2_measured) 
+        ET_Intercept = self.interception(T,Rnet,Rsn,e_s,e_a,windspeed,LAI_leaf,veg_H,CO2_measured,precipi)
             #ET_Shuttleworth-Wallace mit Rn und Rsn aus PlantModel (unten)     
         if self.developmentstage.IsGerminated:
             #Water uptake
@@ -540,50 +552,6 @@ class Plant:
         :summary: Calculates nitrogen demand.
         """
         return Wpot*NO3conc
-    def vernalisation(self,tmean,plant_vern):
-        """
-        Returns the relative vernalisation based on the daily mean temperature.
-        
-        :type tmean: double
-        :param tmean: Daily average temperature in [Celsius]
-        :type plant_vern: list
-        :type plant_vern: List with vernalisation coefficiants.
-        
-        :rtype: double
-        :return: Relative vernalisation coefficiant.
-        """
-        if tmean<plant_vern[0] or tmean>plant_vern[2]: return 0.
-        elif tmean>=plant_vern[0] and tmean<=plant_vern[1]: return 1.0
-        else: return (plant_vern[-1]-tmean)/(plant_vern[-1]-plant_vern[-2])    
-#    def photoperiod(self,dl,type,plant_photoperiod):
-#        """
-#        Returns the relative photoperiod coefficiant. The value can
-#        accelerate  development depending on the daylenght and the plant
-#        type.
-#        
-#        :type dl: double
-#        :param dl: Daylenght in [hours].
-#        :type type: string
-#        :param type: Plant photopreiod type, can be longday or shortday plant.
-#        :type plant_photoperiod: list
-#        :param plant_photoperiod: List with the photoperiod coefficiants.
-#        
-#        :rtype: double
-#        :return: Relative photoperiod coefficiant in [-].
-#        
-#        :summary: Calculates photoperiode value.
-#        """  
-#        if type=='longday':
-#            if dl<=plant_photoperiod[0] or dl>=plant_photoperiod[-1]: 
-#                return 0.
-#            elif dl>plant_photoperiod[1] and dl<plant_photoperiod[2]: 
-#                return 1.0
-#            else: 
-#                return (plant_photoperiod[1]-dl)/(plant_photoperiod[1]-plant_photoperiod[0])
-#        else:
-#            if dl<=plant_photoperiod[0] or dl>=plant_photoperiod[-1]: return 0.
-#            elif dl>plant_photoperiod[0] and dl<plant_photoperiod[1]: return 1.0
-#            else: return (plant_photoperiod[-1]-dl)/(plant_photoperiod[-1]-plant_photoperiod[-2])
     def sink_term(self,h_soil,h_plant): 
         """
         Calculates the crop response due to the soil water conditions.
@@ -741,7 +709,7 @@ class Shoot:
     
     :summary: Allocates aboveground biomass to leaf, stem and storage organs.
     """
-    def __init__(self,plant,leaf_specific_weight,FRDR,thermaltime_anthesis,shoot_percent,leaf_percent,stem_percent,storage_percent,max_height,elongation_end, thermaltime_maturity):    #FRDR new
+    def __init__(self,plant,leaf_specific_weight,fact_sen,FRDR,thermaltime_anthesis,shoot_percent,leaf_percent,stem_percent,storage_percent,max_height,elongation_end, thermaltime_maturity):    #FRDR new
         """
         Returns shoot instance. Shoot implements leaf, stem and storageorgans.
         
@@ -775,11 +743,11 @@ class Shoot:
         leaf = [leaf_percent[i]*percent for i,percent in enumerate(self.percent)]
         stem = [stem_percent[i]*percent for i,percent in enumerate(self.percent)]
         storage = [storage_percent[i]*percent for i,percent in enumerate(self.percent)]
-        #Shoot owns leaf, tem and storage_organs
-        self.leaf=Leaf(self,leaf,leaf_specific_weight,thermaltime_anthesis,thermaltime_maturity, FRDR)              # FRDR new, weil hier leaf aufgerufen wird
+        #Shoot owns leaf, stem and storage_organs
+        self.leaf=Leaf(self,leaf,leaf_specific_weight,thermaltime_anthesis,thermaltime_maturity,fact_sen,FRDR)              # FRDR new, weil hier leaf aufgerufen wird
         self.stem=Stem(self,stem,max_height,elongation_end)
         self.storage_organs=Storage_Organs(self,storage)
-        #State variables updated in every timestep
+        #State variables updated in every time step
         #total biomass
         self.Wtot=0.
     def __call__(self,step,biomass,Wleaf,Wstem,Wstorage,thermaltime,tt_rate):
@@ -943,7 +911,7 @@ class Leaf:
     Leaf calculates actual total biomass and the leaf area index with
     the specific leaf weight and a partitioing coefficiant.
     """
-    def __init__(self,shoot,percent,leaf_specific_weight,thermaltime_anthesis,ttmaturity, FRDR):                #FRDR new
+    def __init__(self,shoot,percent,leaf_specific_weight,thermaltime_anthesis,ttmaturity,fact_sen,FRDR,min_LAI=0.1):                #FRDR new
         """
         Returns a leaf instance.
         
@@ -958,6 +926,10 @@ class Leaf:
         :type thermaltime_anthesis: double
         :param thermaltime_anthesis: Total thermaltime at 
         developmentstage anthesis in [degreedays].
+        :type fact_sen: double
+        :param fact_sen: factor to adjust senescence rate after maturity 
+        :type min_LAI: double
+        :param min_LAI: Minimum leaf area index [m2 m-2].
         :rtype: leaf
         :return: leaf instance
         """
@@ -970,11 +942,13 @@ class Leaf:
         self.ttanthesis = thermaltime_anthesis
         self.ttmaturity = ttmaturity    
         self.percent = percent
-        self.FRDR = FRDR                                                                                        # FRDR new
+        self.fact_sen = fact_sen
+        self.FRDR = FRDR     
+        self.min_LAI = min_LAI                      # inital value of leaf area index                                                             
 
         
         #State variables updated in every timestep
-        self.stomatal_resistance=0.
+#        self.stomatal_resistance=0. #is now calculated in ET-Shuttleworth script
         self.Wtot=0.
         self.leafarea = 0.1       
         self.senesced_leafmass = 0.                              
@@ -1002,45 +976,30 @@ class Leaf:
         :type thermaltime: double
         :param thermaltime: Thermaltime in [°days].
         """
-        
-##### O L D ########### O L D ############## O L D ############### without senescence
-      
-#        #Calculate total biomass
-#        self.Wtot = self.Wtot + biomass * step
-#
-#        #Calcualte LAI 
-#        self.leafarea += self.convert(biomass, self.adj_weigth(thermaltime, self.ttanthesis)*self.specific_weight)
-
-
-##### N E W ############ N E W ############## N E W ############### with senescence
-        
+               
         #Calculate total biomass
         self.Wtot = self.Wtot + biomass * step
         
        #senescence starting with beginning of anthesis
         if thermaltime >= self.ttanthesis:
-            sen = self.senescence(tt_rate,thermaltime,self.ttmaturity,self.FRDR)
+            sen = self.senescence(tt_rate,thermaltime,self.ttmaturity,self.fact_sen,self.FRDR)
         else:
             sen = 0.
         
         self.senesced_leafmass = self.Wtot * sen
-        self.Wtot = self.Wtot - self.senesced_leafmass
-#        
+        self.Wtot = self.Wtot - self.senesced_leafmass       
         
         #Calculate LAI with scenscence
 #        self.leafarea = 0.1 + self.convert(self.Wtot, self.adj_weigth(thermaltime, self.ttanthesis)*self.specific_weight)
-        self.leafarea = max(0.1, self.convert(self.Wtot, self.adj_weigth(thermaltime, self.ttanthesis)*self.specific_weight))
+        self.leafarea = max(self.min_LAI, self.convert(self.Wtot, self.adj_weigth(thermaltime, self.ttanthesis)*self.specific_weight))
 
-
-###################################################
-        
-        self.stomatal_resistance= 100 if self.shoot.plant.developmentstage.IsGerminated else 300
-
-########## N E W ################ N E W ############ N E W ################# senescence function
    
-    def senescence(self,tt_rate,tt_sum,tt_maturity,FRDR):
-        """ Calculates the relative senescence rate for leaves [1/d].
+    def senescence(self,tt_rate,tt_sum,tt_maturity,fact_sen, FRDR):
+        """ Calculates the relative senescence rate for leaves [1/d]. Before anthesis no senscence occurs.
         The calculation is based on the concept applied in SUCROS97.
+        The aging and linked leave biomass reduction starts at anthesis level (see above).
+        Between anthesis and maturity the senescence facor is value between 0 and 1. Reaching the maturity level 
+        the senescence rate varies with an adjusted mean temperature (tt_rate/fact_sen).
         Here sen (PMF) equate to RDR (SUCROS97).
         
         :type tt_rate: double
@@ -1049,15 +1008,19 @@ class Leaf:
         :param tt_maturity: sum of degree days when maturity is reached [°C days]
         :type tt_sum: double
         :param tt_sum: sum of all degree days [°C days]
+        :type fact_sen: double
+        :param fact_sen: factor to adjust senescence rate after maturity 
         :type FRDR: double
         :param FRDR: factor varying senescence rate [-]
-        :return: senenscenece: 
+        :return: senenscenece 
         :rtype: double
         """
-        sen = tt_rate / max(0.1,(tt_maturity - tt_sum)) * FRDR
+        if tt_maturity - tt_sum > 0.1:
+            sen = tt_rate / (tt_maturity - tt_sum) * FRDR
+        else:
+            sen = tt_rate / fact_sen * FRDR
+           
         return sen
-        
-##########################################################################
     
 
     def convert(self,biomass,specific_weight):
@@ -1095,24 +1058,5 @@ class Leaf:
         
         """
         return min((thermaltime/tt_anthesis+0.25),1.)
-    def stomatal_resistance(self):
-        """
-        Reduced photosynthesis due to sink size limitation, ageing, or
-        even low air humidity increases stomatal resistance and lowers the potential
-        transpiration rate. The actual transpiration rate is below the potential rate
-        when stomatal resistance increases in response to water shortage.
-        
-        :type param: double
-        :param param: 
-        :rtype: double
-        :return: Stomatal resistance
-        
-        The stomatal resistance is mainly determined by photosynthesis and the
-        CO 2 -internal/external fraction.
-        
-        :see: [O'Toole and Cruz, 1980, De Vries et al, 1989]
-        
-        :todo: Calculation of stomatal resistance
-        """
-        pass
+
 
