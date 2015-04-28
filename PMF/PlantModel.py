@@ -27,6 +27,7 @@ import math
 import pylab as pylab
 import PMF
 import CropDatabase
+import numpy as np
 class Plant:
     """
     Plant functioning as interacting platform. It holds the plant components, 
@@ -193,6 +194,7 @@ class Plant:
         self.Rp = 0.
         self.Wateruptake = []
         
+        
     
     @property
     def ShootNitrogen(self):
@@ -324,12 +326,12 @@ class Plant:
         :return: -
         """
         Plant.Count-=1
-    def __call__(self,time_act,step,interval):
+    def __call__(self,day_of_simulation,time_act,step,interval):
         """
         Call plant initiate the growth process for a given time periode.
         The start of the processes is related to the development stage.
         Development and Evapotranspiration are calculated in every time step.
-        Water uptake, nutrient uptake  and transpiration after geminantion. 
+        Water uptake, nutrient uptake  and transpiration after germination. 
         Bioamss accumulation and partitioning takes places
         during the growing season.
         
@@ -347,6 +349,7 @@ class Plant:
         :todo: vegH equals at the first day of growth zero: ZeroDivisionError.
         The recent solution is very bad ( max(0.01,self.shoot.stem.height))
         """
+        
         #Set time step
         time_step = 1. * interval if step == 'day' else 1./24. * interval
         #compute actual rooting zone with actual rooting depth
@@ -357,7 +360,7 @@ class Plant:
         #Development
         self.developmentstage(time_step,self.atmosphere.get_tmin(time_act), self.atmosphere.get_tmax(time_act), self.tbase, self.atmosphere.get_daylength(time_act), self.atmosphere.get_tmean(time_act)) 
         #Evapotranspiration
-        Kr = self.soil.Kr()
+#        Kr = self.soil.Kr()
         thermaltime = self.developmentstage.Thermaltime
 
         # calls the class net radiation        
@@ -373,6 +376,11 @@ class Plant:
         Rnet = self.net_radiation.calc_R_n(self.net_radiation.R_n_s,self.net_radiation.R_n_l)
         Rsn = self.net_radiation.calc_R_s_n(self.net_radiation.R_n,self.net_radiation.interception)   
         Cr = self.net_radiation.Cr
+        self.Rs = self.atmosphere.get_Rs(time_act)
+#        print self.Rs
+        
+        self.day_of_simulation = day_of_simulation
+        self.soilprofile = self.atmosphere.soilprofile()
         
         'für interface_Jul.Atmosphere_FACE()'
         if self.CO2_ring == 1.1:
@@ -423,7 +431,8 @@ class Plant:
             self.nutrition_stress = max(0, 1 - sum(self.nitrogen.Total)/ self.Rp * self.stress_adaption if self.Rp>0 else 0.0)
             self.stress = min(max(self.water_stress, self.nutrition_stress),1)
             #Calls biomass interface for the calculation of the actual biomass                                                  ## CO2 neu eingefügt  ####
-            self.biomass(time_step,self.stress,self.biomass.atmosphere_values(self.atmosphere,time_act),self.net_radiation.calc_interception(LAI_leaf,Cr),self.shoot.leaf.LAI,self.biomass.measured_CO2(self.atmosphere,time_act),self.shoot.leaf.senesced_leafmass)
+#            self.biomass(time_step,self.stress,self.biomass.atmosphere_values(self.atmosphere,time_act),self.net_radiation.calc_interception(LAI_leaf,Cr),self.shoot.leaf.LAI,self.biomass.measured_CO2(self.atmosphere,time_act),self.shoot.leaf.senesced_leafmass)
+            self.biomass(time_step,self.stress,self.Rs,self.net_radiation.calc_interception(LAI_leaf,Cr),self.shoot.leaf.LAI,self.biomass.measured_CO2(self.atmosphere,time_act),self.shoot.leaf.senesced_leafmass)            
             #Root partitining
             if self.developmentstage.Thermaltime <= self.developmentstage[4][1]:
                                 
@@ -439,8 +448,12 @@ class Plant:
                 root_biomass = self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth
                 vertical_root_growth_stress = self.stress
                 physical_constraints = self.water([self.root.depth])[0]
-                self.root(time_step,fgi,root_biomass,vertical_root_growth_stress,physical_constraints)
+                self.root(self.soilprofile,self.day_of_simulation,time_step,fgi,root_biomass,vertical_root_growth_stress,physical_constraints)
             #Shoot partitioning
+                    #            self.test = (self.shoot.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth)
+                    #            print self.biomass.ActualGrowth
+                    #            print self.shoot.percent[self.developmentstage.StageIndex]
+                    #            print self.test
             self.shoot(time_step,(self.shoot.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        (self.shoot.leaf.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
                        (self.shoot.stem.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth),
@@ -484,7 +497,7 @@ class Plant:
         #Compute stress index for nitrogen and water
         w=1-Sh/Tpot
         n=1-(Ra/Rp) if Rp>0. else 0.
-        #Return list for the factor wit hthe higher stress index
+        #Return list for the factor with the higher stress index
         H2Odis_sum=sum(H2Odis)
         if H2Odis_sum<=0: 
             H2Odis_sum=1 
@@ -641,13 +654,19 @@ class Root:
         self.actual_distribution = [0. for l in self.zone]
         self.fgi = [0. for l in self.zone]
         
-    def __call__(self,step,fgi,biomass,stress,physical_constraints):
+
+        
+        
+    def __call__(self,soilprofile,day_of_simulation,step,fgi,biomass,stress,physical_constraints):
         """
         Root calculates the actual rootingdepth and allocates
         the biomass between the layers in the rootingzone. The vertical growth
         is restricted due to the water conditions at actual depth and drought
         stress influences on the whole plant. 
         
+        
+        :type layerdepth_percent: list
+        :param layerdepth_percent: Percentage of  mass of each layer related to entire soil profile. Value between 0 and 1. 
         :type physical_constraints: double
         :param physical_constraints: Resistance of the soil against root 
         penetration in [-].
@@ -664,15 +683,34 @@ class Root:
         self.depth=self.depth+self.elong*physical_constraints*(1-stress)*step
         if self.depth>self.max_depth:
             self.depth=self.max_depth
-        #Calculate toal biomass
-        self.growth = biomass*step
-        self.Wtot=self.Wtot+biomass*step
-        #Allocate actual growth between the layers in the rooting zone
-        self.branching=self.allocate(self.branching, biomass, fgi)
-        self.actual_distribution = [index*biomass for index in fgi]
-        self.fgi =  fgi
+            
+        # exponential equ. for root allocation over depth
+        # Taking into account changing layer thickness with depth
+        self.soilprofile = soilprofile
+        cum_sum =  [1./np.exp((b/100.)*5.5) for i,b in enumerate(self.soilprofile)]
+        # amount of root allocation per layer 
+        self.biomass_percent_per_layer = []
+        for i,b in enumerate(cum_sum):
+            if i == 0:
+                self.biomass_percent_per_layer.append(1.- cum_sum[i])
+            else:
+                self.biomass_percent_per_layer.append(cum_sum[i-1]-cum_sum[i])
+        self.biomass_income_per_layer = [biomass*layer_percent for i,layer_percent in enumerate(self.biomass_percent_per_layer)]
+        #Allocate actual growth between the layers in the rooting zone 
+        self.root_allocation=self.allocate(self.branching, self.biomass_income_per_layer, fgi,self.soilprofile)
+        self.root_death = self.root_decay(self.branching)       
+
+        #Calculate total biomass  
+        every_7th_day = day_of_simulation % 7
+        if every_7th_day == 0:
+            self.branching=[self.root_allocation[i] - self.root_death[i] for i in range(len(self.root_allocation))]
+            self.Wtot = self.Wtot + biomass - 0.1 * self.Wtot 
+        else:
+            self.branching=self.root_allocation
+            self.Wtot = self.Wtot + biomass
+    
         
-    def allocate(self,distr,biomass,fgi):
+    def allocate(self,distr,biomass,fgi,layerlepth,k_shape=0.05):
         """        
         Allocates biomass over the rooting zone in realtion to a distribution
         index fgi (FeelingGoodIndex).
@@ -690,7 +728,23 @@ class Root:
         
         :summary: Returns the biomass distribution over the rootingzone.
         """
-        return [b+(biomass*fgi[i]) for i,b in enumerate(distr)]
+#        return [b+(np.exp(layerlepth[i]*k_shape*-1)*biomass[i]) for i,b in enumerate(distr)]
+#        return [b+(biomass[i]*fgi[i]) for i,b in enumerate(distr)]
+        return [b+biomass[i] for i,b in enumerate(distr)]
+
+    def root_decay(self,distr):
+        """
+        Calculates root decay for each layer [g]
+        
+        :type distr: list
+        :param distr: Total biomass allocation over the rootingzone in [g]. 
+        :rtype: list
+        :return: List with the dead biomass in each layer in the rootingzone 
+        in [g].
+
+        """        
+        return [b*0.1 for i,b in enumerate(distr)]
+
     
 class Shoot:
     """    
