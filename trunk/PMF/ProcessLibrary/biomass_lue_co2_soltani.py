@@ -81,6 +81,15 @@ class Biomass_LUE_CO2_Soltani:
         :return: Biomass [g dry matter m-2].
         """ 
         return self.total
+        
+    @property
+    def Rue_soltani(self):
+        return self.rue_sol
+
+    @property
+    def PAR_absorbed(self):
+        return self.par_absorbed
+
 
     def __call__(self,step,stress,Rs,interception,LAI,CO2_measured,senesced_leaf):  
         """
@@ -99,7 +108,9 @@ class Biomass_LUE_CO2_Soltani:
         """
         
         self.stress = stress
-        self.growthrate = self.PAR_a(Rs, interception)* self.rue_soltani(self.rue_0,self.C_0,self.factor_b,CO2_measured)
+        self.rue_sol = self.rue_soltani(self.rue_0,self.C_0,self.factor_b,CO2_measured)
+        self.par_absorbed = self.PAR_a(Rs, interception)
+        self.growthrate = self.par_absorbed * self.rue_sol
         self.total = self.total - senesced_leaf + self.growthrate * (1-self.stress) * step         
         self.pot_total = self.pot_total + self.growthrate
         

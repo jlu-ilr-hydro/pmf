@@ -108,8 +108,8 @@ class CropCoefficiants_c3grass:
                           ['Seed fill',1174.],          # end of seed fill
                           ['Dough stage',1556.],        # end of dough stage
                           ['Maturity',1665.]],          # end of maturity
-                 RUE=3.,  # tidigare 2.6,           #RUE at reference CO2 concentration
-                 C_0=350,           #ppm reference atmospheric CO2 concentration
+                 RUE=2.4, # tidigare 2.6,           #RUE at reference CO2 concentration
+                 C_0=350.,           #ppm reference atmospheric CO2 concentration
                  factor_b=0.8,      # biomass_lue_soltani
                  b_1 = 7784.,       # biomass_lue_stockle
                  b_2 = 0.00107,     # biomass_lue_stockle
@@ -131,11 +131,11 @@ class CropCoefficiants_c3grass:
                  FRDR = 0.5,        # plant --> factor changing shape of senescence function [-]
                  min_LAI = 0.1,     # plant --> minimum LAI 
                  max_height = 1.,  # plant --> max plant height [m]
-                 max_depth=90.,    # plant --> max root depth [cm]
-                 root_growth=1.5,   # plant --> root growth [cm d-1]
-                 leaf_specific_weight = 40.,    # 40., plant --> specific leaf weight [g m-2]
-                 tbase = 1.,#5.,        # plant --> min temperature for physiol. processes, needed for temp sum
-                 Cr = 0.5,          # netradiation --> extinction coefﬁcient of the vegetation for net radiation
+                 max_depth=100.,    # plant --> max root depth [cm]
+                 root_growth=1.,   # plant --> root growth [cm d-1]
+                 leaf_specific_weight = 45.,    # 40., plant --> specific leaf weight [g m-2]
+                 tbase = 10.,#5.,        # plant --> min temperature for physiol. processes, needed for temp sum
+                 Cr = 0.3, #before 0.5,          # netradiation --> extinction coefﬁcient of the vegetation for net radiation
                  albedo_m = 0.23,  # netradiation --> albedo for closed grass canopy (Zhu et al. 2005)
                  CO2_ring=1.1):     # 1.1=ring_A1, 1.2=ring_A2, 1.3=ring_A3, 2.1=ring_E1, 2.2=ring_E2, 2.3=ring_E3 
         self.tbase = tbase
@@ -186,7 +186,7 @@ class CropCoefficiants_c4grass:
                           ['Dough stage',1556.],        # end of dough stage
                           ['Maturity',1665.]],          # end of maturity
                  RUE=3.6,           #RUE at reference CO2 concentration
-                 C_0=350,           #ppm reference atmospheric CO2 concentration
+                 C_0=350.,           #ppm reference atmospheric CO2 concentration
                  factor_b=0.4,      # biomass_lue_soltani
                  b_1 = 7784.,       # biomass_lue_stockle
                  b_2 = 0.00107,     # biomass_lue_stockle

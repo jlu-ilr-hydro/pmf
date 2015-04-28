@@ -92,12 +92,30 @@ class ET_ShuttleworthWallace:
         self._Tpot_SW = 0.  
         self._Epot_SW = 0.  
         self._ETpot_SW= 0.
+     
+     
+    @property
+    def R_c_s(self):
+        return self.r_c_s_value
+     
+     
+     
+    @property
+    def E_PM(self):
+        """
+        Returns potential evaporation according to Shuttleworth Wallace, 
+        which equals the Penman-Monteith evaporation for bare soil.
+
+        :rtype: double
+        :return: Transpiration in [mm d-1].
+        """
+        return self._Epot_penmanmonteith    
         
     @property
     def T_PM(self):
         """
-        Returns potential transpiration from canopy calculated according to 
-        Shuttleworth-Wallace 1989.
+        Returns potential evaporation according to Shuttleworth Wallace, 
+        which equals the Penman-Monteith transpiration for close canopy.
 
         :rtype: double
         :return: Transpiration in [mm d-1].
@@ -193,6 +211,7 @@ class ET_ShuttleworthWallace:
         #Calculates the different resistances
         r_b = self.calc_r_b(self.w_leafwidth,u_h,n_eddy)    
         r_c_s = self.calc_r_c_s(LAI_e,self.r_st_min,CO2_response,VPD_response,Temp_response)
+        self.r_c_s_value = r_c_s
         r_c_a = self.calc_r_c_a(LAI,r_b,self.sigma_b)
         r_a_a = self.calc_r_a_a(vegH,self.kappa,u_stern,z_a,d_0,n_eddy,k_h,Z_0,d_p)
         r_s_a = self.calc_r_s_a(vegH,n_eddy,k_h,self.z_0g,Z_0,d_p)    
@@ -208,6 +227,7 @@ class ET_ShuttleworthWallace:
         if self._Tpot_penmanmonteith==0.:
             self._Tpot_SW = 0.001
         else: self._Tpot_SW = (self._Tpot_penmanmonteith * C_c/lambda1)   
+#        self._Tpot_SW = (self._Tpot_penmanmonteith * C_c/lambda1) 
         self._Epot_SW = (self._Epot_penmanmonteith * C_s/lambda1)
         
         #Calculates potential evapotranspiration [mm d-1]
