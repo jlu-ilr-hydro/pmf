@@ -111,7 +111,7 @@ class Biomass_LUE_CO2_Soltani:
         self.rue_sol = self.rue_soltani(self.rue_0,self.C_0,self.factor_b,CO2_measured)
         self.par_absorbed = self.PAR_a(Rs, interception)
         self.growthrate = self.par_absorbed * self.rue_sol
-        self.total = self.total - senesced_leaf + self.growthrate * (1-self.stress) * step         
+#        self.total = self.total - senesced_leaf + self.growthrate * (1-self.stress) * step         
         self.pot_total = self.pot_total + self.growthrate
         
     
@@ -155,7 +155,8 @@ class Biomass_LUE_CO2_Soltani:
         :rtype: double
         :return: Photosynthetically active absorbed radiation in [MJ m-2 day-1].
         """
-        return Rs*0.5*0.9*(1-interception)
+        return Rs * 0.48 * (1-interception)   #according to Soltani&Sinclair (2012), p. 121
+#        return Rs*0.5*0.9*(1-interception)
 
 
     def atmosphere_values(self,atmosphere,time_act):
@@ -195,6 +196,8 @@ class Biomass_LUE_CO2_Soltani:
             CO2_measured = atmosphere.get_CO2_E1(time_act) 
         elif self.CO2_ring == 2.2:
             CO2_measured = atmosphere.get_CO2_E2(time_act) 
-        else: CO2_measured = atmosphere.get_CO2_E3(time_act)
+        elif self.CO2_ring == 2.3:
+            CO2_measured = atmosphere.get_CO2_E3(time_act)
+        else: CO2_measured = self.CO2_ring
 #        return atmosphere.get_CO2_measured(time_act)
         return CO2_measured

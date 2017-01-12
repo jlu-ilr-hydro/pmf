@@ -5,7 +5,8 @@ Created on 25 sep 2014
 :author: kellner-j
 '''
 import math
-import pylab as pylab
+#import pylab as pylab
+import numpy as np
 
 class Biomass_LUE:
     """
@@ -130,7 +131,7 @@ class Biomass_LUE:
         :type k: double
         :param k: Canopy extinction coefficient in [-].
         """
-        return pylab.exp(-k*LAI)
+        return np.exp(-k*LAI)
     def atmosphere_values(self,atmosphere,time_act):
         """
         Returns a method to interfere with the atmosphere interface over the 

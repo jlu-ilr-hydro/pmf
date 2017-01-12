@@ -93,11 +93,12 @@ def connect(plant,soil,atmosphere,**args):
         plant.set_soil(soil)
         plant.set_atmosphere(atmosphere)
         return plant
+        print 'connect'
     else:
         return 'Error: No plant instance'
 
 
-wheat=CropDatabase.CropCoefficiants_wheat()
+wheat=PMF.CropCoefficiants_wheat()#CropDatabase.CropCoefficiants_wheat()
 c3grass=PMF.CropCoefficiants_c3grass()
 c4grass=PMF.CropCoefficiants_c4grass()
 
@@ -107,7 +108,7 @@ def createPlant_wheat_SWC(**args):
     """
     print 'wheat'
     et = PMF.ET_ShuttleworthWallace(wheat.w_leafwidth,wheat.z_0w,wheat.z_0g,wheat.z_w,
-                                    wheat.r_st_min,wheat.sigma_b,wheat.c_int)
+                                    wheat.r_st_min,wheat.sigma_b,wheat.c_int,wheat.C_0,wheat.factor_p)
     print 'Evapotranspiration: Shuttleworth-Wallace'
     biomass = PMF.Biomass_LUE_CO2_Soltani(wheat.RUE,wheat.C_0,wheat.factor_b,wheat.CO2_ring)
     print 'Biomass: Light-use-efficiency concept with CO2 response' 
@@ -122,18 +123,20 @@ def createPlant_wheat_SWC(**args):
     layer = PMF.SoilLayer()
     return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
                      interception=interception,net_radiation=net_radiation,water=water,layer=layer,
-                     FRDR=wheat.FRDR,max_height=wheat.max_height,CO2_ring=wheat.CO2_ring,max_depth=wheat.max_depth, 
+                     FRDR=wheat.FRDR,
+                     max_height=wheat.max_height,CO2_ring=wheat.CO2_ring,max_depth=wheat.max_depth, 
                      root_growth=wheat.root_growth,leaf_specific_weight=wheat.leaf_specific_weight,
-                     tbase=wheat.tbase,fact_sen=wheat.fact_sen,**args)
+                     tbase=wheat.tbase,fact_sen=wheat.fact_sen,shoot_percent=wheat.shoot_percent,root_percent=wheat.root_percent,
+                     leaf_percent=wheat.leaf_percent,stem_percent=wheat.stem_percent,storage_percent=wheat.storage_percent,plantN=wheat.plantN,**args)
 
 
-def createPlant_c3grass_SWC(**args):                                                    
+def createPlant_c3grass_SWC(c3grass):#**args):                                                    
     """             
     Implements a specific plant setup with C3 values.
     """
     print 'C3 grass'
     et = PMF.ET_ShuttleworthWallace(c3grass.w_leafwidth,c3grass.z_0w,c3grass.z_0g,c3grass.z_w,
-                                    c3grass.r_st_min,c3grass.sigma_b,c3grass.c_int)
+                                    c3grass.r_st_min,c3grass.sigma_b,c3grass.c_int,c3grass.C_0,c3grass.factor_p)
     print 'Evapotranspiration: Shuttleworth-Wallace'
     biomass = PMF.Biomass_LUE_CO2_Soltani(c3grass.RUE,c3grass.C_0,c3grass.factor_b, c3grass.CO2_ring)
     print 'Biomass: Light-use-efficiency concept with CO2 response' 
@@ -146,12 +149,21 @@ def createPlant_c3grass_SWC(**args):
     water = PMF.Waterstress_FAO()
     print 'Waterstress: FAO'
     layer = PMF.SoilLayer()
+#    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
+#                     interception=interception,net_radiation=net_radiation,water=water,layer=layer,
+#                     FRDR=c3grass.FRDR,max_height=c3grass.max_height,CO2_ring=c3grass.CO2_ring,max_depth=c3grass.max_depth, 
+#                     root_growth=c3grass.root_growth,leaf_specific_weight=c3grass.leaf_specific_weight,
+#                     tbase=c3grass.tbase,fact_sen=c3grass.fact_sen,shoot_percent=c3grass.shoot_percent,root_percent=c3grass.root_percent,
+#                     leaf_percent=c3grass.leaf_percent,stem_percent=c3grass.stem_percent,storage_percent=c3grass.storage_percent,plantN=c3grass.plantN,**args)
     return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
                      interception=interception,net_radiation=net_radiation,water=water,layer=layer,
-                     FRDR=c3grass.FRDR,max_height=c3grass.max_height,CO2_ring=c3grass.CO2_ring,max_depth=c3grass.max_depth, 
+                     FRDR=c3grass.FRDR,stem_specific_factor=c3grass.stem_specific_factor,
+                     stem_growth_max=c3grass.stem_growth_max,
+                     max_height=c3grass.max_height,CO2_ring=c3grass.CO2_ring,max_depth=c3grass.max_depth, 
                      root_growth=c3grass.root_growth,leaf_specific_weight=c3grass.leaf_specific_weight,
-                     tbase=c3grass.tbase,fact_sen=c3grass.fact_sen,**args)
-
+                     tbase=c3grass.tbase,fact_sen=c3grass.fact_sen,shoot_percent=c3grass.shoot_percent,root_percent=c3grass.root_percent,
+                     leaf_percent=c3grass.leaf_percent,stem_percent=c3grass.stem_percent,storage_percent=c3grass.storage_percent,
+                     plantN=c3grass.plantN,pressure_threshold=c3grass.pressure_threshold)
  
 def createPlant_c4grass_SWC(**args):                                                    
     """             
@@ -159,7 +171,7 @@ def createPlant_c4grass_SWC(**args):
     """
     print 'C4 grass'
     et = PMF.ET_ShuttleworthWallace(c4grass.w_leafwidth,c4grass.z_0w,c4grass.z_0g,c4grass.z_w,
-                                    c4grass.r_st_min,c4grass.sigma_b,c4grass.c_int)
+                                    c4grass.r_st_min,c4grass.sigma_b,c4grass.c_int,c4grass.C_0,c4grass.factor_p)
     print 'Evapotranspiration: Shuttleworth-Wallace'
     biomass = PMF.Biomass_LUE_CO2_Soltani(c4grass.RUE,c4grass.C_0,c4grass.factor_b,c4grass.CO2_ring)
     print 'Biomass: Light-use-efficiency concept with CO2 response' 
@@ -176,15 +188,16 @@ def createPlant_c4grass_SWC(**args):
                      interception=interception,net_radiation=net_radiation,water=water,layer=layer,
                      FRDR=c4grass.FRDR,max_height=c4grass.max_height,CO2_ring=c4grass.CO2_ring,max_depth=c4grass.max_depth, 
                      root_growth=c4grass.root_growth,leaf_specific_weight=c4grass.leaf_specific_weight,
-                     tbase=c4grass.tbase,fact_sen=c4grass.fact_sen,**args)   
+                     tbase=c4grass.tbase,fact_sen=c4grass.fact_sen,shoot_percent=c4grass.shoot_percent,root_percent=c4grass.root_percent,
+                     leaf_percent=c4grass.leaf_percent,stem_percent=c4grass.stem_percent,storage_percent=c4grass.storage_percent,plantN=c4grass.plantN,**args)   
 
-def createPlant_wheat_CMF(**args):                                                    
+def createPlant_wheat_CMF(wheat):#**args):                                                    
     """             
     Implements a specific plant setup with summer wheat values.
     """
     print 'wheat'
     et = PMF.ET_ShuttleworthWallace(wheat.w_leafwidth,wheat.z_0w,wheat.z_0g,wheat.z_w,
-                                    wheat.r_st_min,wheat.sigma_b,wheat.c_int)
+                                    wheat.r_st_min,wheat.sigma_b,wheat.c_int,wheat.C_0,wheat.factor_p)
     print 'Evapotranspiration: Shuttleworth-Wallace'
     biomass = PMF.Biomass_LUE_CO2_Soltani(wheat.RUE,wheat.C_0,wheat.factor_b,wheat.CO2_ring)
     print 'Biomass: Light-use-efficiency concept with CO2 response' 
@@ -197,20 +210,30 @@ def createPlant_wheat_CMF(**args):
     water = PMF.Waterstress_Feddes()
     print 'Waterstress: Feddes'
     layer = PMF.SoilLayer()
+#    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
+#                     interception=interception,net_radiation=net_radiation,water=water,layer=layer,
+#                     FRDR=wheat.FRDR,max_height=wheat.max_height,CO2_ring=wheat.CO2_ring,max_depth=wheat.max_depth, 
+#                     root_growth=wheat.root_growth,leaf_specific_weight=wheat.leaf_specific_weight,
+#                     tbase=wheat.tbase,fact_sen=wheat.fact_sen,shoot_percent=wheat.shoot_percent,root_percent=wheat.root_percent,
+#                     leaf_percent=wheat.leaf_percent,stem_percent=wheat.stem_percent,storage_percent=wheat.storage_percent,
+#                     plantN=wheat.plantN,pressure_threshold=wheat.pressure_threshold,**args)
     return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
                      interception=interception,net_radiation=net_radiation,water=water,layer=layer,
-                     FRDR=wheat.FRDR,max_height=wheat.max_height,CO2_ring=wheat.CO2_ring,max_depth=wheat.max_depth, 
+                     FRDR=wheat.FRDR,stem_specific_factor=wheat.stem_specific_factor,
+                     stem_growth_max=wheat.stem_growth_max,
+                     max_height=wheat.max_height,CO2_ring=wheat.CO2_ring,max_depth=wheat.max_depth, 
                      root_growth=wheat.root_growth,leaf_specific_weight=wheat.leaf_specific_weight,
-                     tbase=wheat.tbase,fact_sen=wheat.fact_sen,**args)
+                     tbase=wheat.tbase,fact_sen=wheat.fact_sen,shoot_percent=wheat.shoot_percent,root_percent=wheat.root_percent,
+                     leaf_percent=wheat.leaf_percent,stem_percent=wheat.stem_percent,storage_percent=wheat.storage_percent,
+                     plantN=wheat.plantN,pressure_threshold=wheat.pressure_threshold)
 
-
-def createPlant_c3grass_CMF(**args):                                                    
+def createPlant_c3grass_CMF(c3grass):#(c3grass):                                                    
     """             
     Implements a specific plant setup with C3 values.
     """
     print 'C3 grass'
     et = PMF.ET_ShuttleworthWallace(c3grass.w_leafwidth,c3grass.z_0w,c3grass.z_0g,c3grass.z_w,
-                                    c3grass.r_st_min,c3grass.sigma_b,c3grass.c_int)
+                                    c3grass.r_st_min,c3grass.sigma_b,c3grass.c_int,c3grass.C_0,c3grass.factor_p)
     print 'Evapotranspiration: Shuttleworth-Wallace'
     biomass = PMF.Biomass_LUE_CO2_Soltani(c3grass.RUE,c3grass.C_0,c3grass.factor_b, c3grass.CO2_ring)
     print 'Biomass: Light-use-efficiency concept with CO2 response' 
@@ -223,20 +246,30 @@ def createPlant_c3grass_CMF(**args):
     water = PMF.Waterstress_Feddes()
     print 'Waterstress: Feddes'
     layer = PMF.SoilLayer()
+    print 'layer'
+#    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
+#                     interception=interception,net_radiation=net_radiation,water=water,layer=layer,
+#                     FRDR=c3grass.FRDR,max_height=c3grass.max_height,CO2_ring=c3grass.CO2_ring,max_depth=c3grass.max_depth, 
+#                     root_growth=c3grass.root_growth,leaf_specific_weight=c3grass.leaf_specific_weight,
+#                     tbase=c3grass.tbase,fact_sen=c3grass.fact_sen,shoot_percent=c3grass.shoot_percent,root_percent=c3grass.root_percent,
+#                     leaf_percent=c3grass.leaf_percent,stem_percent=c3grass.stem_percent,storage_percent=c3grass.storage_percent,**args)
     return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
                      interception=interception,net_radiation=net_radiation,water=water,layer=layer,
-                     FRDR=c3grass.FRDR,max_height=c3grass.max_height,CO2_ring=c3grass.CO2_ring,max_depth=c3grass.max_depth, 
+                     FRDR=c3grass.FRDR,stem_specific_factor=c3grass.stem_specific_factor,
+                     stem_growth_max=c3grass.stem_growth_max,
+                     max_height=c3grass.max_height,CO2_ring=c3grass.CO2_ring,max_depth=c3grass.max_depth, 
                      root_growth=c3grass.root_growth,leaf_specific_weight=c3grass.leaf_specific_weight,
-                     tbase=c3grass.tbase,fact_sen=c3grass.fact_sen,**args)
-
+                     tbase=c3grass.tbase,fact_sen=c3grass.fact_sen,shoot_percent=c3grass.shoot_percent,root_percent=c3grass.root_percent,
+                     leaf_percent=c3grass.leaf_percent,stem_percent=c3grass.stem_percent,storage_percent=c3grass.storage_percent,
+                     plantN=c3grass.plantN,pressure_threshold=c3grass.pressure_threshold)
  
-def createPlant_c4grass_CMF(**args):                                                    
+def createPlant_c4grass_CMF(c4grass):#**args):                                                    
     """             
     Implements a specific plant setup with C4 values.
     """
     print 'C4 grass'
     et = PMF.ET_ShuttleworthWallace(c4grass.w_leafwidth,c4grass.z_0w,c4grass.z_0g,c4grass.z_w,
-                                    c4grass.r_st_min,c4grass.sigma_b,c4grass.c_int)
+                                    c4grass.r_st_min,c4grass.sigma_b,c4grass.c_int,c4grass.C_0,c4grass.factor_p)
     print 'Evapotranspiration: Shuttleworth-Wallace'
     biomass = PMF.Biomass_LUE_CO2_Soltani(c4grass.RUE,c4grass.C_0,c4grass.factor_b,c4grass.CO2_ring)
     print 'Biomass: Light-use-efficiency concept with CO2 response' 
@@ -249,11 +282,21 @@ def createPlant_c4grass_CMF(**args):
     water = PMF.ProcessLibrary.Waterstress_Feddes()
     print 'Waterstress: Feddes'
     layer = PMF.SoilLayer()
+#    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
+#                     interception=interception,net_radiation=net_radiation,water=water,layer=layer,
+#                     FRDR=c4grass.FRDR,max_height=c4grass.max_height,CO2_ring=c4grass.CO2_ring,max_depth=c4grass.max_depth, 
+#                     root_growth=c4grass.root_growth,leaf_specific_weight=c4grass.leaf_specific_weight,
+#                     tbase=c4grass.tbase,fact_sen=c4grass.fact_sen,shoot_percent=c4grass.shoot_percent,root_percent=c4grass.root_percent,
+#                     leaf_percent=c4grass.leaf_percent,stem_percent=c4grass.stem_percent,storage_percent=c4grass.storage_percent,**args)   
     return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
                      interception=interception,net_radiation=net_radiation,water=water,layer=layer,
-                     FRDR=c4grass.FRDR,max_height=c4grass.max_height,CO2_ring=c4grass.CO2_ring,max_depth=c4grass.max_depth, 
+                     FRDR=c4grass.FRDR,stem_specific_factor=c4grass.stem_specific_factor,
+                     stem_growth_max=c4grass.stem_growth_max,
+                     max_height=c4grass.max_height,CO2_ring=c4grass.CO2_ring,max_depth=c4grass.max_depth, 
                      root_growth=c4grass.root_growth,leaf_specific_weight=c4grass.leaf_specific_weight,
-                     tbase=c4grass.tbase,fact_sen=c4grass.fact_sen,**args)   
+                     tbase=c4grass.tbase,fact_sen=c4grass.fact_sen,shoot_percent=c4grass.shoot_percent,root_percent=c4grass.root_percent,
+                     leaf_percent=c4grass.leaf_percent,stem_percent=c4grass.stem_percent,storage_percent=c4grass.storage_percent,
+                     plantN=c4grass.plantN,pressure_threshold=c4grass.pressure_threshold)
                      
 def createPlant_CMF(**args):                                                    
     """
@@ -263,12 +306,25 @@ def createPlant_CMF(**args):
     print 'Evapotranspiration: FAO - Penman-Monteith'
     biomass = PMF.Biomass_LUE(wheat.RUE,wheat.k)
     print 'Biomass: Light-use-efficiency concept' 
-    development = PMF.Development(wheat.stage,wheat.R_p, wheat.R_v)                         
+    development = PMF.Development(wheat.stage,wheat.R_p, wheat.R_v, wheat.photo_on_off, wheat.verna_on_off)                         
     nitrogen = PMF.Nitrogen()
+    print 'No nitrogen uptake'
+    interception = PMF.Intercept_Evapo(wheat.w_leafwidth,wheat.z_0w,wheat.z_0g,wheat.z_w,
+                                       wheat.r_st_min,wheat.sigma_b,wheat.c_int)
+    net_radiation = PMF.Net_Radiation(wheat.albedo_m,wheat.Cr)
     water = PMF.Waterstress_Feddes()
     print 'Waterstress: Feddes'
     layer = PMF.SoilLayer()
-    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)
+    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
+                     interception=interception,net_radiation=net_radiation,water=water,layer=layer,
+                     FRDR=wheat.FRDR,stem_specific_factor=wheat.stem_specific_factor,
+                     stem_growth_max=wheat.stem_growth_max,
+                     max_height=wheat.max_height,CO2_ring=wheat.CO2_ring,max_depth=wheat.max_depth, 
+                     root_growth=wheat.root_growth,leaf_specific_weight=wheat.leaf_specific_weight,
+                     tbase=wheat.tbase,fact_sen=wheat.fact_sen,shoot_percent=wheat.shoot_percent,root_percent=wheat.root_percent,
+                     leaf_percent=wheat.leaf_percent,stem_percent=wheat.stem_percent,storage_percent=wheat.storage_percent,plantN=wheat.plantN)
+#    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)
+
 
 def createPlant_SWC(**args):                                                    
     """             
@@ -278,13 +334,29 @@ def createPlant_SWC(**args):
     print 'Evapotranspiration: FAO - Penman-Monteith'
     biomass = PMF.Biomass_LUE(wheat.RUE,wheat.k)
     print 'Biomass: Light-use-efficiency concept' 
-    development = PMF.Development(wheat.stage,wheat.R_p, wheat.R_v)                          
+    development = PMF.Development(wheat.stage,wheat.R_p, wheat.R_v, wheat.photo_on_off, wheat.verna_on_off)                           
     nitrogen = PMF.Nitrogen()
     print 'No nitrogen uptake'
+    interception = PMF.Intercept_Evapo(wheat.w_leafwidth,wheat.z_0w,wheat.z_0g,wheat.z_w,
+                                       wheat.r_st_min,wheat.sigma_b,wheat.c_int)
+    net_radiation = PMF.Net_Radiation(wheat.albedo_m,wheat.Cr)
     water = PMF.Waterstress_FAO()
     print 'Waterstress: FAO'
     layer = PMF.SoilLayer()
-    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)
+    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
+                     interception=interception,net_radiation=net_radiation,water=water,layer=layer,
+                     FRDR=wheat.FRDR,stem_specific_factor=wheat.stem_specific_factor,
+                     stem_growth_max=wheat.stem_growth_max,
+                     max_height=wheat.max_height,CO2_ring=wheat.CO2_ring,max_depth=wheat.max_depth, 
+                     root_growth=wheat.root_growth,leaf_specific_weight=wheat.leaf_specific_weight,
+                     tbase=wheat.tbase,fact_sen=wheat.fact_sen,shoot_percent=wheat.shoot_percent,root_percent=wheat.root_percent,
+                     leaf_percent=wheat.leaf_percent,stem_percent=wheat.stem_percent,storage_percent=wheat.storage_percent,plantN=wheat.plantN)   
+#    return makePlant(PMF.Plant,CO2_ring=wheat.CO2_ring,et=et,biomass=biomass,net_radiation=net_radiation,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)    
+#    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
+#                     interception=interception,net_radiation=net_radiation,water=water,layer=layer,
+#                     FRDR=wheat.FRDR,max_height=wheat.max_height,CO2_ring=wheat.CO2_ring,max_depth=wheat.max_depth, 
+#                     root_growth=wheat.root_growth,leaf_specific_weight=wheat.leaf_specific_weight,
+#                     tbase=wheat.tbase,fact_sen=wheat.fact_sen,**args)    
 
 
 def createPlant_SWC_Soltani(**args):                                                   
@@ -295,7 +367,7 @@ def createPlant_SWC_Soltani(**args):
     print 'Evapotranspiration: FAO - Penman-Monteith'
     biomass = PMF.Biomass_LUE_CO2_Soltani(wheat.RUE,wheat.k)
     print 'Biomass: Light-use-efficiency concept with CO2 response according to Soltani and Sinclair 2012' 
-    development = PMF.Development(wheat.stage,wheat.R_p, wheat.R_v)                          
+    development = PMF.Development(wheat.stage,wheat.R_p, wheat.R_v)                      
     nitrogen = PMF.Nitrogen()
     print 'No nitrogen uptake'
     water = PMF.Waterstress_FAO()

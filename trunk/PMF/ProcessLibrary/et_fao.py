@@ -4,7 +4,8 @@ Created on 25 sep 2014
 
 :author: kellner-j
 '''
-import pylab as pylab
+#import pylab as pylab
+import numpy as np
 class ET_FAO:
     """
     Calculates crop specific Evapotranspiration.
@@ -208,9 +209,9 @@ class ET_FAO:
         
         :todo: defintion of altitude
         """
-        delta=4098*(0.6108*pylab.exp(17.27*T/(T+237.3)))/(T+237.3)**2
+        delta=4098*(0.6108*np.exp(17.27*T/(T+237.3)))/(T+237.3)**2
         if daily:   G=0
-        else : G=(0.5-pylab.greater(Rn,0)*0.4)*Rn
+        else : G=(0.5-np.greater(Rn,0)*0.4)*Rn
         P=101.3*((293-0.0065*alt)/293)**5.253
         c_p=0.001013
         epsilon=0.622
@@ -222,7 +223,7 @@ class ET_FAO:
         z_om=0.123*vegH
         z_oh=0.1*z_om
         k=0.41
-        r_a_u= pylab.log((2-d)/z_om)*pylab.log((2-d)/z_oh)/k**2
+        r_a_u= np.log((2-d)/z_om)*np.log((2-d)/z_oh)/k**2
         r_a=r_a_u/windspeed
         r_s=100./(0.5*LAI) # LAIactive = LAI * 0.5
         nominator=(delta+gamma*(1+r_s/r_a))
