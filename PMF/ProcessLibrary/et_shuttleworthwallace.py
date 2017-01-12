@@ -52,6 +52,8 @@ class ET_ShuttleworthWallace:
                  r_st_min,
                  sigma_b,
                  c_int,
+                 C_0,
+                 factor_p,
                  kappa=0.41):
         """
         Returns a ET_ShuttleworthWallace instance.
@@ -74,6 +76,10 @@ class ET_ShuttleworthWallace:
         :param sigma_b: shielding factor [-]
         :type c_int: double
         :param c_int: Water interception coefficient [mm]
+        :type C_0: double
+        :param C_0: reference atmospheric CO2 concentration [ppm].
+        :type factor_p: double
+        :param factor_p: factor for adapting stomatal response to changing CO2 concentrations
         """
 
         #Constant variables
@@ -85,6 +91,8 @@ class ET_ShuttleworthWallace:
         self.r_st_min = r_st_min
         self.sigma_b = sigma_b
         self.c_int = c_int
+        self.C_0 = C_0
+        self.factor_p = factor_p
         
         #State variables
         self._Tpot_penmanmonteith = 0.
@@ -155,6 +163,17 @@ class ET_ShuttleworthWallace:
         """
         return self._ETpot_SW
     
+    @property
+    def LAI_effective(self):
+        """
+        Returns potential evapotranspiration calcutlated according to 
+        Shuttleworth-Wallace 1989.
+        
+        :rtype: double
+        :return: Evapotranspiration [mm d-1]
+        """
+        return self.LAI_e_value
+    
     def __call__(self,T,Rn,Rsn,e_s,e_a,windspeed,LAI,vegH,CO2_measured):     #Rn und Rsn beschreiben     
         """
         Calculates potential Evapotranspiration, Evaporation and Tranpiration.
@@ -188,6 +207,7 @@ class ET_ShuttleworthWallace:
 
         
         LAI_e = self.calc_LAI_e(LAI)
+        self.LAI_e_value = LAI_e
         d_p = self.calc_d_p(vegH)    
         n_eddy = self.calc_n_eddy(vegH)
         z_a = self.calc_z_a(vegH)
@@ -203,8 +223,9 @@ class ET_ShuttleworthWallace:
         k_h = self.calc_k_h(vegH,self.kappa,u_stern,d_0)  
         lambda1 = self.calc_lambda(T)   
         
-        #Calculates stress functions for stomatal resistance (r_c_s)
-        CO2_response = self.calc_CO2_response_stomata(CO2_measured)
+        #Calculates stress functions for stomatal resistance (r_c_s)       
+        
+        CO2_response = self.calc_CO2_response_stomata(self.factor_p,CO2_measured,self.C_0)
         VPD_response = self.calc_VPD_response_stomata(e_s,e_a)
         Temp_response = self.calc_Temp_response_stomata(T)
     
@@ -587,11 +608,11 @@ class ET_ShuttleworthWallace:
         :rtype: double
         :return: Bulk stomatal resistance of canopy [m s-1].
         """
-        
         return min(50000. , r_st_min/(LAI_e*(CO2_response * VPD_response * Temp_response)))  
+#        return min(50000. , r_st_min/(LAI_e*(CO2_response)))  
         
         
-    def calc_CO2_response_stomata(self, CO2_measured):
+    def calc_CO2_response_stomata(self, factor_p,CO2_measured,C_0):
         """
         Calculates the response of stomata to atmospheric CO2.
         
@@ -604,13 +625,19 @@ class ET_ShuttleworthWallace:
         
         This approach was taken based on Stockle 1992, p.233.
         
+        :type factor_p: double
+        :param factor_p: factor for adapting stomatal response to changing CO2 concentrations
         :type CO2_measured: double
         :param CO2_measured: atmospheric CO2 concentration in rings [ppm].
+        :type C_0: double
+        :param C_0: reference atmospheric CO2 concentration [ppm].
         :rtype: double
         :return: Stomatal response to atmospheric CO2 [-].          
         """        
     
-        return 1.4 - 0.4*(CO2_measured/330.) 
+        #return 1.4 - 0.4*(CO2_measured/330.) 
+        co2_response = max(0.00001,(1.0 + factor_p) - factor_p * CO2_measured/C_0 )
+        return co2_response 
 
 
     def calc_VPD_response_stomata(self, e_s, e_a):
@@ -632,6 +659,7 @@ class ET_ShuttleworthWallace:
         """
         vapor = e_s - e_a
         vpd_response = 1. - 0.409 * vapor
+        vpd_response = max(0.00001,vpd_response)
         return vpd_response
 
 
@@ -654,7 +682,7 @@ class ET_ShuttleworthWallace:
         T_kelvin = T + 273.16
         
         if T_kelvin >= 298.: temp_response = 1.
-        elif T_kelvin <= 273.: temp_response = 0.
+        elif T_kelvin <= 273.: temp_response = 0.0001
         else: temp_response = 1. - 1.6 * 10.**(-3.) * (298. - T_kelvin)**2.   # linear opening of stomata with increasing temperature    
         
         return temp_response
@@ -680,7 +708,7 @@ class ET_ShuttleworthWallace:
         elif theta<= theta_r: soilmoi_response = 0.
         else: soilmoi_response = (theta-theta_r)/(theta_f-theta_r)
         
-        return soilmoi
+        return soilmoi_response
 
 
     def calc_r_s_a(self,vegH,n_eddy,k_h,z_0g,Z_0,d_p):

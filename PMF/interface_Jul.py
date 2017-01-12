@@ -66,7 +66,7 @@ class Atmosphere_FACE:
 #        """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns net radiation in [MJ m-2]"""
 #        index = self.weather[self.datum==time].index[0]           
 #        return self.weather['Rn'][index]
-        return self.weather['Rn_MJ_qm*d'][index]
+#        return self.weather['Rn_MJ_qm*d'][index]
     def get_Rs_clearsky(self,time):
         """ Time as datetime instance: datetime(JJJJ,MM,DD); Returns clear sky solar radiation in [MJ m-2]"""
         index = self.weather[self.datum==time].index[0]    
@@ -117,6 +117,10 @@ class Atmosphere_FACE:
         """  Time as datetime instance: datetime(JJJJ,MM,DD); Returns measured CO2 concentration in ring E3 (elevated) [ppm] """
         index = self.weather[self.datum==time].index[0] 
         return self.weather['CO2_E3'][index]
+        
+    def soilprofile(self):
+        """ Returns a list with the lower limits of the layers in the whole soilprofile in [cm]. """
+        return [100]
 
 
 class Atmosphere_Ring1_nCO2:

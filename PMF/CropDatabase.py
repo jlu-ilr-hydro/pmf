@@ -31,8 +31,9 @@ class CropCoefficiants_wheat:
                           ['Seed fill',1174.],          # end of seed fill
                           ['Dough stage',1556.],        # end of dough stage
                           ['Maturity',1665.]],          # end of maturity
+                 plantN = [[160.,0.043],[1200.,0.016]],
                  RUE=3.,            # Stockle 1992 Table1  #RUE=2.2source : Soltani & Sinclair (2012), p.3#RUE at reference CO2 concentration
-                 C_0=350.,          # ppm reference atmospheric CO2 concentration
+                 C_0=394.,          # ppm reference atmospheric CO2 concentration
                  factor_b=0.8,      # biomass_lue_soltani
                  b_1 = 7784.,       # biomass_lue_stockle
                  b_2 = 0.00107,     # biomass_lue_stockle
@@ -49,10 +50,18 @@ class CropCoefficiants_wheat:
                  c_int = 0.2,       # Shuttelworth-Wallace --> Interception coefficient [-]
                  k=.4,
                  seasons = [160.0, 499.0, 897.0, 1006.0],  #für baresoil,[0,0,0,0], 
-                 kcb = [0.15,1,1,0.15],  #  für baresoil [0,0,0,0],  # für fullcover [1,1,1,1]
+                 kcb = [0.15,1.1,0.15],  #  für baresoil [0,0,0,0],  # für fullcover [1,1,1,1]
+                 shoot_percent =   [.0,.5,.5,.9,.9,.9,.9,.9], #[.0,.5,.5,.9,.95,1.,1.,1.]
+                 root_percent =    [.0,.5,.5,.1,.1,.1,.1,.1], #[.0,.5,.5,.1,.05,.0,.0,.0]  
+                 leaf_percent =    [.0,.6,.6,.6,.0,.0,.0,.0], # [.0,.5,.5,.5,.0,.0,.0,.0]
+                 stem_percent =    [.0,.4,.4,.4,.5,.0,.0,.0], # [.0,.5,.5,.5,.0,.0,.0,.0]]
+                 storage_percent = [.0,.0,.0,.0,.5,1.,1.,1.],
                  fact_sen = 50.,     # plant --> leaf --> Factor to adjust senescence rate after maturity
                  FRDR = 0.5,        # plant --> factor changing shape of senescence function [-]
                  min_LAI = 0.1,     # plant --> minimum LAI 
+                 stem_specific_factor = 200., # plant --> stem height - factor for calculating stem height out of stem biomass
+                 stem_growth_shape = 0.006, # plant --> stem height - shaping factor logistic growth
+                 stem_growth_max = 0.015, # plant --> stem height - maximum daily stem growth [m]
                  max_height = 1.5,  # plant --> max plant height [m]
                  max_depth=150.,    # plant --> max root depth [cm]
                  root_growth=1.5,   # plant --> root growth [cm d-1]
@@ -60,9 +69,11 @@ class CropCoefficiants_wheat:
                  tbase = 0.,        # plant --> min temperature for physiol. processes, needed for temp sum
                  Cr = 0.5,          # netradiation --> extinction coefﬁcient of the vegetation for net radiation
                  albedo_m = 0.2,     # netradiation --> albedo for closed crop canopy (Zhu et al. 2005)
-                 CO2_ring=1.1):     # 1.1=ring_A1, 1.2=ring_A2, 1.3=ring_A3, 2.1=ring_E1, 2.2=ring_E2, 2.3=ring_E3 
-        self.tbase = tbase
+                 pressure_threshold = [0.,1.,500.,16000.],
+                 CO2_ring=394.,     # 1.1=ring_A1, 1.2=ring_A2, 1.3=ring_A3, 2.1=ring_E1, 2.2=ring_E2, 2.3=ring_E3 or CO2 concentration [ppm]
+                 factor_p = 0.25):
         self.stage=stage
+        self.plantN = plantN
         self.seasons = seasons
         self.factor_b=factor_b
         self.b_1=b_1
@@ -80,11 +91,19 @@ class CropCoefficiants_wheat:
         self.c_int = c_int 
         self.k=k
         self.kcb=kcb
+        self.shoot_percent = shoot_percent   
+        self.root_percent = root_percent 
+        self.leaf_percent = leaf_percent
+        self.stem_percent = stem_percent
+        self.storage_percent = storage_percent
         self.RUE=RUE
         self.C_0=C_0
         self.fact_sen=fact_sen
         self.FRDR = FRDR
         self.min_LAI = min_LAI 
+        self.stem_specific_factor = stem_specific_factor
+        self.stem_growth_shape = stem_growth_shape
+        self.stem_growth_max = stem_growth_max
         self.max_height = max_height 
         self.max_depth = max_depth
         self.root_growth = root_growth
@@ -92,8 +111,9 @@ class CropCoefficiants_wheat:
         self.tbase=tbase
         self.Cr = Cr
         self.albedo_m = albedo_m
+        self.pressure_threshold = pressure_threshold
         self.CO2_ring =CO2_ring
-               
+        self.factor_p = factor_p               
                
 class CropCoefficiants_c3grass:
     """
@@ -108,8 +128,9 @@ class CropCoefficiants_c3grass:
                           ['Seed fill',1174.],          # end of seed fill
                           ['Dough stage',1556.],        # end of dough stage
                           ['Maturity',1665.]],          # end of maturity
+                 plantN = [[160.,0.043],[1200.,0.016]],
                  RUE=2.4, # tidigare 2.6,           #RUE at reference CO2 concentration
-                 C_0=350.,           #ppm reference atmospheric CO2 concentration
+                 C_0=394.,           #ppm reference atmospheric CO2 concentration
                  factor_b=0.8,      # biomass_lue_soltani
                  b_1 = 7784.,       # biomass_lue_stockle
                  b_2 = 0.00107,     # biomass_lue_stockle
@@ -126,23 +147,39 @@ class CropCoefficiants_c3grass:
                  c_int = 0.2,       # Shuttelworth-Wallace --> Interception coefficient [-]
                  k=.4,
                  seasons = [160.0, 499.0, 897.0, 1006.0],  #für baresoil,[0,0,0,0], 
-                 kcb = [0.15,1,1,0.15],  
+                 kcb = [0.15,1.1,0.15],  
+                 shoot_percent =   [.0,.5,.5,.9,.9,.9,.9,.9], #[.0,.5,.5,.9,.95,1.,1.,1.]
+                 root_percent =    [.0,.5,.5,.1,.1,.1,.1,.1], #[.0,.5,.5,.1,.05,.0,.0,.0]  
+                 leaf_percent =    [.0,.6,.6,.6,.0,.0,.0,.0], # [.0,.5,.5,.5,.0,.0,.0,.0]
+                 stem_percent =    [.0,.4,.4,.4,.5,.0,.0,.0], # [.0,.5,.5,.5,.0,.0,.0,.0]]
+                 storage_percent = [.0,.0,.0,.0,.5,1.,1.,1.],
                  fact_sen = 50.,     # plant --> leaf --> Factor to adjust senescence rate after maturity
                  FRDR = 0.5,        # plant --> factor changing shape of senescence function [-]
                  min_LAI = 0.1,     # plant --> minimum LAI 
-                 max_height = 1.,  # plant --> max plant height [m]
+                 stem_specific_factor = 400., # plant --> stem height - factor for calculating stem height out of stem biomass
+                 stem_growth_shape = 0.006, # plant --> stem height - shaping factor logistic growth
+                 stem_growth_max = 0.015, # plant --> stem height - maximum daily stem growth [m]
+                 max_height = 1.25,  # plant --> max plant height [m]  vorher 1.m
                  max_depth=100.,    # plant --> max root depth [cm]
                  root_growth=1.,   # plant --> root growth [cm d-1]
                  leaf_specific_weight = 45.,    # 40., plant --> specific leaf weight [g m-2]
-                 tbase = 10.,#5.,        # plant --> min temperature for physiol. processes, needed for temp sum
+                 tbase = 5.,        # plant --> min temperature for physiol. processes, needed for temp sum
                  Cr = 0.3, #before 0.5,          # netradiation --> extinction coefﬁcient of the vegetation for net radiation
                  albedo_m = 0.23,  # netradiation --> albedo for closed grass canopy (Zhu et al. 2005)
-                 CO2_ring=1.1):     # 1.1=ring_A1, 1.2=ring_A2, 1.3=ring_A3, 2.1=ring_E1, 2.2=ring_E2, 2.3=ring_E3 
+                 pressure_threshold = [10.,25.,200.,8000.],
+                 CO2_ring=394.,     # 1.1=ring_A1, 1.2=ring_A2, 1.3=ring_A3, 2.1=ring_E1, 2.2=ring_E2, 2.3=ring_E3 or CO2 concentration [ppm]
+                 factor_p = 0.25):
         self.tbase = tbase
+        self.plantN = plantN
         self.stage=stage
         self.seasons = seasons
         self.k=k
         self.kcb=kcb
+        self.shoot_percent = shoot_percent   
+        self.root_percent = root_percent 
+        self.leaf_percent = leaf_percent
+        self.stem_percent = stem_percent
+        self.storage_percent = storage_percent
         self.RUE=RUE
         self.factor_b=factor_b
         self.b_1=b_1
@@ -162,31 +199,35 @@ class CropCoefficiants_c3grass:
         self.fact_sen=fact_sen        
         self.FRDR = FRDR
         self.min_LAI = min_LAI 
+        self.stem_specific_factor = stem_specific_factor
+        self.stem_growth_shape = stem_growth_shape
+        self.stem_growth_max = stem_growth_max
         self.max_height = max_height 
         self.max_depth = max_depth
         self.root_growth = root_growth
         self.leaf_specific_weight = leaf_specific_weight
-        self.tbase=tbase
         self.Cr = Cr
         self.albedo_m = albedo_m
+        self.pressure_threshold = pressure_threshold
         self.CO2_ring =CO2_ring
-
+        self.factor_p = factor_p
         
 class CropCoefficiants_c4grass:
     """
-    Holds crop specific parameters for C4 grass..
+    Holds crop specific parameters for C4 plants, such as maize..
     """        
     def __init__(self,
-                 stage = [['Emergence',160.],           # end of emergence
-                          ['Leaf development',208.],    # end of leaf development
-                          ['Tillering',421.],           # end of tillering
-                          ['Stem elongation',659.],     # end of stem elongation
-                          ['Anthesis',901.],            # end of anthesis
-                          ['Seed fill',1174.],          # end of seed fill
-                          ['Dough stage',1556.],        # end of dough stage
-                          ['Maturity',1665.]],          # end of maturity
+                 stage = [['Emergence',93.],           # end of emergence   (source: NCH-40 by Neild)
+                          ['Leaf development',538.],    # 14 leaved fully developed
+                          ['Tillering',613.],           # end of tassel emerged
+                          ['Stem elongation',760.],     # end of silks emerged
+                          ['Anthesis',904.],            # end of kernels blister
+                          ['Seed fill',1052.],          # end of kernels dough
+                          ['Dough stage',1343.],        # end of kernel dented
+                          ['Maturity',1482.]],          # end of maturity
+                 plantN = [[160.,0.043],[1200.,0.016]],
                  RUE=3.6,           #RUE at reference CO2 concentration
-                 C_0=350.,           #ppm reference atmospheric CO2 concentration
+                 C_0=394.,           #ppm reference atmospheric CO2 concentration
                  factor_b=0.4,      # biomass_lue_soltani
                  b_1 = 7784.,       # biomass_lue_stockle
                  b_2 = 0.00107,     # biomass_lue_stockle
@@ -194,32 +235,47 @@ class CropCoefficiants_c4grass:
                  photo_on_off = 1., # development --> turning photoperiod response on =1, off =0
                  R_v = 1.5,         # development --> sensitivity to vernalization
                  verna_on_off = 0., # development --> turning vernalization function on =1, off =0
-                 w_leafwidth=0.01,  # Shuttelworth-Wallace --> max veg leaf width                 
+                 w_leafwidth=0.01,  # Shuttelworth-Wallace --> max veg leaf width [m]                
                  z_0w = 0.005,      # Shuttelworth-Wallace --> Roughness length over weather station ground [m]
-                 z_0g = 0.01,       # Shuttelworth-Wallace --> Roughness length of substrate ground [m]
+                 z_0g = 0.005,       # Shuttelworth-Wallace --> Roughness length of substrate ground [m]
                  z_w = 2.,          # Shuttelworth-Wallace --> Height of weather observation [m]
-                 r_st_min = 115.,   # Shuttelworth-Wallace --> Min. stomatal resistance [s m-1]
+                 r_st_min = 90.,   # Shuttelworth-Wallace --> Min. stomatal resistance [s m-1]
                  sigma_b = 0.5,     # Shuttelworth-Wallace --> Shielding factor [-]
                  c_int = 0.2,       # Shuttelworth-Wallace --> Interception coefficient [-]
                  k=.4,
                  seasons = [160.0, 499.0, 897.0, 1006.0],  #für baresoil,[0,0,0,0], 
-                 kcb = [0.15,1,1,0.15],  
+                 kcb = [0.15,1.1,0.15],  
+                 shoot_percent =   [.0,.5,.9,.9,.9,.9,.9,1.], #[.0,.5,.5,.9,.95,1.,1.,1.]
+                 root_percent =    [.0,.5,.1,.1,.1,.1,.1,.0], #[.0,.5,.5,.1,.05,.0,.0,.0]  
+                 leaf_percent =    [.0,.9,.7,.5,.2,.1,.0,.0], # [.0,.5,.5,.5,.0,.0,.0,.0]
+                 stem_percent =    [.0,.1,.3,.5,.2,.1,.0,.0], # [.0,.5,.5,.5,.0,.0,.0,.0]]
+                 storage_percent = [.0,.0,.0,.0,.6,.8,1.,1.],
                  fact_sen = 50.,     # plant --> leaf --> Factor to adjust senescence rate after maturity
                  FRDR = 0.5,        # plant --> factor changing shape of senescence function [-]
                  min_LAI = 0.1,     # plant --> minimum LAI 
-                 max_height = 1.5,  # plant --> max plant height [m]
-                 max_depth=150.,    # plant --> max root depth [cm]
-                 root_growth=1.5,   # plant --> root growth [cm d-1]
-                 leaf_specific_weight = 40.,    # plant --> specific leaf weight [g m-2]
-                 tbase = 0.,        # plant --> min temperature for physiol. processes, needed for temp sum
+                 stem_specific_factor = 200., # plant --> stem height - factor for calculating stem height out of stem biomass
+                 stem_growth_shape = 0.006, # plant --> stem height - shaping factor logistic growth
+                 stem_growth_max = 0.015, # plant --> stem height - maximum daily stem growth [m]
+                 max_height = 3.0,#2.3,  # plant --> max plant height [m]
+                 max_depth=60.,    # plant --> max root depth [cm]
+                 root_growth=2.,   # plant --> root growth [cm d-1]
+                 leaf_specific_weight = 63.,    # plant --> specific leaf weight [g m-2]
+                 tbase = 10.,        # plant --> min temperature for physiol. processes, needed for temp sum
                  Cr = 0.5,          # netradiation --> extinction coefﬁcient of the vegetation for net radiation
-                 albedo_m = 0.23,  # netradiation --> albedo for closed grass canopy (Zhu et al. 2005)
-                 CO2_ring=1.1):     # 1.1=ring_A1, 1.2=ring_A2, 1.3=ring_A3, 2.1=ring_E1, 2.2=ring_E2, 2.3=ring_E3 
-        self.tbase = tbase
+                 albedo_m = 0.2,  # netradiation --> albedo for closed grass canopy (Zhu et al. 2005)
+                 pressure_threshold = [15.,30.,325.,15000.],
+                 CO2_ring=394.,     # 1.1=ring_A1, 1.2=ring_A2, 1.3=ring_A3, 2.1=ring_E1, 2.2=ring_E2, 2.3=ring_E3 or CO2 concentration [ppm]
+                 factor_p = 0.25):
         self.stage=stage
+        self.plantN = plantN
         self.seasons = seasons
         self.k=k
         self.kcb=kcb
+        self.shoot_percent = shoot_percent   
+        self.root_percent = root_percent 
+        self.leaf_percent = leaf_percent
+        self.stem_percent = stem_percent
+        self.storage_percent = storage_percent
         self.RUE=RUE
         self.factor_b=factor_b
         self.b_1=b_1
@@ -239,6 +295,9 @@ class CropCoefficiants_c4grass:
         self.fact_sen=fact_sen
         self.FRDR = FRDR
         self.min_LAI = min_LAI 
+        self.stem_specific_factor = stem_specific_factor
+        self.stem_growth_shape = stem_growth_shape
+        self.stem_growth_max = stem_growth_max
         self.max_height = max_height 
         self.max_depth = max_depth
         self.root_growth = root_growth
@@ -246,8 +305,9 @@ class CropCoefficiants_c4grass:
         self.tbase=tbase
         self.Cr = Cr
         self.albedo_m = albedo_m
+        self.pressure_threshold = pressure_threshold
         self.CO2_ring =CO2_ring
-
+        self.factor_p = factor_p
 
         
 
