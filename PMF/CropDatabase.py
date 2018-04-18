@@ -3,7 +3,7 @@
 The Crop Database holds crop specific parameter. Theses parameter refer to
 the requirements of the classes in the Process Library 
 
-:author: Sebastian Multsch
+:author: Sebastian Multsch, modified by J. Kellner
 
 :version: 0.1 (26.10.2010)
 
@@ -129,8 +129,8 @@ class CropCoefficiants_c3grass:
                           ['Dough stage',1556.],        # end of dough stage
                           ['Maturity',1665.]],          # end of maturity
                  plantN = [[160.,0.043],[1200.,0.016]],
-                 RUE=2.4, # tidigare 2.6,           #RUE at reference CO2 concentration
-                 C_0=394.,           #ppm reference atmospheric CO2 concentration
+                 RUE=2.4,          #RUE at reference CO2 concentration
+                 C_0=394.,          # reference atmospheric CO2 concentration [ppm]
                  factor_b=0.8,      # biomass_lue_soltani
                  b_1 = 7784.,       # biomass_lue_stockle
                  b_2 = 0.00107,     # biomass_lue_stockle
@@ -146,12 +146,12 @@ class CropCoefficiants_c3grass:
                  sigma_b = 0.5,     # Shuttelworth-Wallace --> Shielding factor [-]
                  c_int = 0.2,       # Shuttelworth-Wallace --> Interception coefficient [-]
                  k=.4,
-                 seasons = [160.0, 499.0, 897.0, 1006.0],  #für baresoil,[0,0,0,0], 
-                 kcb = [0.15,1.1,0.15],  
-                 shoot_percent =   [.0,.5,.5,.9,.9,.9,.9,.9], #[.0,.5,.5,.9,.95,1.,1.,1.]
-                 root_percent =    [.0,.5,.5,.1,.1,.1,.1,.1], #[.0,.5,.5,.1,.05,.0,.0,.0]  
-                 leaf_percent =    [.0,.6,.6,.6,.0,.0,.0,.0], # [.0,.5,.5,.5,.0,.0,.0,.0]
-                 stem_percent =    [.0,.4,.4,.4,.5,.0,.0,.0], # [.0,.5,.5,.5,.0,.0,.0,.0]]
+                 seasons = [160.0, 499.0, 897.0, 1006.0],  # penman-monteith; baresoil,[0,0,0,0], 
+                 kcb = [0.15,1.1,0.15],                 # penman-monteith
+                 shoot_percent =   [.0,.5,.5,.9,.9,.9,.9,.9], 
+                 root_percent =    [.0,.5,.5,.1,.1,.1,.1,.1], 
+                 leaf_percent =    [.0,.6,.6,.6,.0,.0,.0,.0], 
+                 stem_percent =    [.0,.4,.4,.4,.5,.0,.0,.0], 
                  storage_percent = [.0,.0,.0,.0,.5,1.,1.,1.],
                  fact_sen = 50.,     # plant --> leaf --> Factor to adjust senescence rate after maturity
                  FRDR = 0.5,        # plant --> factor changing shape of senescence function [-]
@@ -159,10 +159,10 @@ class CropCoefficiants_c3grass:
                  stem_specific_factor = 400., # plant --> stem height - factor for calculating stem height out of stem biomass
                  stem_growth_shape = 0.006, # plant --> stem height - shaping factor logistic growth
                  stem_growth_max = 0.015, # plant --> stem height - maximum daily stem growth [m]
-                 max_height = 1.25,  # plant --> max plant height [m]  vorher 1.m
+                 max_height = 1.25,  # plant --> max plant height [m]  
                  max_depth=100.,    # plant --> max root depth [cm]
                  root_growth=1.,   # plant --> root growth [cm d-1]
-                 leaf_specific_weight = 45.,    # 40., plant --> specific leaf weight [g m-2]
+                 leaf_specific_weight = 45.,    # plant --> specific leaf weight [g m-2]
                  tbase = 5.,        # plant --> min temperature for physiol. processes, needed for temp sum
                  Cr = 0.3, #before 0.5,          # netradiation --> extinction coefﬁcient of the vegetation for net radiation
                  albedo_m = 0.23,  # netradiation --> albedo for closed grass canopy (Zhu et al. 2005)
@@ -227,7 +227,7 @@ class CropCoefficiants_c4grass:
                           ['Maturity',1482.]],          # end of maturity
                  plantN = [[160.,0.043],[1200.,0.016]],
                  RUE=3.6,           #RUE at reference CO2 concentration
-                 C_0=394.,           #ppm reference atmospheric CO2 concentration
+                 C_0=394.,          # reference atmospheric CO2 concentration [ppm]
                  factor_b=0.4,      # biomass_lue_soltani
                  b_1 = 7784.,       # biomass_lue_stockle
                  b_2 = 0.00107,     # biomass_lue_stockle
@@ -243,12 +243,12 @@ class CropCoefficiants_c4grass:
                  sigma_b = 0.5,     # Shuttelworth-Wallace --> Shielding factor [-]
                  c_int = 0.2,       # Shuttelworth-Wallace --> Interception coefficient [-]
                  k=.4,
-                 seasons = [160.0, 499.0, 897.0, 1006.0],  #für baresoil,[0,0,0,0], 
-                 kcb = [0.15,1.1,0.15],  
-                 shoot_percent =   [.0,.5,.9,.9,.9,.9,.9,1.], #[.0,.5,.5,.9,.95,1.,1.,1.]
-                 root_percent =    [.0,.5,.1,.1,.1,.1,.1,.0], #[.0,.5,.5,.1,.05,.0,.0,.0]  
-                 leaf_percent =    [.0,.9,.7,.5,.2,.1,.0,.0], # [.0,.5,.5,.5,.0,.0,.0,.0]
-                 stem_percent =    [.0,.1,.3,.5,.2,.1,.0,.0], # [.0,.5,.5,.5,.0,.0,.0,.0]]
+                 seasons = [160.0, 499.0, 897.0, 1006.0],   #penman-monteith,  baresoil,[0,0,0,0], 
+                 kcb = [0.15,1.1,0.15],                     #penman-monteith
+                 shoot_percent =   [.0,.5,.9,.9,.9,.9,.9,1.], 
+                 root_percent =    [.0,.5,.1,.1,.1,.1,.1,.0], 
+                 leaf_percent =    [.0,.9,.7,.5,.2,.1,.0,.0],
+                 stem_percent =    [.0,.1,.3,.5,.2,.1,.0,.0], 
                  storage_percent = [.0,.0,.0,.0,.6,.8,1.,1.],
                  fact_sen = 50.,     # plant --> leaf --> Factor to adjust senescence rate after maturity
                  FRDR = 0.5,        # plant --> factor changing shape of senescence function [-]
@@ -262,7 +262,7 @@ class CropCoefficiants_c4grass:
                  leaf_specific_weight = 63.,    # plant --> specific leaf weight [g m-2]
                  tbase = 10.,        # plant --> min temperature for physiol. processes, needed for temp sum
                  Cr = 0.5,          # netradiation --> extinction coefﬁcient of the vegetation for net radiation
-                 albedo_m = 0.2,  # netradiation --> albedo for closed grass canopy (Zhu et al. 2005)
+                 albedo_m = 0.2,  # netradiation --> albedo for cropland (Zhu et al. 2005)
                  pressure_threshold = [15.,30.,325.,15000.],
                  CO2_ring=394.,     # 1.1=ring_A1, 1.2=ring_A2, 1.3=ring_A3, 2.1=ring_E1, 2.2=ring_E2, 2.3=ring_E3 or CO2 concentration [ppm]
                  factor_p = 0.25):

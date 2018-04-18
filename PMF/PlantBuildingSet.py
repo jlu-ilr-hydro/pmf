@@ -20,7 +20,7 @@ Holds functions for plant implementation
     - connect(wheat_instance,Loess,Meteo_Giessen)
     - connect(wheat_classobj,Loess,Meteo_Giessen,et=et,biomass=biomass,development=development,layer=layer,nitrogen=nitrogen,water=water)
 
-:author: Sebastian Multsch
+:author: Sebastian Multsch, modified by J. Kellner
 
 :version: 0.1 (26.10.2010)
 
@@ -98,7 +98,7 @@ def connect(plant,soil,atmosphere,**args):
         return 'Error: No plant instance'
 
 
-wheat=PMF.CropCoefficiants_wheat()#CropDatabase.CropCoefficiants_wheat()
+wheat=PMF.CropCoefficiants_wheat()
 c3grass=PMF.CropCoefficiants_c3grass()
 c4grass=PMF.CropCoefficiants_c4grass()
 
@@ -130,7 +130,7 @@ def createPlant_wheat_SWC(**args):
                      leaf_percent=wheat.leaf_percent,stem_percent=wheat.stem_percent,storage_percent=wheat.storage_percent,plantN=wheat.plantN,**args)
 
 
-def createPlant_c3grass_SWC(c3grass):#**args):                                                    
+def createPlant_c3grass_SWC(c3grass):                                                    
     """             
     Implements a specific plant setup with C3 values.
     """
@@ -149,12 +149,6 @@ def createPlant_c3grass_SWC(c3grass):#**args):
     water = PMF.Waterstress_FAO()
     print 'Waterstress: FAO'
     layer = PMF.SoilLayer()
-#    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
-#                     interception=interception,net_radiation=net_radiation,water=water,layer=layer,
-#                     FRDR=c3grass.FRDR,max_height=c3grass.max_height,CO2_ring=c3grass.CO2_ring,max_depth=c3grass.max_depth, 
-#                     root_growth=c3grass.root_growth,leaf_specific_weight=c3grass.leaf_specific_weight,
-#                     tbase=c3grass.tbase,fact_sen=c3grass.fact_sen,shoot_percent=c3grass.shoot_percent,root_percent=c3grass.root_percent,
-#                     leaf_percent=c3grass.leaf_percent,stem_percent=c3grass.stem_percent,storage_percent=c3grass.storage_percent,plantN=c3grass.plantN,**args)
     return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
                      interception=interception,net_radiation=net_radiation,water=water,layer=layer,
                      FRDR=c3grass.FRDR,stem_specific_factor=c3grass.stem_specific_factor,
@@ -191,7 +185,7 @@ def createPlant_c4grass_SWC(**args):
                      tbase=c4grass.tbase,fact_sen=c4grass.fact_sen,shoot_percent=c4grass.shoot_percent,root_percent=c4grass.root_percent,
                      leaf_percent=c4grass.leaf_percent,stem_percent=c4grass.stem_percent,storage_percent=c4grass.storage_percent,plantN=c4grass.plantN,**args)   
 
-def createPlant_wheat_CMF(wheat):#**args):                                                    
+def createPlant_wheat_CMF(wheat):                                                    
     """             
     Implements a specific plant setup with summer wheat values.
     """
@@ -210,13 +204,6 @@ def createPlant_wheat_CMF(wheat):#**args):
     water = PMF.Waterstress_Feddes()
     print 'Waterstress: Feddes'
     layer = PMF.SoilLayer()
-#    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
-#                     interception=interception,net_radiation=net_radiation,water=water,layer=layer,
-#                     FRDR=wheat.FRDR,max_height=wheat.max_height,CO2_ring=wheat.CO2_ring,max_depth=wheat.max_depth, 
-#                     root_growth=wheat.root_growth,leaf_specific_weight=wheat.leaf_specific_weight,
-#                     tbase=wheat.tbase,fact_sen=wheat.fact_sen,shoot_percent=wheat.shoot_percent,root_percent=wheat.root_percent,
-#                     leaf_percent=wheat.leaf_percent,stem_percent=wheat.stem_percent,storage_percent=wheat.storage_percent,
-#                     plantN=wheat.plantN,pressure_threshold=wheat.pressure_threshold,**args)
     return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
                      interception=interception,net_radiation=net_radiation,water=water,layer=layer,
                      FRDR=wheat.FRDR,stem_specific_factor=wheat.stem_specific_factor,
@@ -227,7 +214,7 @@ def createPlant_wheat_CMF(wheat):#**args):
                      leaf_percent=wheat.leaf_percent,stem_percent=wheat.stem_percent,storage_percent=wheat.storage_percent,
                      plantN=wheat.plantN,pressure_threshold=wheat.pressure_threshold)
 
-def createPlant_c3grass_CMF(c3grass):#(c3grass):                                                    
+def createPlant_c3grass_CMF(c3grass):                                                    
     """             
     Implements a specific plant setup with C3 values.
     """
@@ -247,12 +234,6 @@ def createPlant_c3grass_CMF(c3grass):#(c3grass):
     print 'Waterstress: Feddes'
     layer = PMF.SoilLayer()
     print 'layer'
-#    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
-#                     interception=interception,net_radiation=net_radiation,water=water,layer=layer,
-#                     FRDR=c3grass.FRDR,max_height=c3grass.max_height,CO2_ring=c3grass.CO2_ring,max_depth=c3grass.max_depth, 
-#                     root_growth=c3grass.root_growth,leaf_specific_weight=c3grass.leaf_specific_weight,
-#                     tbase=c3grass.tbase,fact_sen=c3grass.fact_sen,shoot_percent=c3grass.shoot_percent,root_percent=c3grass.root_percent,
-#                     leaf_percent=c3grass.leaf_percent,stem_percent=c3grass.stem_percent,storage_percent=c3grass.storage_percent,**args)
     return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
                      interception=interception,net_radiation=net_radiation,water=water,layer=layer,
                      FRDR=c3grass.FRDR,stem_specific_factor=c3grass.stem_specific_factor,
@@ -263,7 +244,7 @@ def createPlant_c3grass_CMF(c3grass):#(c3grass):
                      leaf_percent=c3grass.leaf_percent,stem_percent=c3grass.stem_percent,storage_percent=c3grass.storage_percent,
                      plantN=c3grass.plantN,pressure_threshold=c3grass.pressure_threshold)
  
-def createPlant_c4grass_CMF(c4grass):#**args):                                                    
+def createPlant_c4grass_CMF(c4grass):                                                    
     """             
     Implements a specific plant setup with C4 values.
     """
@@ -282,12 +263,6 @@ def createPlant_c4grass_CMF(c4grass):#**args):
     water = PMF.ProcessLibrary.Waterstress_Feddes()
     print 'Waterstress: Feddes'
     layer = PMF.SoilLayer()
-#    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
-#                     interception=interception,net_radiation=net_radiation,water=water,layer=layer,
-#                     FRDR=c4grass.FRDR,max_height=c4grass.max_height,CO2_ring=c4grass.CO2_ring,max_depth=c4grass.max_depth, 
-#                     root_growth=c4grass.root_growth,leaf_specific_weight=c4grass.leaf_specific_weight,
-#                     tbase=c4grass.tbase,fact_sen=c4grass.fact_sen,shoot_percent=c4grass.shoot_percent,root_percent=c4grass.root_percent,
-#                     leaf_percent=c4grass.leaf_percent,stem_percent=c4grass.stem_percent,storage_percent=c4grass.storage_percent,**args)   
     return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
                      interception=interception,net_radiation=net_radiation,water=water,layer=layer,
                      FRDR=c4grass.FRDR,stem_specific_factor=c4grass.stem_specific_factor,
@@ -323,7 +298,6 @@ def createPlant_CMF(**args):
                      root_growth=wheat.root_growth,leaf_specific_weight=wheat.leaf_specific_weight,
                      tbase=wheat.tbase,fact_sen=wheat.fact_sen,shoot_percent=wheat.shoot_percent,root_percent=wheat.root_percent,
                      leaf_percent=wheat.leaf_percent,stem_percent=wheat.stem_percent,storage_percent=wheat.storage_percent,plantN=wheat.plantN)
-#    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)
 
 
 def createPlant_SWC(**args):                                                    
@@ -351,12 +325,6 @@ def createPlant_SWC(**args):
                      root_growth=wheat.root_growth,leaf_specific_weight=wheat.leaf_specific_weight,
                      tbase=wheat.tbase,fact_sen=wheat.fact_sen,shoot_percent=wheat.shoot_percent,root_percent=wheat.root_percent,
                      leaf_percent=wheat.leaf_percent,stem_percent=wheat.stem_percent,storage_percent=wheat.storage_percent,plantN=wheat.plantN)   
-#    return makePlant(PMF.Plant,CO2_ring=wheat.CO2_ring,et=et,biomass=biomass,net_radiation=net_radiation,development=development,nitrogen=nitrogen,water=water,layer=layer,**args)    
-#    return makePlant(PMF.Plant,et=et,biomass=biomass,development=development,nitrogen=nitrogen,
-#                     interception=interception,net_radiation=net_radiation,water=water,layer=layer,
-#                     FRDR=wheat.FRDR,max_height=wheat.max_height,CO2_ring=wheat.CO2_ring,max_depth=wheat.max_depth, 
-#                     root_growth=wheat.root_growth,leaf_specific_weight=wheat.leaf_specific_weight,
-#                     tbase=wheat.tbase,fact_sen=wheat.fact_sen,**args)    
 
 
 def createPlant_SWC_Soltani(**args):                                                   

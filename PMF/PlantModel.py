@@ -66,16 +66,16 @@ class Plant:
     def __init__(self,et,water,biomass,net_radiation,interception,development,nitrogen,layer,
                  FRDR,stem_specific_factor,stem_growth_max,max_height,CO2_ring,max_depth,
                  root_growth,leaf_specific_weight,tbase,fact_sen,         
-                 shoot_percent, #[.0,.5,.5,.9,.95,1.,1.,1.]
-                 root_percent, #[.0,.5,.5,.1,.05,.0,.0,.0]                 
-                 leaf_percent, # [.0,.5,.5,.5,.0,.0,.0,.0]
-                 stem_percent, # [.0,.5,.5,.5,.0,.0,.0,.0]]
+                 shoot_percent, 
+                 root_percent,                
+                 leaf_percent, 
+                 stem_percent,
                  storage_percent,
                  plantN,
                  pressure_threshold,# corn: [15.,30.,325.,15000.]  wheat: [0.,1.,500.,16000.], pasture: [10.,25.,200.,8000.]
                  stress_adaption=1.,
                  carbonfraction=.4,
-                 soil=None,atmosphere=None):                                    # FRDR new
+                 soil=None,atmosphere=None):                                   
         """        
         The implementation of plant requires six process modules, two 
         environmental interfaces and the specification of several crop specific 
@@ -167,11 +167,7 @@ class Plant:
         self.CO2_ring = CO2_ring
         
         self.stem_growth_max = stem_growth_max
-        
-        
-#        self.max_depth = max_depth
-#        self.root_growth = root_growth
-#        self.leaf_specific_weight = leaf_specific_weight
+    
       
         #Handing over environmental interfaces
         self.soil=soil
@@ -387,12 +383,8 @@ class Plant:
         # calls the class net radiation        
         self.net_radiation(self.atmosphere.get_tmax(time_act),self.atmosphere.get_tmin(time_act),self.atmosphere.get_ea(time_act),self.atmosphere.get_Rs(time_act),self.atmosphere.get_Rs_clearsky(time_act),self.shoot.leaf.LAI)
         
-#        veg_H = self.shoot.stem.height_ttrate
-#        veg_H = self.shoot.stem.stem_height_log(self.stem_growth_shape,self.max_height,self.developmentstage[4][1],self.developmentstage.Thermaltime)
-        #linear stem growth        
-#        veg_H = self.shoot.stem.stem_height_linear(self.stress,self.max_height,self.developmentstage[4][1],self.developmentstage.Thermaltime)
+        # stem growth        
         veg_H = self.shoot.stem.height_biomass
-#        #veg_H = self.shoot.stem.stem_height_biomass(self.stem_specific_factor,self.max_height,self.shoot.stem.Wtot,self.developmentstage[4][1],self.developmentstage.Thermaltime)
         
         T = self.atmosphere.get_tmean(time_act)
         e_s = self.atmosphere.get_es(time_act)
@@ -404,7 +396,6 @@ class Plant:
         Rsn = self.net_radiation.calc_R_s_n(self.net_radiation.R_n,self.net_radiation.interception)   
         Cr = self.net_radiation.Cr
         self.Rs = self.atmosphere.get_Rs(time_act)
-#        print self.Rs
         
         self.day_of_simulation = day_of_simulation
         self.soilprofile = self.atmosphere.soilprofile()
@@ -447,7 +438,6 @@ class Plant:
             self.nutrition_stress = max(0, 1 - sum(self.nitrogen.Total)/ self.Rp * self.stress_adaption if self.Rp>0 else 0.0)
             self.stress = min(max(self.water_stress, self.nutrition_stress),1)
             #Calls biomass interface for the calculation of the actual biomass                                                  ## CO2 neu eingefügt  ####
-#            self.biomass(time_step,self.stress,self.biomass.atmosphere_values(self.atmosphere,time_act),self.net_radiation.calc_interception(LAI_leaf,Cr),self.shoot.leaf.LAI,self.biomass.measured_CO2(self.atmosphere,time_act),self.shoot.leaf.senesced_leafmass)      
             self.biomass(time_step,self.stress,self.Rs,self.net_radiation.calc_interception(LAI_leaf,Cr),self.shoot.leaf.LAI,self.biomass.measured_CO2(self.atmosphere,time_act),self.shoot.leaf.senesced_leafmass)            
             #Root partitining
             if self.developmentstage.Thermaltime <= self.developmentstage[4][1]:
@@ -462,7 +452,6 @@ class Plant:
                 fgi = self.get_fgi(Sh, Tpot, Ra, Rp, NO3dis, H2Odis)
                 
                 root_biomass = self.root.percent[self.developmentstage.StageIndex] * self.biomass.ActualGrowth
-#                print 'root_biomass', root_biomass
                 vertical_root_growth_stress = self.stress
                 physical_constraints = self.water([self.root.depth])[0]
                 self.root(self.soilprofile,self.day_of_simulation,time_step,fgi,root_biomass,vertical_root_growth_stress,physical_constraints)
@@ -481,7 +470,6 @@ class Plant:
             if shootWtot_after<0.:
                 print 'shootWtot_before', shootWtot_before
                 print 'shootWtot_after', shootWtot_after   
-#            self.biomass -= self.shoot.leaf.senesced_leafmass
 
 
         else: self.biomass.growthrate = 0.0
@@ -922,7 +910,7 @@ class Stem:
     Stem must be called with timestep and the stem growthrate
     and calculates the actual stem biomass and plant height.
     """
-    def __init__(self,shoot,percent,stem_specific_factor,t_base,stem_growth_rate_max,max_height,elongation_end):  #t_base,stem_growth_rate_max,
+    def __init__(self,shoot,percent,stem_specific_factor,t_base,stem_growth_rate_max,max_height,elongation_end): 
         """
         Returns stem instance.
         
