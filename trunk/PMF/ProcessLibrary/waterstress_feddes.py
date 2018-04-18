@@ -2,7 +2,7 @@
 '''
 Created on 25 sep 2014
 
-:author: kellner-j
+:author: S. Multsch
 '''
 
 class Waterstress_Feddes:
